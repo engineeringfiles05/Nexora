@@ -51,6 +51,30 @@ export const ExamLauncherModal: React.FC<Props> = ({
   const [randomizeQuestions, setRandomizeQuestions] = useState<boolean>(true);
   const [randomizeChoices, setRandomizeChoices] = useState<boolean>(true);
 
+  const applyModeDefaults = (type: ExamType) => {
+    if (type === 'final_mock') {
+      setQuestionCount(20);
+      setDurationMinutes(60);
+      setInstantFeedback(false);
+    } else if (type === 'pre_board') {
+      setQuestionCount(20);
+      setDurationMinutes(45);
+      setInstantFeedback(false);
+    } else if (type === 'pre_test') {
+      setQuestionCount(12);
+      setDurationMinutes(30);
+      setInstantFeedback(false);
+    } else if (type === 'quiz') {
+      setQuestionCount(10);
+      setDurationMinutes(15);
+      setInstantFeedback(true);
+    } else {
+      setQuestionCount(15);
+      setDurationMinutes(30);
+      setInstantFeedback(false);
+    }
+  };
+
   // Synchronize internal state whenever modal opens or props change
   useEffect(() => {
     if (isOpen) {
@@ -59,28 +83,7 @@ export const ExamLauncherModal: React.FC<Props> = ({
       setSelectedTopic(initialTopic || 'all');
       setSelectedDifficulty('mixed');
       setSelectedPdfId(initialPdfSourceId || (pdfSources[0]?.id || ''));
-
-      if (initialType === 'final_mock') {
-        setQuestionCount(20);
-        setDurationMinutes(60);
-        setInstantFeedback(false);
-      } else if (initialType === 'pre_board') {
-        setQuestionCount(20);
-        setDurationMinutes(45);
-        setInstantFeedback(false);
-      } else if (initialType === 'pre_test') {
-        setQuestionCount(12);
-        setDurationMinutes(30);
-        setInstantFeedback(false);
-      } else if (initialType === 'quiz') {
-        setQuestionCount(10);
-        setDurationMinutes(15);
-        setInstantFeedback(true);
-      } else {
-        setQuestionCount(15);
-        setDurationMinutes(30);
-        setInstantFeedback(false);
-      }
+      applyModeDefaults(initialType);
     }
   }, [isOpen, initialType, initialSubjectId, initialTopic, initialPdfSourceId, pdfSources]);
 
@@ -114,12 +117,15 @@ export const ExamLauncherModal: React.FC<Props> = ({
       description = 'Questions sourced directly from uploaded PDF questionnaire.';
     }
 
+    // Mock Board and PDF Set hide the subject pickers, so a leftover choice must not filter them.
+    const usesSubjectFilter = examType !== 'pdf_quiz' && examType !== 'final_mock';
+
     const config: ExamConfig = {
       type: examType,
       title,
       description,
-      subjectId: selectedSubject === 'all' ? undefined : (selectedSubject as SubjectId),
-      topic: selectedTopic === 'all' ? undefined : selectedTopic,
+      subjectId: !usesSubjectFilter || selectedSubject === 'all' ? undefined : (selectedSubject as SubjectId),
+      topic: !usesSubjectFilter || selectedTopic === 'all' ? undefined : selectedTopic,
       pdfSourceId: examType === 'pdf_quiz' ? selectedPdfId : undefined,
       difficulty: selectedDifficulty === 'mixed' ? 'mixed' : (selectedDifficulty as DifficultyLevel),
       questionCount,
@@ -174,12 +180,7 @@ export const ExamLauncherModal: React.FC<Props> = ({
                 type="button"
                 onClick={() => {
                   setExamType(m.id as ExamType);
-                  if (m.id === 'quiz') setInstantFeedback(true);
-                  if (m.id === 'final_mock') {
-                    setQuestionCount(20);
-                    setDurationMinutes(45);
-                    setInstantFeedback(false);
-                  }
+                  applyModeDefaults(m.id as ExamType);
                 }}
                 className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition ${
                   examType === m.id
@@ -282,6 +283,7 @@ export const ExamLauncherModal: React.FC<Props> = ({
             >
               <option value={5}>5 Questions (Quick)</option>
               <option value={10}>10 Questions</option>
+              <option value={12}>12 Questions</option>
               <option value={15}>15 Questions</option>
               <option value={20}>20 Questions</option>
               <option value={30}>30 Questions (Intense)</option>
@@ -298,6 +300,7 @@ export const ExamLauncherModal: React.FC<Props> = ({
               className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
             >
               <option value={10}>10 Minutes</option>
+              <option value={15}>15 Minutes</option>
               <option value={20}>20 Minutes</option>
               <option value={30}>30 Minutes</option>
               <option value={45}>45 Minutes</option>

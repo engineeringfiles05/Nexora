@@ -15,21 +15,36 @@ export const ScientificCalculatorModal: React.FC<Props> = ({ isOpen, onClose }) 
   const [display, setDisplay] = useState('0');
   const [history, setHistory] = useState('');
   const [isRad, setIsRad] = useState(false);
+  const [entryState, setEntryState] = useState<'typing' | 'afterOperator' | 'afterResult'>('typing');
 
   if (!isOpen) return null;
 
   const handleDigit = (digit: string) => {
-    setDisplay((prev) => (prev === '0' || prev === 'Error' ? digit : prev + digit));
+    setDisplay((prev) => {
+      if (prev === '0' || prev === 'Error' || entryState === 'afterResult') {
+        return digit === '.' ? '0.' : digit;
+      }
+      return prev + digit;
+    });
+    setEntryState('typing');
   };
 
   const handleOperator = (op: string) => {
-    setHistory(`${display} ${op} `);
+    if (display === 'Error') return;
+    if (entryState === 'afterOperator') {
+      // A second operator press changes the pending operator.
+      setHistory((prev) => prev.replace(/\S+ $/, `${op} `));
+      return;
+    }
+    setHistory((prev) => `${prev}${display} ${op} `);
     setDisplay('0');
+    setEntryState('afterOperator');
   };
 
   const handleClear = () => {
     setDisplay('0');
     setHistory('');
+    setEntryState('typing');
   };
 
   const handleBackspace = () => {
@@ -37,12 +52,18 @@ export const ScientificCalculatorModal: React.FC<Props> = ({ isOpen, onClose }) 
       if (prev.length <= 1 || prev === 'Error') return '0';
       return prev.slice(0, -1);
     });
+    if (entryState === 'afterResult') setEntryState('typing');
   };
 
   const handleFunc = (func: string) => {
     try {
-      const val = parseFloat(display);
-      if (isNaN(val)) return;
+      // Functions apply to the number being typed, so "(30" keeps its bracket.
+      const match = display.match(/^(.*?)(-?\d*\.?\d+(?:e[+-]?\d+)?)$/);
+      const isConstant = func === 'pi' || func === 'e';
+      const afterBracket = display.endsWith('(');
+      if (!match && !(isConstant && (afterBracket || display === 'Error'))) return;
+      const prefix = match ? match[1] : afterBracket ? display : '';
+      const val = match ? parseFloat(match[2]) : 0;
 
       let result = 0;
       switch (func) {
@@ -86,7 +107,13 @@ export const ScientificCalculatorModal: React.FC<Props> = ({ isOpen, onClose }) 
           return;
       }
 
-      setDisplay(Number(result.toFixed(8)).toString());
+      if (!isFinite(result)) {
+        setDisplay('Error');
+        setEntryState('afterResult');
+        return;
+      }
+      setDisplay(prefix + Number(result.toFixed(8)).toString());
+      setEntryState(prefix ? 'typing' : 'afterResult');
     } catch {
       setDisplay('Error');
     }
@@ -94,7 +121,10 @@ export const ScientificCalculatorModal: React.FC<Props> = ({ isOpen, onClose }) 
 
   const handleCalculate = () => {
     try {
-      const fullExpression = (history + display)
+      // "2 + =" evaluates as 2 rather than 2 + 0.
+      const expression =
+        entryState === 'afterOperator' ? history.replace(/\s*\S+ $/, '') : history + display;
+      const fullExpression = expression
         .replace(/×/g, '*')
         .replace(/÷/g, '/')
         .replace(/\^/g, '**');
@@ -104,13 +134,14 @@ export const ScientificCalculatorModal: React.FC<Props> = ({ isOpen, onClose }) 
       const result = Function(`"use strict"; return (${fullExpression})`)();
       if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
         setDisplay(Number(result.toFixed(8)).toString());
-        setHistory('');
       } else {
         setDisplay('Error');
       }
     } catch {
       setDisplay('Error');
     }
+    setHistory('');
+    setEntryState('afterResult');
   };
 
   return (
@@ -191,8 +222,9 @@ export const ScientificCalculatorModal: React.FC<Props> = ({ isOpen, onClose }) 
           {/* Numeric row 4 */}
           <button onClick={() => handleDigit('0')} className="p-3 rounded-lg bg-slate-800/80 text-white hover:bg-slate-700 font-semibold">0</button>
           <button onClick={() => handleDigit('.')} className="p-3 rounded-lg bg-slate-800/80 text-white hover:bg-slate-700 font-semibold">.</button>
-          <button onClick={handleCalculate} className="col-span-2 p-3 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-900/40">=</button>
+          <button onClick={handleCalculate} className="p-3 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-900/40">=</button>
           <button onClick={() => handleOperator('+')} className="p-3 rounded-lg bg-indigo-900/40 text-indigo-300 border border-indigo-800/40 hover:bg-indigo-800/50 font-semibold">+</button>
+          <button onClick={() => handleDigit(')')} className="p-3 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">)</button>
         </div>
       </div>
     </div>
