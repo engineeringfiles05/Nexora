@@ -1,0 +1,6 @@
+{
+  "name": "NEXORA ACADEMY",
+  "description": "Premier professional board examination review platform with AI-powered PDF question importer, multi-mode exams, step-by-step engineering solutions, and performance analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
