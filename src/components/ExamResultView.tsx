@@ -40,6 +40,8 @@ export const ExamResultView: React.FC<Props> = ({
 }) => {
   const [filterMode, setFilterMode] = useState<'all' | 'incorrect' | 'flagged'>('all');
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
+  // The Incorrect filter opens every solution, so it tracks which ones were closed instead.
+  const [collapsedIds, setCollapsedIds] = useState<string[]>([]);
 
   // Trigger celebration confetti on pass!
   useEffect(() => {
@@ -292,7 +294,10 @@ export const ExamResultView: React.FC<Props> = ({
                 All ({questions.length})
               </button>
               <button
-                onClick={() => setFilterMode('incorrect')}
+                onClick={() => {
+                  setFilterMode('incorrect');
+                  setCollapsedIds([]);
+                }}
                 className={`px-3 py-1 rounded-lg font-medium transition ${
                   filterMode === 'incorrect'
                     ? 'bg-rose-950 text-rose-300 shadow-sm'
@@ -321,7 +326,8 @@ export const ExamResultView: React.FC<Props> = ({
             const userAnswer = result.userAnswers[q.id];
             const isCorrect = userAnswer === q.correctAnswer;
             const isOmitted = userAnswer === undefined;
-            const isExpanded = expandedQuestionId === q.id || filterMode === 'incorrect';
+            const isExpanded =
+              filterMode === 'incorrect' ? !collapsedIds.includes(q.id) : expandedQuestionId === q.id;
 
             return (
               <div
@@ -363,9 +369,16 @@ export const ExamResultView: React.FC<Props> = ({
                     )}
 
                     <button
-                      onClick={() =>
-                        setExpandedQuestionId(isExpanded ? null : q.id)
-                      }
+                      onClick={() => {
+                        if (filterMode === 'incorrect') {
+                          setCollapsedIds((prev) =>
+                            isExpanded ? [...prev, q.id] : prev.filter((id) => id !== q.id)
+                          );
+                        } else {
+                          setExpandedQuestionId(isExpanded ? null : q.id);
+                        }
+                      }}
+                      aria-label={isExpanded ? 'Hide solution' : 'Show solution'}
                       className="text-xs text-slate-400 hover:text-white flex items-center gap-1 p-1"
                     >
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

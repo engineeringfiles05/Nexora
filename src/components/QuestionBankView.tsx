@@ -54,6 +54,7 @@ export const QuestionBankView: React.FC<Props> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalError, setAddModalError] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [editModalError, setEditModalError] = useState<string | null>(null);
   const [inspectQuestion, setInspectQuestion] = useState<Question | null>(null);
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<{ id?: string; isBulk?: boolean } | null>(null);
 
@@ -127,6 +128,38 @@ export const QuestionBankView: React.FC<Props> = ({
       }
     });
     setSelectedIds([]);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteConfirmTarget) return;
+    const ids = deleteConfirmTarget.isBulk
+      ? selectedIds
+      : deleteConfirmTarget.id
+      ? [deleteConfirmTarget.id]
+      : [];
+    ids.forEach((id) => onDeleteQuestion(id));
+    setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+    setDeleteConfirmTarget(null);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingQuestion(null);
+    setEditModalError(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingQuestion) return;
+    if (!editingQuestion.question.trim() || editingQuestion.options.some((o) => !o.text.trim())) {
+      setEditModalError('Please fill out the question statement and all answer choices.');
+      return;
+    }
+    onUpdateQuestion({
+      ...editingQuestion,
+      subjectName:
+        subjects.find((s) => s.id === editingQuestion.subjectId)?.name || editingQuestion.subjectName,
+      updatedAt: new Date().toISOString().split('T')[0],
+    });
+    handleCloseEdit();
   };
 
   const handleSaveNewQuestion = () => {
@@ -561,7 +594,10 @@ export const QuestionBankView: React.FC<Props> = ({
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setAddModalError(null);
+                }}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
               >
                 Cancel
@@ -571,6 +607,184 @@ export const QuestionBankView: React.FC<Props> = ({
                 className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/30"
               >
                 Add to Question Bank
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Question Modal */}
+      {editingQuestion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-6 sm:p-8 space-y-5 my-8">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-indigo-400" />
+                Edit Question {editingQuestion.id}
+              </h3>
+              <button onClick={handleCloseEdit} className="text-slate-400 hover:text-white" aria-label="Close editor">
+                ✕
+              </button>
+            </div>
+
+            {editModalError && (
+              <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{editModalError}</span>
+              </div>
+            )}
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Question Statement:</label>
+                <textarea
+                  rows={3}
+                  value={editingQuestion.question}
+                  onChange={(e) => setEditingQuestion({ ...editingQuestion, question: e.target.value })}
+                  className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {editingQuestion.options.map((opt, i) => (
+                  <div key={opt.key}>
+                    <label className="block text-slate-400 mb-1">Option {opt.key}:</label>
+                    <input
+                      type="text"
+                      value={opt.text}
+                      onChange={(e) => {
+                        const options = [...editingQuestion.options];
+                        options[i] = { ...opt, text: e.target.value };
+                        setEditingQuestion({ ...editingQuestion, options });
+                      }}
+                      className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">Correct Answer Choice:</label>
+                  <select
+                    value={editingQuestion.correctAnswer}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, correctAnswer: e.target.value })}
+                    className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  >
+                    {editingQuestion.options.map((opt) => (
+                      <option key={opt.key} value={opt.key}>
+                        Choice {opt.key}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1">Subject:</label>
+                  <select
+                    value={editingQuestion.subjectId}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, subjectId: e.target.value as SubjectId })}
+                    className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  >
+                    <option value="ee">Electrical Engineering</option>
+                    <option value="esas">Engineering Sciences</option>
+                    <option value="math">Mathematics</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1">Difficulty:</label>
+                  <select
+                    value={editingQuestion.difficulty}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, difficulty: e.target.value as DifficultyLevel })}
+                    className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  >
+                    <option value="Easy">Easy</option>
+                    <option value="Average">Average</option>
+                    <option value="Difficult">Difficult</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1">Topic Name:</label>
+                <input
+                  type="text"
+                  value={editingQuestion.topic}
+                  onChange={(e) => setEditingQuestion({ ...editingQuestion, topic: e.target.value })}
+                  className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Step-by-Step Mathematical Derivation:</label>
+                <textarea
+                  rows={4}
+                  value={editingQuestion.stepByStepSolution}
+                  onChange={(e) => setEditingQuestion({ ...editingQuestion, stepByStepSolution: e.target.value })}
+                  className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg font-mono text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Conceptual Explanation:</label>
+                <textarea
+                  rows={2}
+                  value={editingQuestion.explanation}
+                  onChange={(e) => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })}
+                  className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                onClick={handleCloseEdit}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/30"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  {deleteConfirmTarget.isBulk
+                    ? `Delete ${selectedIds.length} selected questions?`
+                    : `Delete question ${deleteConfirmTarget.id}?`}
+                </h3>
+                <p className="text-xs text-slate-400">This removes it from the Question Bank and all future exams.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => setDeleteConfirmTarget(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-rose-600/30 transition"
+              >
+                Yes, Delete
               </button>
             </div>
           </div>

@@ -372,6 +372,12 @@ export const Navbar: React.FC<Props> = ({
             >
               PDF Sets
             </button>
+            <button
+              onClick={() => onNavigate('exam-history')}
+              className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'exam-history' ? 'bg-emerald-600 text-white' : 'text-slate-300'}`}
+            >
+              History
+            </button>
           </>
         ) : (
           <>

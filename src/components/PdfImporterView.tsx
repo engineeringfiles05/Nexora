@@ -45,6 +45,7 @@ export const PdfImporterView: React.FC<Props> = ({
   onAddAuditLog,
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
   const [selectedPreset, setSelectedPreset] = useState<string>('custom');
   const [rawText, setRawText] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -118,22 +119,46 @@ D. ₱130,200
     }
   };
 
+  const loadFile = (file: File) => {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isText = file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt');
+    if (!isPdf && !isText) {
+      setErrorMessage(`"${file.name}" is not supported. Please choose a PDF or TXT file.`);
+      return;
+    }
+
+    setErrorMessage(null);
+    setSelectedFile(file);
+    setSelectedPreset('custom');
+
+    if (isPdf) {
+      // PDFs are sent to the server as binary, so there is no readable text to preview.
+      setRawText('');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content === 'string') {
+        setRawText(content.slice(0, 5000));
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setSelectedPreset('custom');
-      // For quick preview or text-based reading
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result;
-        if (typeof content === 'string') {
-          // If text or plain file
-          setRawText(content.slice(0, 5000));
-        }
-      };
-      reader.readAsText(file);
-    }
+    if (file) loadFile(file);
+    // Allows choosing the same file again after switching to a preset.
+    e.target.value = '';
+  };
+
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingFile(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) loadFile(file);
   };
 
   // Convert File to Base64
@@ -178,7 +203,7 @@ D. ₱130,200
       }
 
       setProcessingProgress(35);
-      setProcessingStage('Stage 2/5: Distilling actual examination questions (filtering non-question prose & lecture notes)...');
+      setProcessingStage('Stage 2/5: Distilling and solving examination questions. Long PDFs can take a few minutes...');
 
       // Call backend API
       const res = await fetch('/api/extract-pdf', {
@@ -196,7 +221,12 @@ D. ₱130,200
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Server extraction error');
+        throw new Error(
+          errData.error ||
+            (res.status === 413
+              ? 'This file is too large to upload. Please split the PDF into smaller files.'
+              : 'Server extraction error')
+        );
       }
 
       const data = await res.json();
@@ -223,12 +253,14 @@ D. ₱130,200
           };
         }
 
+        // "Verified" must be earned: anything uncertain or incomplete goes to manual review.
+        const confidence: number = item.extractionConfidence ?? 0;
         const validStatus: VerificationStatus =
           item.verificationStatus === 'discrepancy_flagged'
             ? 'discrepancy_flagged'
-            : item.verificationStatus === 'needs_verification'
-            ? 'needs_verification'
-            : 'verified';
+            : item.verificationStatus === 'verified' && confidence >= 90 && item.stepByStepSolution
+            ? 'verified'
+            : 'needs_verification';
 
         return {
           id: qId,
@@ -242,8 +274,8 @@ D. ₱130,200
           ],
           correctAnswer: item.correctAnswer || 'A',
           extractedAnswerKey: item.extractedAnswerKey,
-          explanation: item.explanation || 'Verified using standard board examination principles.',
-          stepByStepSolution: item.stepByStepSolution || '1. Identify parameters.\n2. Apply governing theorem.\n3. Compute result with units.',
+          explanation: item.explanation || '',
+          stepByStepSolution: item.stepByStepSolution || '',
           formulasUsed: item.formulasUsed || [],
           givenValues: item.givenValues || [],
           finalAnswerWithUnit: item.finalAnswerWithUnit || '',
@@ -255,7 +287,7 @@ D. ₱130,200
           sourcePdfId: pdfId,
           sourcePdfName: filename,
           sourcePdfPage: item.sourcePdfPage || 1,
-          extractionConfidence: item.extractionConfidence || 95,
+          extractionConfidence: confidence,
           verificationStatus: validStatus,
           isPublished: false,
           createdAt: new Date().toISOString(),
@@ -310,6 +342,11 @@ D. ₱130,200
   const handleDelete = (id: string) => {
     setExtractedQuestions((prev) => prev.filter((q) => q.id !== id));
     setSelectedIds((prev) => prev.filter((item) => item !== id));
+    setDuplicateConflicts((prev) => {
+      const remaining = { ...prev };
+      delete remaining[id];
+      return remaining;
+    });
   };
 
   // Approve question
@@ -434,7 +471,7 @@ D. ₱130,200
           {/* Preset Buttons */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-300 uppercase tracking-wide">
-              Quick Test Presets (Instant AI Demonstration):
+              Sample Questionnaires (Processed by the AI like any upload):
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {presets.map((p) => (
@@ -465,8 +502,16 @@ D. ₱130,200
           {/* Drag & Drop File Zone */}
           <div
             onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDraggingFile(true);
+            }}
+            onDragLeave={() => setIsDraggingFile(false)}
+            onDrop={handleFileDrop}
             className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition ${
-              selectedFile
+              isDraggingFile
+                ? 'border-indigo-500 bg-indigo-950/40'
+                : selectedFile
                 ? 'border-emerald-500/80 bg-emerald-950/20'
                 : 'border-slate-700 hover:border-indigo-500 bg-slate-950/50 hover:bg-slate-900'
             }`}
@@ -503,7 +548,7 @@ D. ₱130,200
                 Questionnaire Content Stream Preview:
               </label>
               <button
-                onClick={() => setRawText(SAMPLE_RAW_QUESTIONNAIRE_TEXT)}
+                onClick={() => handlePresetSelect('sample-ree-power')}
                 className="text-indigo-400 hover:text-indigo-300 transition"
               >
                 Reset to Standard Sample

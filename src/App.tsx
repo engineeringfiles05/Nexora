@@ -201,6 +201,15 @@ export default function App() {
     setCurrentView('exam-result');
   };
 
+  // Open a saved result. Clears the last-launched config so Retake can't start a different exam.
+  const handleViewResult = (res: ExamResult) => {
+    setActiveResult(res);
+    setActiveExamConfig(null);
+    const matched = questions.filter((q) => res.userAnswers[q.id] !== undefined);
+    setActiveExamQuestions(matched.length > 0 ? matched : questions.slice(0, res.totalQuestions));
+    setCurrentView('exam-result');
+  };
+
   // Admin: Publish new extracted questions
   const handlePublishQuestions = (newQuestions: Question[], sourcePdf: PdfSource) => {
     // Add new questions marked as published
@@ -228,7 +237,7 @@ export default function App() {
   // Admin audit log adder
   const handleAddAuditLog = (action: string, details: string, badge?: string) => {
     const newLog: AuditLog = {
-      id: `log-${Date.now()}`,
+      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, // unique within a bulk action
       adminName: currentUser.name,
       action,
       details,
@@ -270,13 +279,7 @@ export default function App() {
               handleOpenLauncher(type, subjectId, pdfSourceId, topic)
             }
             onNavigate={handleNavigate}
-            onViewResult={(res) => {
-              setActiveResult(res);
-              // Find matching questions
-              const matched = questions.filter((q) => res.userAnswers[q.id] !== undefined);
-              setActiveExamQuestions(matched.length > 0 ? matched : questions.slice(0, res.totalQuestions));
-              setCurrentView('exam-result');
-            }}
+            onViewResult={handleViewResult}
           />
         )}
 
@@ -320,12 +323,7 @@ export default function App() {
                     </div>
                   </div>
                   <button
-                    onClick={() => {
-                      setActiveResult(exam);
-                      const matched = questions.filter((q) => exam.userAnswers[q.id] !== undefined);
-                      setActiveExamQuestions(matched.length > 0 ? matched : questions.slice(0, exam.totalQuestions));
-                      setCurrentView('exam-result');
-                    }}
+                    onClick={() => handleViewResult(exam)}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl"
                   >
                     Review Solutions
@@ -420,6 +418,7 @@ export default function App() {
             onNavigateToImporter={() => setCurrentView('pdf-importer')}
             onNavigateToQuiz={(pdfId) => {
               setCurrentUser(DEMO_USERS[1]); // switch to reviewee
+              setCurrentView('pdf-quiz-generator'); // leave the admin-only page along with the role
               handleOpenLauncher('pdf_quiz', undefined, pdfId);
             }}
           />
