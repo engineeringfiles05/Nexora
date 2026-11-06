@@ -58,7 +58,9 @@ export const Navbar: React.FC<Props> = ({
 
         {/* Quick Role Switcher Pill */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-400">Current Role:</span>
+          <span className="text-[11px] text-slate-400" title="Demo only: there is no sign-in, so anyone can switch roles.">
+            Demo Role:
+          </span>
           <div className="inline-flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
             <button
               onClick={() => onSwitchRole('reviewee')}

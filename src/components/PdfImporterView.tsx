@@ -30,6 +30,17 @@ import {
 import { Question, PdfSource, SubjectId, DifficultyLevel, VerificationStatus } from '../types/index.ts';
 import { SAMPLE_RAW_QUESTIONNAIRE_TEXT } from '../data/seedData.ts';
 import { checkQuestionDuplicate } from '../utils/examEngine.ts';
+import { getDefaultSelectedIds, isReviewedForExams, splitPublishableQuestions } from '../utils/bank.ts';
+import { classifyQuestionnaireFile, formatFileSize } from '../utils/importFile.ts';
+
+const ADMIN_TOKEN_SESSION_KEY = 'nexora.adminToken';
+const readSessionToken = () => {
+  try {
+    return sessionStorage.getItem(ADMIN_TOKEN_SESSION_KEY) || '';
+  } catch {
+    return '';
+  }
+};
 
 interface Props {
   existingQuestions: Question[];
@@ -46,6 +57,8 @@ export const PdfImporterView: React.FC<Props> = ({
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
+  const [adminToken, setAdminToken] = useState<string>(readSessionToken);
+  const [stagedFileSize, setStagedFileSize] = useState<string>('Text input');
   const [selectedPreset, setSelectedPreset] = useState<string>('custom');
   const [rawText, setRawText] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -120,9 +133,8 @@ D. ₱130,200
   };
 
   const loadFile = (file: File) => {
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    const isText = file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt');
-    if (!isPdf && !isText) {
+    const kind = classifyQuestionnaireFile(file);
+    if (!kind) {
       setErrorMessage(`"${file.name}" is not supported. Please choose a PDF or TXT file.`);
       return;
     }
@@ -131,20 +143,17 @@ D. ₱130,200
     setSelectedFile(file);
     setSelectedPreset('custom');
 
-    if (isPdf) {
+    if (kind === 'pdf') {
       // PDFs are sent to the server as binary, so there is no readable text to preview.
       setRawText('');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result;
-      if (typeof content === 'string') {
-        setRawText(content.slice(0, 5000));
-      }
-    };
-    reader.readAsText(file);
+    // The box holds the full text because it is exactly what gets sent for extraction.
+    file
+      .text()
+      .then(setRawText)
+      .catch(() => setErrorMessage(`"${file.name}" could not be read.`));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,7 +202,7 @@ D. ₱130,200
 
       if (selectedFile) {
         filename = selectedFile.name;
-        if (selectedFile.type === 'application/pdf') {
+        if (classifyQuestionnaireFile(selectedFile) === 'pdf') {
           setProcessingStage('Stage 1/5: Encoding PDF binary data for multimodal analysis...');
           base64Pdf = await fileToBase64(selectedFile);
         }
@@ -208,7 +217,10 @@ D. ₱130,200
       // Call backend API
       const res = await fetch('/api/extract-pdf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminToken ? { 'x-nexora-admin-token': adminToken } : {}),
+        },
         body: JSON.stringify({
           rawText: rawText.trim() || undefined,
           base64Pdf: base64Pdf,
@@ -236,7 +248,8 @@ D. ₱130,200
       setProcessingStage('Stage 4/5: Verifying answer keys and checking duplicate similarity against Question Bank...');
 
       // Transform into typed Question objects & check duplicates
-      const pdfId = `pdf-${Date.now().toString(36)}`;
+      // Reimporting a file keeps its existing source ID.
+      const pdfId = pdfSources.find((p) => p.filename === filename)?.id ?? `pdf-${Date.now().toString(36)}`;
       const newDuplicates: Record<string, { matchedId: string; matchedText: string; similarity: number }> = {};
 
       const processed: Question[] = rawExtracted.map((item, idx) => {
@@ -297,7 +310,8 @@ D. ₱130,200
 
       setDuplicateConflicts(newDuplicates);
       setExtractedQuestions(processed);
-      setSelectedIds(processed.map((q) => q.id)); // select all by default
+      setSelectedIds(getDefaultSelectedIds(processed));
+      setStagedFileSize(selectedFile ? formatFileSize(selectedFile.size) : 'Text input');
 
       setProcessingProgress(100);
       setProcessingStage('Stage 5/5: Extraction and Verification Complete!');
@@ -323,11 +337,8 @@ D. ₱130,200
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.length === filteredQuestions.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredQuestions.map((q) => q.id));
-    }
+    const selectable = filteredQuestions.filter(isReviewedForExams).map((q) => q.id);
+    setSelectedIds(selectedIds.length === selectable.length ? [] : selectable);
   };
 
   // Inline edit save
@@ -349,20 +360,32 @@ D. ₱130,200
     });
   };
 
-  // Approve question
+  // An admin's explicit override, recorded separately from AI verification
   const handleApprove = (id: string) => {
     setExtractedQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, verificationStatus: 'verified' } : q))
+      prev.map((q) => (q.id === id ? { ...q, verificationStatus: 'manual_override' } : q))
+    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    const target = extractedQuestions.find((q) => q.id === id);
+    onAddAuditLog(
+      'Answer Approved by Admin',
+      `Manually approved the answer for extracted item #${target?.originalQuestionNumber ?? id}${target?.sourcePdfName ? ` from "${target.sourcePdfName}"` : ''}.`,
+      'Override'
     );
   };
 
   // Publish to Question Bank
   const handlePublishSelected = () => {
-    const toPublish = extractedQuestions.filter((q) => selectedIds.includes(q.id));
+    const { publishable: toPublish, held } = splitPublishableQuestions(extractedQuestions, selectedIds);
     if (toPublish.length === 0) {
-      setErrorMessage('Please select at least one question to publish.');
+      setErrorMessage(
+        held.length > 0
+          ? 'The selected questions still need review. Approve their answers before publishing.'
+          : 'Please select at least one question to publish.'
+      );
       return;
     }
+    const publishedIds = toPublish.map((q) => q.id);
 
     const firstItem = toPublish[0];
     const sourcePdfName = firstItem.sourcePdfName || 'Extracted_Questionnaire.pdf';
@@ -371,8 +394,8 @@ D. ₱130,200
       id: firstItem.sourcePdfId || `pdf-${Date.now().toString(36)}`,
       filename: sourcePdfName,
       originalName: sourcePdfName,
-      fileSize: '3.6 MB',
-      pageCount: 18,
+      fileSize: stagedFileSize,
+      pageCount: 0, // unknown: the browser doesn't parse the PDF
       uploadDate: new Date().toISOString().split('T')[0],
       status: 'published',
       questionsCount: toPublish.length,
@@ -391,14 +414,17 @@ D. ₱130,200
     onPublishQuestions(toPublish, sourceRecord);
     onAddAuditLog(
       'Questions Published to Bank',
-      `Published ${toPublish.length} questions from "${sourcePdfName}" into Question Bank. Now live for all reviewee exams.`,
+      `Published ${toPublish.length} questions from "${sourcePdfName}" into the Question Bank in this browser.`,
       'Published'
     );
 
-    // Remove published from staging
-    setExtractedQuestions((prev) => prev.filter((q) => !selectedIds.includes(q.id)));
+    // Remove published from staging; anything uncertain stays for review
+    setExtractedQuestions((prev) => prev.filter((q) => !publishedIds.includes(q.id)));
     setSelectedIds([]);
-    setSuccessMessage(`Successfully published ${toPublish.length} questions to the central Question Bank! They are now immediately accessible to all reviewees.`);
+    setSuccessMessage(
+      `Published ${toPublish.length} question${toPublish.length === 1 ? '' : 's'} to the Question Bank in this browser.` +
+        (held.length > 0 ? ` ${held.length} still need review and stayed in the queue.` : '')
+    );
   };
 
   // Export JSON
@@ -564,6 +590,30 @@ D. ₱130,200
               placeholder="Paste or review examination questionnaire text here..."
               className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
             />
+          </div>
+
+          {/* Server access for paid AI calls */}
+          <div className="space-y-1 text-xs">
+            <label htmlFor="admin-token" className="font-semibold text-slate-300">
+              Admin Access Token:
+            </label>
+            <input
+              id="admin-token"
+              type="password"
+              autoComplete="off"
+              value={adminToken}
+              onChange={(e) => {
+                setAdminToken(e.target.value);
+                try {
+                  sessionStorage.setItem(ADMIN_TOKEN_SESSION_KEY, e.target.value);
+                } catch {
+                  // It just won't be remembered for this tab.
+                }
+              }}
+              placeholder="Required when the server sets NEXORA_ADMIN_TOKEN"
+              className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+            />
+            <p className="text-[11px] text-slate-500">Kept only for this browser tab and sent only to this app's server.</p>
           </div>
 
           {/* Start Extraction CTA */}
@@ -740,7 +790,9 @@ D. ₱130,200
                 onClick={handleSelectAll}
                 className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs font-medium border border-slate-700"
               >
-                {selectedIds.length === filteredQuestions.length ? 'Deselect All' : 'Select All'}
+                {selectedIds.length > 0 && selectedIds.length === filteredQuestions.filter(isReviewedForExams).length
+                  ? 'Deselect All'
+                  : 'Select All Reviewed'}
               </button>
 
               <button
@@ -785,6 +837,7 @@ D. ₱130,200
             >
               <option value="all">All Verification Statuses</option>
               <option value="verified">Verified (High Confidence)</option>
+              <option value="manual_override">Approved by Admin</option>
               <option value="needs_verification">Needs Verification</option>
               <option value="discrepancy_flagged">Discrepancy Flagged</option>
             </select>
@@ -812,7 +865,9 @@ D. ₱130,200
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleSelect(q.id)}
-                        className="w-4 h-4 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500"
+                        disabled={!isReviewedForExams(q)}
+                        title={isReviewedForExams(q) ? undefined : 'Approve this answer before publishing.'}
+                        className="w-4 h-4 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500 disabled:opacity-40"
                       />
                       <span className="font-mono text-xs font-bold text-slate-400">
                         Item #{q.originalQuestionNumber || '—'}
@@ -841,6 +896,11 @@ D. ₱130,200
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                           Verified ({q.extractionConfidence}%)
                         </span>
+                      ) : q.verificationStatus === 'manual_override' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
+                          Approved by Admin
+                        </span>
                       ) : q.verificationStatus === 'discrepancy_flagged' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
                           <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
@@ -851,6 +911,15 @@ D. ₱130,200
                           <Clock className="w-3.5 h-3.5 text-amber-400" />
                           Needs Verification
                         </span>
+                      )}
+
+                      {!isReviewedForExams(q) && (
+                        <button
+                          onClick={() => handleApprove(q.id)}
+                          className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition"
+                        >
+                          Approve Answer
+                        </button>
                       )}
 
                       <button

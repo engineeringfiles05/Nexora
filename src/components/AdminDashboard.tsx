@@ -165,7 +165,7 @@ export const AdminDashboard: React.FC<Props> = ({
                   <div className="text-[11px] text-slate-400 flex items-center gap-2">
                     <span>{pdf.fileSize}</span>
                     <span>•</span>
-                    <span>{pdf.pageCount} Pages</span>
+                    <span>{pdf.pageCount > 0 ? `${pdf.pageCount} Pages` : 'Pages unknown'}</span>
                     <span>•</span>
                     <strong className="text-emerald-400">{pdf.questionsCount} Questions Extracted</strong>
                   </div>

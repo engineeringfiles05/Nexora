@@ -18,6 +18,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { PdfSource, SubjectId } from '../types/index.ts';
+import { isSourceAvailableForExam } from '../utils/bank.ts';
 
 interface Props {
   pdfSources: PdfSource[];
@@ -103,7 +104,7 @@ export const PdfSourcesView: React.FC<Props> = ({
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-500 block uppercase">Pages</span>
-                  <strong className="text-sm text-indigo-400">{source.pageCount} Pgs</strong>
+                  <strong className="text-sm text-indigo-400">{source.pageCount > 0 ? `${source.pageCount} Pgs` : '—'}</strong>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-500 block uppercase">File Size</span>
@@ -163,7 +164,9 @@ export const PdfSourcesView: React.FC<Props> = ({
 
               <button
                 onClick={() => onNavigateToQuiz(source.id)}
-                className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition"
+                disabled={!isSourceAvailableForExam(source, 'pdf_quiz')}
+                title={isSourceAvailableForExam(source, 'pdf_quiz') ? undefined : 'Make this PDF public and allow quiz mode to launch it for reviewees.'}
+                className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Launch Quiz on this PDF
