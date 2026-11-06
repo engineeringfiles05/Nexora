@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   UserProfile,
   UserRole,
@@ -23,6 +23,14 @@ import {
   INITIAL_AUDIT_LOGS,
 } from './data/seedData.ts';
 import { calculateExamScore } from './utils/examEngine.ts';
+import {
+  getReviewQuestions,
+  isReviewedForExams,
+  publishQuestionsToBank,
+  reconcileSourceCounts,
+  selectExamQuestions,
+} from './utils/bank.ts';
+import { isRecordArray, usePersistentState } from './utils/persistence.ts';
 
 // Components
 import { Navbar } from './components/Navbar.tsx';
@@ -43,10 +51,26 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile>(DEMO_USERS[1]); // default to Reviewee
   const [currentView, setCurrentView] = useState<string>('reviewee-dashboard');
 
-  const [questions, setQuestions] = useState<Question[]>(INITIAL_QUESTIONS);
-  const [pdfSources, setPdfSources] = useState<PdfSource[]>(INITIAL_PDF_SOURCES);
-  const [examResults, setExamResults] = useState<ExamResult[]>(INITIAL_EXAM_RESULTS);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_AUDIT_LOGS);
+  // Saved in this browser only. See utils/persistence.ts.
+  const [failedSaves, setFailedSaves] = useState<string[]>([]);
+  const [confirmingReset, setConfirmingReset] = useState<boolean>(false);
+  const handleSaved = useCallback((key: string, succeeded: boolean) => {
+    setFailedSaves((prev) => {
+      const others = prev.filter((item) => item !== key);
+      if (succeeded) return others.length === prev.length ? prev : others;
+      return [...others, key];
+    });
+  }, []);
+  const [questions, setQuestions] = usePersistentState<Question[]>('questions', INITIAL_QUESTIONS, isRecordArray<Question>, handleSaved);
+  const [storedSources, setPdfSources] = usePersistentState<PdfSource[]>('sources', INITIAL_PDF_SOURCES, isRecordArray<PdfSource>, handleSaved);
+  const [examResults, setExamResults] = usePersistentState<ExamResult[]>('results', INITIAL_EXAM_RESULTS, isRecordArray<ExamResult>, handleSaved);
+  const [auditLogs, setAuditLogs] = usePersistentState<AuditLog[]>('audit', INITIAL_AUDIT_LOGS, isRecordArray<AuditLog>, handleSaved);
+
+  // Counts always come from the bank, so edits, deletes and partial publishes can't drift.
+  const pdfSources = useMemo(
+    () => storedSources.map((source) => reconcileSourceCounts(source, questions)),
+    [storedSources, questions]
+  );
 
   // Active Examination Session State
   const [activeExamConfig, setActiveExamConfig] = useState<ExamConfig | null>(null);
@@ -59,6 +83,16 @@ export default function App() {
   const [launcherSubjectId, setLauncherSubjectId] = useState<string | undefined>(undefined);
   const [launcherTopic, setLauncherTopic] = useState<string | undefined>(undefined);
   const [launcherPdfSourceId, setLauncherPdfSourceId] = useState<string | undefined>(undefined);
+  const [launcherNotice, setLauncherNotice] = useState<string | undefined>(undefined);
+
+  const handleResetDemoData = () => {
+    setQuestions(INITIAL_QUESTIONS);
+    setPdfSources(INITIAL_PDF_SOURCES);
+    setExamResults(INITIAL_EXAM_RESULTS);
+    setAuditLogs(INITIAL_AUDIT_LOGS);
+    setConfirmingReset(false);
+    setCurrentView(currentUser.role === 'admin' ? 'admin-dashboard' : 'reviewee-dashboard');
+  };
 
   // Role switching
   const handleSwitchRole = (role: UserRole) => {
@@ -107,59 +141,24 @@ export default function App() {
     setCurrentView(view);
   };
 
-  const handleOpenLauncher = (type: ExamType, subjectId?: string, pdfSourceId?: string, topic?: string) => {
+  const handleOpenLauncher = (type: ExamType, subjectId?: string, pdfSourceId?: string, topic?: string, notice?: string) => {
     setLauncherType(type);
     setLauncherSubjectId(subjectId);
     setLauncherTopic(topic);
     setLauncherPdfSourceId(pdfSourceId);
+    setLauncherNotice(notice);
     setLauncherModalOpen(true);
   };
 
-  // Launching an exam session
-  const handleLaunchExam = (config: ExamConfig) => {
-    setLauncherModalOpen(false);
-
-    // Filter candidate questions based on config
-    let pool = questions.filter((q) => q.isPublished);
-
-    if (config.subjectId && config.subjectId !== 'all') {
-      pool = pool.filter((q) => q.subjectId === config.subjectId);
-    }
-    if (config.topic && config.topic !== 'all') {
-      pool = pool.filter((q) => q.topic.toLowerCase() === config.topic?.toLowerCase());
-    }
-    if (config.pdfSourceId) {
-      pool = pool.filter((q) => q.sourcePdfId === config.pdfSourceId);
-    }
-    if (config.difficulty && config.difficulty !== 'mixed') {
-      pool = pool.filter((q) => q.difficulty === config.difficulty);
-    }
-
-    // If pool is empty or smaller than requested count, pull from published bank with fallback
-    if (pool.length === 0) {
-      pool = questions.filter((q) => q.isPublished);
-    }
-
-    // Shuffle if requested
-    let selected = [...pool];
-    if (config.randomizeQuestions) {
-      selected.sort(() => Math.random() - 0.5);
-    }
-
-    // Limit to requested count
-    selected = selected.slice(0, Math.min(config.questionCount, selected.length));
-
-    // Randomize choices if requested
-    if (config.randomizeChoices) {
-      selected = selected.map((q) => ({
-        ...q,
-        options: [...q.options].sort(() => Math.random() - 0.5),
-      }));
-    }
+  // Starts an exam, or returns why none can be built so the caller can show it.
+  const handleLaunchExam = (config: ExamConfig): string | null => {
+    const selection = selectExamQuestions(questions, pdfSources, config);
+    if (!selection.ok) return selection.error;
 
     setActiveExamConfig(config);
-    setActiveExamQuestions(selected);
+    setActiveExamQuestions(selection.questions);
     setCurrentView('active-exam');
+    return null;
   };
 
   // Finish exam handler
@@ -194,6 +193,8 @@ export default function App() {
       subjectBreakdown: scoreResult.subjectBreakdown,
       weakTopics: scoreResult.weakTopics,
       strongTopics: scoreResult.strongTopics,
+      questionSnapshots: activeExamQuestions,
+      examConfig: activeExamConfig,
     };
 
     setExamResults((prev) => [...prev, newResult]);
@@ -201,37 +202,19 @@ export default function App() {
     setCurrentView('exam-result');
   };
 
-  // Open a saved result. Clears the last-launched config so Retake can't start a different exam.
+  // Open a saved result with the questions and settings it was taken with.
   const handleViewResult = (res: ExamResult) => {
     setActiveResult(res);
-    setActiveExamConfig(null);
-    const matched = questions.filter((q) => res.userAnswers[q.id] !== undefined);
-    setActiveExamQuestions(matched.length > 0 ? matched : questions.slice(0, res.totalQuestions));
+    setActiveExamConfig(res.examConfig ?? null);
+    setActiveExamQuestions(getReviewQuestions(res, questions));
     setCurrentView('exam-result');
   };
 
   // Admin: Publish new extracted questions
   const handlePublishQuestions = (newQuestions: Question[], sourcePdf: PdfSource) => {
-    // Add new questions marked as published
-    const published = newQuestions.map((q) => ({
-      ...q,
-      isPublished: true,
-      sourcePdfId: sourcePdf.id,
-      sourcePdfName: sourcePdf.filename,
-    }));
-
-    setQuestions((prev) => [...prev, ...published]);
-
-    // Update or add pdf source
-    setPdfSources((prev) => {
-      const idx = prev.findIndex((p) => p.id === sourcePdf.id || p.filename === sourcePdf.filename);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = sourcePdf;
-        return copy;
-      }
-      return [sourcePdf, ...prev];
-    });
+    const published = publishQuestionsToBank(questions, storedSources, newQuestions, sourcePdf);
+    setQuestions(published.questions);
+    setPdfSources(published.sources);
   };
 
   // Admin audit log adder
@@ -264,6 +247,32 @@ export default function App() {
           onSelectUser={(u) => setCurrentUser(u)}
           pendingVerificationCount={pendingVerificationCount}
         />
+      )}
+
+      {currentView !== 'active-exam' && (
+        <div className="px-4 py-1.5 bg-amber-950/40 border-b border-amber-900/40 text-[11px] text-amber-200 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+          <span>
+            {failedSaves.length > 0
+              ? 'Demo mode: changes could not be saved in this browser and will be lost on refresh.'
+              : 'Demo mode: no sign-in. Changes are saved in this browser only and are not shared with other users or devices.'}
+          </span>
+          {currentUser.role === 'admin' &&
+            (confirmingReset ? (
+              <span className="flex items-center gap-2">
+                Erase all changes in this browser?
+                <button onClick={handleResetDemoData} className="underline font-semibold hover:text-white">
+                  Yes, reset
+                </button>
+                <button onClick={() => setConfirmingReset(false)} className="underline hover:text-white">
+                  Keep
+                </button>
+              </span>
+            ) : (
+              <button onClick={() => setConfirmingReset(true)} className="underline hover:text-white">
+                Reset demo data
+              </button>
+            ))}
+        </div>
       )}
 
       {/* Main Content Area */}
@@ -302,7 +311,7 @@ export default function App() {
                 randomizeChoices: true,
                 instantFeedback: false,
               };
-              handleLaunchExam(config);
+              return handleLaunchExam(config);
             }}
           />
         )}
@@ -350,10 +359,9 @@ export default function App() {
             result={activeResult}
             questions={activeExamQuestions}
             onRetake={() => {
-              if (activeExamConfig) {
-                handleLaunchExam(activeExamConfig);
-              } else {
-                handleOpenLauncher(activeResult.type);
+              const error = activeExamConfig ? handleLaunchExam(activeExamConfig) : null;
+              if (!activeExamConfig || error) {
+                handleOpenLauncher(activeResult.type, undefined, undefined, undefined, error ?? undefined);
               }
             }}
             onBackToDashboard={() => setCurrentView('reviewee-dashboard')}
@@ -400,8 +408,19 @@ export default function App() {
             }}
             onTogglePublish={(id) => {
               setQuestions((prev) =>
-                prev.map((item) => (item.id === id ? { ...item, isPublished: !item.isPublished } : item))
+                prev.map((item) => {
+                  if (item.id !== id) return item;
+                  // Unpublishing is always allowed; publishing needs a reviewed answer.
+                  if (!item.isPublished && !isReviewedForExams(item)) return item;
+                  return { ...item, isPublished: !item.isPublished };
+                })
               );
+            }}
+            onApproveQuestion={(id) => {
+              setQuestions((prev) =>
+                prev.map((item) => (item.id === id ? { ...item, verificationStatus: 'manual_override' } : item))
+              );
+              handleAddAuditLog('Answer Approved by Admin', `Manually approved the answer for Question #${id}.`, 'Override');
             }}
           />
         )}
@@ -440,10 +459,15 @@ export default function App() {
         initialSubjectId={launcherSubjectId}
         initialTopic={launcherTopic}
         initialPdfSourceId={launcherPdfSourceId}
+        initialError={launcherNotice}
         subjects={SUBJECTS}
         pdfSources={pdfSources}
         onClose={() => setLauncherModalOpen(false)}
-        onLaunch={handleLaunchExam}
+        onLaunch={(config) => {
+          const error = handleLaunchExam(config);
+          if (!error) setLauncherModalOpen(false);
+          return error;
+        }}
       />
     </div>
   );

@@ -151,6 +151,9 @@ export interface ExamResult {
   }>;
   weakTopics: string[];
   strongTopics: string[];
+  // Exactly what was asked, in order. Absent on results saved before snapshots existed.
+  questionSnapshots?: Question[];
+  examConfig?: ExamConfig;
 }
 
 export interface AuditLog {

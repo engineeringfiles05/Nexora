@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
+import { createRateLimiter, rateLimitAi, requireAiAccess } from './server/aiGuards.ts';
 
 dotenv.config();
 
@@ -17,8 +18,30 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Number of reverse proxies in front of the app, so limits see real client addresses.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 0);
+
+const HOUR_MS = 60 * 60 * 1000;
+const envLimit = (name: string, fallback: number) => Number(process.env[name]) || fallback;
+
+// Checked before bodies are parsed, so rejected callers can't make the server read a large upload.
+const aiAccess = requireAiAccess({
+  token: process.env.NEXORA_ADMIN_TOKEN || '',
+  isProduction: process.env.NODE_ENV === 'production',
+});
+const aiDailyBudget = createRateLimiter({ limit: envLimit('AI_DAILY_LIMIT', 500), windowMs: 24 * HOUR_MS });
+const solveLimit = rateLimitAi(
+  createRateLimiter({ limit: envLimit('AI_SOLVE_HOURLY_LIMIT', 120), windowMs: HOUR_MS }),
+  aiDailyBudget
+);
+const extractLimit = rateLimitAi(
+  createRateLimiter({ limit: envLimit('AI_EXTRACT_HOURLY_LIMIT', 30), windowMs: HOUR_MS }),
+  aiDailyBudget
+);
+
+const MAX_QUESTION_CHARS = 5_000;
+const MAX_OPTIONS = 10;
+const MAX_RAW_TEXT_CHARS = 1_000_000;
 
 // Server-side Gemini API client
 const apiKey = process.env.GEMINI_API_KEY || '';
@@ -44,11 +67,17 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Dedicated Question Solver endpoint
-app.post('/api/solve-question', async (req, res) => {
+app.post('/api/solve-question', aiAccess, solveLimit, express.json({ limit: '1mb' }), async (req, res) => {
   try {
     const { question, options, subject, topic } = req.body;
-    if (!question) {
+    if (!question || typeof question !== 'string') {
       return res.status(400).json({ error: 'Question statement is required.' });
+    }
+    if (question.length > MAX_QUESTION_CHARS) {
+      return res.status(413).json({ error: `Question statement must be ${MAX_QUESTION_CHARS} characters or fewer.` });
+    }
+    if (options !== undefined && (!Array.isArray(options) || options.length > MAX_OPTIONS)) {
+      return res.status(400).json({ error: `Options must be a list of at most ${MAX_OPTIONS} choices.` });
     }
 
     if (!apiKey) {
@@ -93,11 +122,18 @@ const EXTRACTION_TIMEOUT_MS = Number(process.env.EXTRACTION_TIMEOUT_MS) || 240_0
 const EXTRACTION_TIMEOUT_MESSAGE = 'AI extraction latency exceeded limit';
 
 // Advanced AI-Powered PDF / Questionnaire Question Importer Endpoint
-app.post('/api/extract-pdf', async (req, res) => {
-  const { rawText, base64Pdf, filename = 'Uploaded_Document.pdf' } = req.body;
+app.post('/api/extract-pdf', aiAccess, extractLimit, express.json({ limit: '50mb' }), async (req, res) => {
+  const { rawText, base64Pdf } = req.body;
+  const filename = typeof req.body.filename === 'string' ? req.body.filename.slice(0, 255) : 'Uploaded_Document.pdf';
 
   if (!rawText && !base64Pdf) {
     return res.status(400).json({ error: 'No document text or PDF data provided.' });
+  }
+  if ((rawText && typeof rawText !== 'string') || (base64Pdf && typeof base64Pdf !== 'string')) {
+    return res.status(400).json({ error: 'Document text and PDF data must be strings.' });
+  }
+  if (rawText && rawText.length > MAX_RAW_TEXT_CHARS) {
+    return res.status(413).json({ error: 'This document is too long. Please split it into smaller files.' });
   }
 
   if (!apiKey) {
@@ -254,6 +290,25 @@ CRITICAL INSTRUCTIONS:
       error: `The AI service could not process "${filename}". No questions were imported. Please try again.`,
     });
   }
+});
+
+// Unknown API routes must not fall through to the SPA's HTML page.
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.method} ${req.path}` });
+});
+
+// API clients get JSON errors, including rejected or oversized request bodies.
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!req.path.startsWith('/api/') || res.headersSent) return next(err);
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) console.error('[API Error]:', err);
+  const message =
+    status === 413
+      ? 'This file is too large to upload. Please split the PDF into smaller files.'
+      : status < 500
+      ? 'The request could not be read.'
+      : 'Internal server error.';
+  return res.status(status).json({ error: message });
 });
 
 // Setup Vite or static serving

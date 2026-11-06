@@ -21,6 +21,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { UserProfile, ExamResult, Subject, ExamType, PdfSource } from '../types/index.ts';
+import { getSelectableSources } from '../utils/bank.ts';
 
 interface Props {
   user: UserProfile;
@@ -140,7 +141,7 @@ export const RevieweeDashboard: React.FC<Props> = ({
           <div className="text-xs font-semibold text-slate-400 uppercase">PDF Question Sets</div>
           <div className="text-2xl font-mono font-bold text-amber-400 flex items-center gap-2">
             <FileText className="w-5 h-5 text-amber-400" />
-            {pdfSources.filter((p) => p.isPublicToReviewees).length} Available
+            {getSelectableSources(pdfSources, 'pdf_quiz').length} Available
           </div>
           <div className="text-[11px] text-slate-500">Extracted from Board PDFs</div>
         </div>
@@ -438,7 +439,7 @@ export const RevieweeDashboard: React.FC<Props> = ({
               </p>
             </div>
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-              <span className="text-[11px] text-emerald-400 font-mono">{pdfSources.length} PDF sets available</span>
+              <span className="text-[11px] text-emerald-400 font-mono">{getSelectableSources(pdfSources, 'pdf_quiz').length} PDF sets available</span>
               <button
                 onClick={() => {
                   if (onNavigate) {

@@ -109,7 +109,8 @@ export function calculateExamScore(
 
   for (const [subjId, stats] of Object.entries(subjectMap)) {
     const pct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-    const passed = pct >= 50;
+    // Compare exact counts: rounding must never lift 49.5% over the 50% floor.
+    const passed = stats.correct * 100 >= stats.total * 50;
     if (!passed) anySubjectBelow50 = true;
 
     subjectBreakdown[subjId] = {
@@ -121,7 +122,8 @@ export function calculateExamScore(
     };
   }
 
-  const isPassed = scorePercentage >= 70 && !anySubjectBelow50;
+  // scorePercentage is rounded for display; the pass mark uses exact counts.
+  const isPassed = correctCount * 100 >= totalQuestions * 70 && !anySubjectBelow50;
 
   // Weak and Strong topics
   const weakTopics: string[] = [];

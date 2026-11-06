@@ -16,6 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { ExamType, ExamConfig, Subject, PdfSource, DifficultyLevel, SubjectId } from '../types/index.ts';
+import { getSelectableSources } from '../utils/bank.ts';
 
 interface Props {
   isOpen: boolean;
@@ -23,10 +24,12 @@ interface Props {
   initialSubjectId?: string;
   initialTopic?: string;
   initialPdfSourceId?: string;
+  initialError?: string;
   subjects: Subject[];
   pdfSources: PdfSource[];
   onClose: () => void;
-  onLaunch: (config: ExamConfig) => void;
+  /** Returns an error message when the exam can't start, and the window stays open to show it. */
+  onLaunch: (config: ExamConfig) => string | null | void;
 }
 
 export const ExamLauncherModal: React.FC<Props> = ({
@@ -35,16 +38,22 @@ export const ExamLauncherModal: React.FC<Props> = ({
   initialSubjectId,
   initialTopic,
   initialPdfSourceId,
+  initialError,
   subjects,
   pdfSources,
   onClose,
   onLaunch,
 }) => {
+  const selectablePdfs = getSelectableSources(pdfSources, 'pdf_quiz');
+  const defaultPdfId = selectablePdfs.some((pdf) => pdf.id === initialPdfSourceId)
+    ? (initialPdfSourceId as string)
+    : selectablePdfs[0]?.id || '';
+  const [launchError, setLaunchError] = useState<string | null>(initialError || null);
   const [examType, setExamType] = useState<ExamType>(initialType);
   const [selectedSubject, setSelectedSubject] = useState<string>(initialSubjectId || 'all');
   const [selectedTopic, setSelectedTopic] = useState<string>(initialTopic || 'all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('mixed');
-  const [selectedPdfId, setSelectedPdfId] = useState<string>(initialPdfSourceId || (pdfSources[0]?.id || ''));
+  const [selectedPdfId, setSelectedPdfId] = useState<string>(defaultPdfId);
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [durationMinutes, setDurationMinutes] = useState<number>(20);
   const [instantFeedback, setInstantFeedback] = useState<boolean>(false);
@@ -82,10 +91,11 @@ export const ExamLauncherModal: React.FC<Props> = ({
       setSelectedSubject(initialSubjectId || 'all');
       setSelectedTopic(initialTopic || 'all');
       setSelectedDifficulty('mixed');
-      setSelectedPdfId(initialPdfSourceId || (pdfSources[0]?.id || ''));
+      setSelectedPdfId(defaultPdfId);
+      setLaunchError(initialError || null);
       applyModeDefaults(initialType);
     }
-  }, [isOpen, initialType, initialSubjectId, initialTopic, initialPdfSourceId, pdfSources]);
+  }, [isOpen, initialType, initialSubjectId, initialTopic, defaultPdfId, initialError]);
 
   if (!isOpen) return null;
 
@@ -136,7 +146,7 @@ export const ExamLauncherModal: React.FC<Props> = ({
       instantFeedback,
     };
 
-    onLaunch(config);
+    setLaunchError(onLaunch(config) || null);
   };
 
   return (
@@ -206,7 +216,8 @@ export const ExamLauncherModal: React.FC<Props> = ({
               onChange={(e) => setSelectedPdfId(e.target.value)}
               className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
             >
-              {pdfSources.map((pdf) => (
+              {selectablePdfs.length === 0 && <option value="">No PDF question sets available</option>}
+              {selectablePdfs.map((pdf) => (
                 <option key={pdf.id} value={pdf.id}>
                   {pdf.filename} ({pdf.questionsCount} questions)
                 </option>
@@ -337,6 +348,12 @@ export const ExamLauncherModal: React.FC<Props> = ({
             </div>
           </label>
         </div>
+
+        {launchError && (
+          <div role="alert" className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 text-rose-300 text-xs">
+            {launchError}
+          </div>
+        )}
 
         {/* Footer CTAs */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">

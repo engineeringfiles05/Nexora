@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Clock,
   Bookmark,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Question, ExamConfig, ExamType } from '../types/index.ts';
 import { formatTimeRemaining } from '../utils/examEngine.ts';
+import { createExamCountdown, type ExamCountdown } from '../utils/examTimer.ts';
 import { ScientificCalculatorModal } from './ScientificCalculatorModal.tsx';
 import { FormulaReferenceDrawer } from './FormulaReferenceDrawer.tsx';
 
@@ -48,23 +49,42 @@ export const ActiveExamView: React.FC<Props> = ({
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
 
-  // Countdown Timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          // Auto submit
-          const consumed = config.durationMinutes * 60;
-          onFinishExam(userAnswers, flaggedIds, consumed);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  // The newest values for the one submission, whichever path triggers it.
+  const latest = useRef({ userAnswers, flaggedIds, onFinishExam });
+  latest.current = { userAnswers, flaggedIds, onFinishExam };
 
-    return () => clearInterval(timer);
-  }, [userAnswers, flaggedIds, config.durationMinutes, onFinishExam]);
+  const countdownRef = useRef<ExamCountdown | null>(null);
+  if (!countdownRef.current) {
+    countdownRef.current = createExamCountdown({
+      durationSeconds: config.durationMinutes * 60,
+      onTick: setTimeRemaining,
+      onExpire: () => submitRef.current(),
+    });
+  }
+
+  const submitOnce = () => {
+    const countdown = countdownRef.current;
+    if (!countdown?.claimFinish()) return;
+    const { userAnswers: answers, flaggedIds: flags, onFinishExam: finish } = latest.current;
+    finish(answers, flags, countdown.getElapsedSeconds());
+  };
+  const submitRef = useRef(submitOnce);
+  submitRef.current = submitOnce;
+
+  // Runs once: answering must not restart the clock. Hidden tabs catch up when shown again.
+  useEffect(() => {
+    const countdown = countdownRef.current;
+    if (!countdown) return;
+    countdown.start();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') countdown.sync();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      countdown.stop();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   // Keyboard shortcut for A, B, C, D
   useEffect(() => {
@@ -116,10 +136,7 @@ export const ActiveExamView: React.FC<Props> = ({
   const isCurrentFlagged = currentQuestion ? flaggedIds.includes(currentQuestion.id) : false;
   const currentSelected = currentQuestion ? userAnswers[currentQuestion.id] : undefined;
 
-  const handleConfirmSubmit = () => {
-    const consumed = config.durationMinutes * 60 - timeRemaining;
-    onFinishExam(userAnswers, flaggedIds, Math.max(1, consumed));
-  };
+  const handleConfirmSubmit = () => submitOnce();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col select-none">

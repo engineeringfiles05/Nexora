@@ -17,11 +17,13 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { PdfSource, Question, DifficultyLevel } from '../types/index.ts';
+import { getSelectableSources, isQuestionEligibleForExam } from '../utils/bank.ts';
 
 interface Props {
   pdfSources: PdfSource[];
   questions: Question[];
-  onStartPdfQuiz: (pdfId: string, questionCount: number, difficulty: string, durationMinutes: number) => void;
+  /** Returns an error message when the exam can't start. */
+  onStartPdfQuiz: (pdfId: string, questionCount: number, difficulty: string, durationMinutes: number) => string | null | void;
 }
 
 export const PdfQuizGeneratorView: React.FC<Props> = ({
@@ -29,7 +31,7 @@ export const PdfQuizGeneratorView: React.FC<Props> = ({
   questions,
   onStartPdfQuiz,
 }) => {
-  const publicPdfs = pdfSources.filter((p) => p.isPublicToReviewees);
+  const publicPdfs = getSelectableSources(pdfSources, 'pdf_quiz');
   const [selectedPdfId, setSelectedPdfId] = useState<string>(publicPdfs[0]?.id || '');
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [difficulty, setDifficulty] = useState<string>('mixed');
@@ -44,8 +46,7 @@ export const PdfQuizGeneratorView: React.FC<Props> = ({
       setValidationError('Please select a PDF questionnaire collection from the list.');
       return;
     }
-    setValidationError(null);
-    onStartPdfQuiz(selectedPdfId, questionCount, difficulty, durationMinutes);
+    setValidationError(onStartPdfQuiz(selectedPdfId, questionCount, difficulty, durationMinutes) || null);
   };
 
   return (
@@ -83,7 +84,9 @@ export const PdfQuizGeneratorView: React.FC<Props> = ({
             <div className="space-y-3">
               {publicPdfs.map((pdf) => {
                 const isSelected = pdf.id === selectedPdfId;
-                const count = questions.filter((q) => q.sourcePdfId === pdf.id).length;
+                const count = questions.filter(
+                  (q) => q.sourcePdfId === pdf.id && isQuestionEligibleForExam(q, 'pdf_quiz', pdfSources)
+                ).length;
 
                 return (
                   <div
@@ -108,7 +111,7 @@ export const PdfQuizGeneratorView: React.FC<Props> = ({
                       <div>
                         <div className="text-sm font-bold leading-tight">{pdf.filename}</div>
                         <div className="text-xs text-slate-400 mt-1">
-                          {pdf.pageCount} Pages • {count > 0 ? count : pdf.questionsCount} Questions Ready
+                          {pdf.pageCount > 0 ? `${pdf.pageCount} Pages • ` : ''}{count} Questions Ready
                         </div>
                       </div>
                     </div>

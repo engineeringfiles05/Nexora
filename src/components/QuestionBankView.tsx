@@ -24,6 +24,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Question, Subject, PdfSource, SubjectId, DifficultyLevel, VerificationStatus } from '../types/index.ts';
+import { isReviewedForExams } from '../utils/bank.ts';
 
 interface Props {
   questions: Question[];
@@ -33,6 +34,7 @@ interface Props {
   onUpdateQuestion: (q: Question) => void;
   onDeleteQuestion: (id: string) => void;
   onTogglePublish: (id: string) => void;
+  onApproveQuestion?: (id: string) => void;
 }
 
 export const QuestionBankView: React.FC<Props> = ({
@@ -43,7 +45,9 @@ export const QuestionBankView: React.FC<Props> = ({
   onUpdateQuestion,
   onDeleteQuestion,
   onTogglePublish,
+  onApproveQuestion,
 }) => {
+  const [bulkNotice, setBulkNotice] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSubject, setFilterSubject] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
@@ -121,13 +125,18 @@ export const QuestionBankView: React.FC<Props> = ({
   };
 
   const handleBulkPublish = (publish: boolean) => {
+    let held = 0;
     selectedIds.forEach((id) => {
       const target = questions.find((q) => q.id === id);
-      if (target && target.isPublished !== publish) {
-        onTogglePublish(id);
+      if (!target || target.isPublished === publish) return;
+      if (publish && !isReviewedForExams(target)) {
+        held += 1;
+        return;
       }
+      onTogglePublish(id);
     });
     setSelectedIds([]);
+    setBulkNotice(held > 0 ? `${held} question(s) were not published because their answers still need review.` : null);
   };
 
   const handleConfirmDelete = () => {
@@ -295,6 +304,12 @@ export const QuestionBankView: React.FC<Props> = ({
           </select>
         </div>
 
+        {bulkNotice && (
+          <div role="status" className="p-2.5 rounded-xl bg-amber-950/30 border border-amber-800/40 text-amber-300 text-xs">
+            {bulkNotice}
+          </div>
+        )}
+
         {/* Selected Items Bulk Toolbar */}
         {selectedIds.length > 0 && (
           <div className="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-800/40 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -391,9 +406,26 @@ export const QuestionBankView: React.FC<Props> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {!isReviewedForExams(q) && (
+                        <>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            {q.verificationStatus === 'discrepancy_flagged' ? 'Discrepancy with Key' : 'Needs Review'}
+                          </span>
+                          {onApproveQuestion && (
+                            <button
+                              onClick={() => onApproveQuestion(q.id)}
+                              className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition"
+                            >
+                              Approve Answer
+                            </button>
+                          )}
+                        </>
+                      )}
                       <button
                         onClick={() => onTogglePublish(q.id)}
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold transition ${
+                        disabled={!q.isPublished && !isReviewedForExams(q)}
+                        title={!q.isPublished && !isReviewedForExams(q) ? 'Approve the answer before publishing.' : undefined}
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold transition disabled:opacity-50 ${
                           q.isPublished
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             : 'bg-slate-800 text-slate-400 border border-slate-700'
