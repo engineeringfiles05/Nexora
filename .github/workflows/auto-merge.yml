@@ -1,0 +1,70 @@
+# On every push to a branch other than main: check the code, then open and merge a pull request.
+# A failed check leaves main untouched.
+#
+# Requires: Settings > Actions > General > Workflow permissions >
+# "Allow GitHub Actions to create and approve pull requests".
+
+name: Check and auto-merge
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+# A newer push to the same branch replaces a run still in progress.
+concurrency:
+  group: auto-merge-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: ${{ !github.event.deleted }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npx --yes bun@1 install --frozen-lockfile
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
+
+  merge:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Open and merge the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if [ "$(git rev-list --count origin/main..HEAD)" = "0" ]; then
+            echo "Nothing to merge: main already has this commit."
+            exit 0
+          fi
+
+          number="$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$number" ]; then
+            gh pr create --base main --head "$BRANCH" \
+              --title "$(git log -1 --pretty=%s)" \
+              --body "Opened automatically after lint, tests and build passed for $GITHUB_SHA."
+          fi
+
+          # Merges only the commit that was checked, never anything pushed since.
+          gh pr merge "$BRANCH" --merge --match-head-commit "$GITHUB_SHA"
