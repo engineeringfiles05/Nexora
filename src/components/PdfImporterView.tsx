@@ -181,6 +181,48 @@ D. 5 quarter bends (450 degrees)
 [Answer: A]`,
     },
     {
+      id: 'sample-ee-eval-2',
+      name: 'EE 2 Evaluation Exam.pdf',
+      description: 'Contains verified questions on two-wattmeter method, DC motor back EMF, transformer open/short circuit tests, and AC maximum power.',
+      text: `1. Two wattmeters connected to measure the active power of a balanced 3-phase, 3-wire load read 5.0 kW and 2.0 kW respectively. Determine the total active power and the operating power factor of the load.
+A. P = 7.0 kW, pf = 0.814 lagging
+B. P = 7.0 kW, pf = 0.866 lagging
+C. P = 3.0 kW, pf = 0.500 lagging
+D. P = 7.0 kW, pf = 0.920 lagging
+[Answer: A]
+
+2. A 220 V DC shunt motor has an armature resistance of 0.25 Ω. At rated full load, it draws an armature current of 50 A while running at 1200 rpm. What will be the developed back EMF at full load?
+A. 207.5 V    B. 232.5 V    C. 215.0 V    D. 200.0 V
+[Answer: A]`,
+    },
+    {
+      id: 'sample-ee-eval-3',
+      name: 'EE 3 Evaluation Exam.pdf',
+      description: 'Contains verified electrical engineering questions on symmetrical faults, surge impedance, kVAR capacitor bank correction, and illumination.',
+      text: `1. A 3-phase, 13.8 kV, 100 MVA synchronous generator has a subtransient reactance Xd" = 0.15 p.u. Calculate the initial symmetrical RMS short-circuit current in amperes for a solid three-phase fault at its terminals.
+A. 27,890 A    B. 16,100 A    C. 31,450 A    D. 24,150 A
+[Answer: A]
+
+2. A 230 kV three-phase overhead transmission line has a series inductance of 1.25 mH/km and a shunt capacitance of 0.0092 μF/km per phase. Determine the surge impedance (characteristic impedance) of the transmission line in ohms.
+A. 368.6 Ω    B. 412.5 Ω    C. 320.0 Ω    D. 285.4 Ω
+[Answer: A]
+
+3. An industrial factory draws an active load of 600 kW at an existing power factor of 0.70 lagging from a 480 V, 3-phase, 60 Hz feeder. Calculate the required rating of the shunt capacitor bank in kVAR to improve the overall power factor to 0.95 lagging.
+A. 415 kVAR    B. 380 kVAR    C. 450 kVAR    D. 350 kVAR
+[Answer: A]
+
+4. An electrical engineering design office measuring 15 m by 10 m requires an average illuminance of 500 lux on the working plane. The luminaires to be installed utilize twin 32 W fluorescent lamps each delivering 2,800 lumens. If the Coefficient of Utilization (CU) is 0.60 and the Maintenance Factor (MF) is 0.75, determine the number of twin-lamp luminaires required.
+A. 30 luminaires    B. 25 luminaires    C. 36 luminaires    D. 40 luminaires
+[Answer: A]
+
+5. Under the Philippine Electrical Code (PEC 1), what is the maximum standard rating of inverse time circuit breaker permitted for branch circuit short-circuit and ground-fault protection of a single 3-phase squirrel cage induction motor with no code letter, having a full-load current of 40 amperes?
+A. 100 A (250% rating)
+B. 80 A (200% rating)
+C. 125 A (300% rating)
+D. 70 A (175% rating)
+[Answer: A]`,
+    },
+    {
       id: 'sample-thermo-mechanics',
       name: 'ESAS_Engineering_Thermodynamics_and_Mechanics.pdf',
       description: 'Contains high-yield questions on Carnot efficiency, static friction, tensile stress, and compound interest.',
@@ -383,13 +425,12 @@ D. ₱130,200
             ? 'verified'
             : 'needs_verification';
 
-        return {
+        const newQuestion: Question = {
           id: qId,
           originalQuestionNumber: item.originalQuestionNumber || idx + 1,
           question: questionText,
           options: item.options || [],
           correctAnswer: item.correctAnswer || 'A',
-          extractedAnswerKey: item.extractedAnswerKey,
           explanation: item.explanation || '',
           stepByStepSolution: item.stepByStepSolution || '',
           formulasUsed: item.formulasUsed || [],
@@ -398,7 +439,6 @@ D. ₱130,200
           subjectId: (item.subjectId as SubjectId) || 'ee',
           subjectName: item.subjectName || 'Electrical Engineering Professional Subjects',
           topic: item.topic || 'General Examination',
-          subtopic: item.subtopic,
           difficulty: (item.difficulty as DifficultyLevel) || 'Average',
           sourcePdfId: generatedPdfId,
           sourcePdfName: filename,
@@ -408,12 +448,15 @@ D. ₱130,200
           isPublished: false,
           hasDiagram: Boolean(item.hasDiagram),
           hasMathEquation: Boolean(item.hasMathEquation),
-          flaggedReason: item.flaggedReason,
           originalQuestionText: item.originalQuestionText || questionText,
           originalOptions: item.originalOptions || item.options,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          ...(item.subtopic ? { subtopic: item.subtopic } : {}),
+          ...(item.extractedAnswerKey ? { extractedAnswerKey: item.extractedAnswerKey } : {}),
+          ...(item.flaggedReason ? { flaggedReason: item.flaggedReason } : {}),
         };
+        return newQuestion;
       });
 
       setDuplicateConflicts(newDuplicates);

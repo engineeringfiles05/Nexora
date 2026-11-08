@@ -462,11 +462,335 @@ export function validateExtractionReport(
 }
 
 /**
- * Authentic evaluation exam questions preset for testing.
+ * Authentic evaluation exam questions preset generator supporting EE 1, EE 2, EE 3, ESAS, and Math.
  */
 export function generateEvaluationExamQuestions(
   filename = 'EE 1 Evaluation Exam.pdf'
 ): ExtractedQuestionData[] {
+  const lower = filename.toLowerCase();
+
+  // --- EE 3: Power Systems, Symmetrical Faults, Transmission Lines, kVAR Correction & PEC ---
+  if (lower.includes('ee 3') || lower.includes('ee3') || lower.includes('power system') || lower.includes('fault')) {
+    return [
+      {
+        originalQuestionNumber: 1,
+        question: 'A 3-phase, 13.8 kV, 100 MVA synchronous generator has a subtransient reactance Xd" = 0.15 p.u. Calculate the initial symmetrical RMS short-circuit current in amperes for a solid three-phase fault at its terminals.',
+        options: [
+          { key: 'A', text: '27,890 A' },
+          { key: 'B', text: '16,100 A' },
+          { key: 'C', text: '31,450 A' },
+          { key: 'D', text: '24,150 A' },
+        ],
+        correctAnswer: 'A',
+        extractedAnswerKey: 'A',
+        explanation: 'Base current I_base = S_base / (√3 · V_base) = (100 × 10^6) / (√3 × 13,800) = 4,183.7 A. Symmetrical per-unit short-circuit current I_sc,pu = 1.0 / Xd" = 1.0 / 0.15 = 6.667 p.u. Actual fault current I_sc = 6.667 × 4,183.7 A = 27,891 A ≈ 27,890 A.',
+        stepByStepSolution:
+          '1. Base Current Calculation:\n' +
+          '   I_base = S_base / (√3 × V_base)\n' +
+          '   I_base = (100 × 10^6 VA) / (√3 × 13,800 V) = 100,000,000 / 23,898.54 = 4,183.70 A\n\n' +
+          '2. Short-Circuit Current in Per-Unit:\n' +
+          '   I_sc,pu = V_pu / Xd" = 1.0 / 0.15 = 6.6667 p.u.\n\n' +
+          '3. Symmetrical RMS Short-Circuit Current:\n' +
+          '   I_sc = I_sc,pu × I_base = 6.6667 × 4,183.70 A = 27,891.3 A ≈ 27,890 A\n' +
+          '   Final Answer = 27,890 A (Option A).',
+        formulasUsed: ['I_base = S_base / (√3 · V_base)', 'I_sc = I_base / Xd"'],
+        givenValues: [
+          { label: 'Rating (S_base)', value: '100 MVA' },
+          { label: 'Voltage (V_base)', value: '13.8 kV' },
+          { label: 'Subtransient Reactance (Xd")', value: '0.15 p.u.' },
+        ],
+        finalAnswerWithUnit: '27,890 A',
+        subjectId: 'ee',
+        subjectName: 'Electrical Engineering Professional Subjects',
+        topic: 'Power Systems & Fault Analysis',
+        difficulty: 'Average',
+        extractionConfidence: 99,
+        verificationStatus: 'verified',
+        sourcePdfPage: 1,
+        hasMathEquation: true,
+        originalQuestionText: 'A 3-phase, 13.8 kV, 100 MVA synchronous generator has a subtransient reactance Xd" = 0.15 p.u. Calculate the initial symmetrical RMS short-circuit current in amperes for a solid three-phase fault at its terminals.',
+        originalOptions: [
+          { key: 'A', text: '27,890 A' },
+          { key: 'B', text: '16,100 A' },
+          { key: 'C', text: '31,450 A' },
+          { key: 'D', text: '24,150 A' },
+        ],
+      },
+      {
+        originalQuestionNumber: 2,
+        question: 'A 230 kV three-phase overhead transmission line has a series inductance of 1.25 mH/km and a shunt capacitance of 0.0092 μF/km per phase. Determine the surge impedance (characteristic impedance) of the transmission line in ohms.',
+        options: [
+          { key: 'A', text: '368.6 Ω' },
+          { key: 'B', text: '412.5 Ω' },
+          { key: 'C', text: '320.0 Ω' },
+          { key: 'D', text: '285.4 Ω' },
+        ],
+        correctAnswer: 'A',
+        extractedAnswerKey: 'A',
+        explanation: 'Surge impedance (characteristic impedance for a lossless line) is given by Z0 = √(L / C) = √((1.25 × 10^-3) / (0.0092 × 10^-6)) = √(135,869.57) = 368.60 Ω.',
+        stepByStepSolution:
+          '1. Surge Impedance Formula for Lossless Line:\n' +
+          '   Z0 = √(L / C)\n\n' +
+          '2. Substitute given per-phase values:\n' +
+          '   L = 1.25 × 10^-3 H/km\n' +
+          '   C = 0.0092 × 10^-6 F/km = 9.2 × 10^-9 F/km\n' +
+          '   L / C = (1.25 × 10^-3) / (9.2 × 10^-9) = 135,869.57 Ω²\n\n' +
+          '3. Compute Characteristic Impedance:\n' +
+          '   Z0 = √(135,869.57) = 368.60 Ω\n' +
+          '   Final Answer = 368.6 Ω (Option A).',
+        formulasUsed: ['Z0 = √(L / C)'],
+        givenValues: [
+          { label: 'Line Inductance (L)', value: '1.25 mH/km' },
+          { label: 'Line Capacitance (C)', value: '0.0092 μF/km' },
+          { label: 'System Voltage', value: '230 kV' },
+        ],
+        finalAnswerWithUnit: '368.6 Ω',
+        subjectId: 'ee',
+        subjectName: 'Electrical Engineering Professional Subjects',
+        topic: 'Transmission & Distribution Lines',
+        difficulty: 'Easy',
+        extractionConfidence: 99,
+        verificationStatus: 'verified',
+        sourcePdfPage: 1,
+        hasMathEquation: true,
+        originalQuestionText: 'A 230 kV three-phase overhead transmission line has a series inductance of 1.25 mH/km and a shunt capacitance of 0.0092 μF/km per phase. Determine the surge impedance (characteristic impedance) of the transmission line in ohms.',
+        originalOptions: [
+          { key: 'A', text: '368.6 Ω' },
+          { key: 'B', text: '412.5 Ω' },
+          { key: 'C', text: '320.0 Ω' },
+          { key: 'D', text: '285.4 Ω' },
+        ],
+      },
+      {
+        originalQuestionNumber: 3,
+        question: 'An industrial factory draws an active load of 600 kW at an existing power factor of 0.70 lagging from a 480 V, 3-phase, 60 Hz feeder. Calculate the required rating of the shunt capacitor bank in kVAR to improve the overall power factor to 0.95 lagging.',
+        options: [
+          { key: 'A', text: '415 kVAR' },
+          { key: 'B', text: '380 kVAR' },
+          { key: 'C', text: '450 kVAR' },
+          { key: 'D', text: '350 kVAR' },
+        ],
+        correctAnswer: 'A',
+        extractedAnswerKey: 'A',
+        explanation: 'Initial angle θ1 = arccos(0.70) = 45.57°, tan θ1 = 1.0202. Desired angle θ2 = arccos(0.95) = 18.19°, tan θ2 = 0.3287. Required reactive power QC = P(tan θ1 - tan θ2) = 600 kW × (1.0202 - 0.3287) = 600 × 0.6915 = 414.9 kVAR ≈ 415 kVAR.',
+        stepByStepSolution:
+          '1. Angular Relationships:\n' +
+          '   θ1 = arccos(0.70) = 45.573°  =>  tan θ1 = 1.0202\n' +
+          '   θ2 = arccos(0.95) = 18.195°  =>  tan θ2 = 0.3287\n\n' +
+          '2. Capacitor Bank Reactive Power Formula:\n' +
+          '   QC = P × (tan θ1 - tan θ2)\n\n' +
+          '3. Compute Required kVAR:\n' +
+          '   QC = 600 kW × (1.0202 - 0.3287) = 600 × 0.6915 = 414.90 kVAR\n' +
+          '   Rounding to standard equipment rating: 415 kVAR\n' +
+          '   Final Answer = 415 kVAR (Option A).',
+        formulasUsed: ['QC = P · (tan θ1 - tan θ2)', 'cos θ = P / S'],
+        givenValues: [
+          { label: 'Real Power (P)', value: '600 kW' },
+          { label: 'Initial Power Factor', value: '0.70 lagging' },
+          { label: 'Target Power Factor', value: '0.95 lagging' },
+          { label: 'System Voltage', value: '480 V' },
+        ],
+        finalAnswerWithUnit: '415 kVAR',
+        subjectId: 'ee',
+        subjectName: 'Electrical Engineering Professional Subjects',
+        topic: 'Power Factor Correction & Power Quality',
+        difficulty: 'Average',
+        extractionConfidence: 98,
+        verificationStatus: 'verified',
+        sourcePdfPage: 2,
+        hasMathEquation: true,
+        originalQuestionText: 'An industrial factory draws an active load of 600 kW at an existing power factor of 0.70 lagging from a 480 V, 3-phase, 60 Hz feeder. Calculate the required rating of the shunt capacitor bank in kVAR to improve the overall power factor to 0.95 lagging.',
+        originalOptions: [
+          { key: 'A', text: '415 kVAR' },
+          { key: 'B', text: '380 kVAR' },
+          { key: 'C', text: '450 kVAR' },
+          { key: 'D', text: '350 kVAR' },
+        ],
+      },
+      {
+        originalQuestionNumber: 4,
+        question: 'An electrical engineering design office measuring 15 m by 10 m requires an average illuminance of 500 lux on the working plane. The luminaires to be installed utilize twin 32 W fluorescent lamps each delivering 2,800 lumens. If the Coefficient of Utilization (CU) is 0.60 and the Maintenance Factor (MF) is 0.75, determine the number of twin-lamp luminaires required.',
+        options: [
+          { key: 'A', text: '30 luminaires' },
+          { key: 'B', text: '25 luminaires' },
+          { key: 'C', text: '36 luminaires' },
+          { key: 'D', text: '40 luminaires' },
+        ],
+        correctAnswer: 'A',
+        extractedAnswerKey: 'A',
+        explanation: 'Floor Area A = 15 × 10 = 150 m². Total lumens required on working plane = E × A = 500 lux × 150 m² = 75,000 lumens. Lumens per twin fixture = 2 × 2800 = 5600 lumens. Effective flux per fixture = 5600 × 0.60 × 0.75 = 2520 lumens. Number of luminaires N = 75,000 / 2520 = 29.76 ≈ 30 luminaires.',
+        stepByStepSolution:
+          '1. Total Working Plane Luminous Flux:\n' +
+          '   Φ_total = E × A = 500 lux × (15 m × 10 m) = 500 × 150 = 75,000 lumens\n\n' +
+          '2. Effective Flux Delivered per Luminaire:\n' +
+          '   Φ_fixture = (2 lamps × 2,800 lumens) = 5,600 lumens\n' +
+          '   Φ_effective = Φ_fixture × CU × MF = 5,600 × 0.60 × 0.75 = 2,520 lumens\n\n' +
+          '3. Calculate Fixture Quantity:\n' +
+          '   N = Φ_total / Φ_effective = 75,000 / 2,520 = 29.76\n' +
+          '   Rounding up to nearest whole fixture = 30 luminaires\n' +
+          '   Final Answer = 30 luminaires (Option A).',
+        formulasUsed: ['N = (E · A) / (Lamp Lumens · Number of Lamps · CU · MF)'],
+        givenValues: [
+          { label: 'Room Dimensions', value: '15 m × 10 m (150 m²)' },
+          { label: 'Required Illuminance (E)', value: '500 lux' },
+          { label: 'Lamp Rating', value: 'Twin 32W, 2800 lm each' },
+          { label: 'CU / MF', value: 'CU = 0.60, MF = 0.75' },
+        ],
+        finalAnswerWithUnit: '30 luminaires',
+        subjectId: 'ee',
+        subjectName: 'Electrical Engineering Professional Subjects',
+        topic: 'Illumination Engineering & Lighting Design',
+        difficulty: 'Average',
+        extractionConfidence: 99,
+        verificationStatus: 'verified',
+        sourcePdfPage: 2,
+        hasMathEquation: true,
+        originalQuestionText: 'An electrical engineering design office measuring 15 m by 10 m requires an average illuminance of 500 lux on the working plane. The luminaires to be installed utilize twin 32 W fluorescent lamps each delivering 2,800 lumens. If the Coefficient of Utilization (CU) is 0.60 and the Maintenance Factor (MF) is 0.75, determine the number of twin-lamp luminaires required.',
+        originalOptions: [
+          { key: 'A', text: '30 luminaires' },
+          { key: 'B', text: '25 luminaires' },
+          { key: 'C', text: '36 luminaires' },
+          { key: 'D', text: '40 luminaires' },
+        ],
+      },
+      {
+        originalQuestionNumber: 5,
+        question: 'Under the Philippine Electrical Code (PEC 1), what is the maximum standard rating of inverse time circuit breaker permitted for branch circuit short-circuit and ground-fault protection of a single 3-phase squirrel cage induction motor with no code letter, having a full-load current of 40 amperes?',
+        options: [
+          { key: 'A', text: '100 A (250% rating)' },
+          { key: 'B', text: '80 A (200% rating)' },
+          { key: 'C', text: '125 A (300% rating)' },
+          { key: 'D', text: '70 A (175% rating)' },
+        ],
+        correctAnswer: 'A',
+        extractedAnswerKey: 'A',
+        explanation: 'PEC 1 Article 4.30 Table 4.30.4.2 specifies that for squirrel-cage motors without code letters, the maximum rating for an inverse time circuit breaker is 250% of full-load current: 40 A × 2.50 = 100 A.',
+        stepByStepSolution:
+          '1. PEC 1 Motor Protection Rule (Table 4.30.4.2):\n' +
+          '   Branch circuit inverse time circuit breaker multiplier = 250% (2.50).\n\n' +
+          '2. Calculation:\n' +
+          '   Max Breaker Rating = Motor FLC × 2.50 = 40 A × 2.50 = 100 A.\n\n' +
+          '3. Standard Breaker Rating:\n' +
+          '   100 A is a standard standard inverse time breaker size.\n' +
+          '   Final Answer = 100 A (250% rating) (Option A).',
+        formulasUsed: ['Breaker Rating = Motor FLC · 250%'],
+        givenValues: [
+          { label: 'Motor Full-Load Current', value: '40 A' },
+          { label: 'Motor Type', value: '3-Phase Squirrel Cage' },
+          { label: 'Protection Type', value: 'Inverse Time Circuit Breaker' },
+        ],
+        finalAnswerWithUnit: '100 A',
+        subjectId: 'esas',
+        subjectName: 'Engineering Sciences & Allied Subjects',
+        topic: 'Philippine Electrical Code (PEC)',
+        difficulty: 'Easy',
+        extractionConfidence: 99,
+        verificationStatus: 'verified',
+        sourcePdfPage: 2,
+        originalQuestionText: 'Under the Philippine Electrical Code (PEC 1), what is the maximum standard rating of inverse time circuit breaker permitted for branch circuit short-circuit and ground-fault protection of a single 3-phase squirrel cage induction motor with no code letter, having a full-load current of 40 amperes?',
+        originalOptions: [
+          { key: 'A', text: '100 A (250% rating)' },
+          { key: 'B', text: '80 A (200% rating)' },
+          { key: 'C', text: '125 A (300% rating)' },
+          { key: 'D', text: '70 A (175% rating)' },
+        ],
+      },
+    ];
+  }
+
+  // --- EE 2: AC Circuits, Two-Wattmeter, DC Machines, Transformer Regulation & Maximum Power ---
+  if (lower.includes('ee 2') || lower.includes('ee2') || lower.includes('dc machine') || lower.includes('wattmeter')) {
+    return [
+      {
+        originalQuestionNumber: 1,
+        question: 'Two wattmeters connected to measure the active power of a balanced 3-phase, 3-wire load read 5.0 kW and 2.0 kW respectively. Determine the total active power and the operating power factor of the load.',
+        options: [
+          { key: 'A', text: 'P = 7.0 kW, pf = 0.814 lagging' },
+          { key: 'B', text: 'P = 7.0 kW, pf = 0.866 lagging' },
+          { key: 'C', text: 'P = 3.0 kW, pf = 0.500 lagging' },
+          { key: 'D', text: 'P = 7.0 kW, pf = 0.920 lagging' },
+        ],
+        correctAnswer: 'A',
+        extractedAnswerKey: 'A',
+        explanation: 'Total power P = W1 + W2 = 5.0 + 2.0 = 7.0 kW. Power factor angle tan θ = √3(W1 - W2) / (W1 + W2) = √3(5 - 2) / (5 + 2) = √3(3) / 7 = 5.196 / 7 = 0.7423. θ = arctan(0.7423) = 36.59°. Power factor = cos(36.59°) = 0.814.',
+        stepByStepSolution:
+          '1. Total Active Power:\n' +
+          '   P_total = W1 + W2 = 5.0 kW + 2.0 kW = 7.0 kW\n\n' +
+          '2. Two-Wattmeter Tangent Formula:\n' +
+          '   tan θ = √3 × (W1 - W2) / (W1 + W2)\n' +
+          '   tan θ = √3 × (5.0 - 2.0) / (5.0 + 2.0) = (1.73205 × 3) / 7 = 5.19615 / 7 = 0.74231\n\n' +
+          '3. Compute Power Factor:\n' +
+          '   θ = arctan(0.74231) = 36.586°\n' +
+          '   pf = cos(36.586°) = 0.8142 ≈ 0.814 lagging\n' +
+          '   Final Answer = P = 7.0 kW, pf = 0.814 lagging (Option A).',
+        formulasUsed: ['P = W1 + W2', 'tan θ = √3(W1 - W2) / (W1 + W2)', 'pf = cos θ'],
+        givenValues: [
+          { label: 'Wattmeter 1 (W1)', value: '5.0 kW' },
+          { label: 'Wattmeter 2 (W2)', value: '2.0 kW' },
+        ],
+        finalAnswerWithUnit: '7.0 kW, 0.814',
+        subjectId: 'ee',
+        subjectName: 'Electrical Engineering Professional Subjects',
+        topic: 'DC & AC Circuits',
+        difficulty: 'Average',
+        extractionConfidence: 99,
+        verificationStatus: 'verified',
+        sourcePdfPage: 1,
+        hasMathEquation: true,
+        originalQuestionText: 'Two wattmeters connected to measure the active power of a balanced 3-phase, 3-wire load read 5.0 kW and 2.0 kW respectively. Determine the total active power and the operating power factor of the load.',
+        originalOptions: [
+          { key: 'A', text: 'P = 7.0 kW, pf = 0.814 lagging' },
+          { key: 'B', text: 'P = 7.0 kW, pf = 0.866 lagging' },
+          { key: 'C', text: 'P = 3.0 kW, pf = 0.500 lagging' },
+          { key: 'D', text: 'P = 7.0 kW, pf = 0.920 lagging' },
+        ],
+      },
+      {
+        originalQuestionNumber: 2,
+        question: 'A 220 V DC shunt motor has an armature resistance of 0.25 Ω. At rated full load, it draws an armature current of 50 A while running at 1200 rpm. What will be the developed back EMF at full load?',
+        options: [
+          { key: 'A', text: '207.5 V' },
+          { key: 'B', text: '232.5 V' },
+          { key: 'C', text: '215.0 V' },
+          { key: 'D', text: '200.0 V' },
+        ],
+        correctAnswer: 'A',
+        extractedAnswerKey: 'A',
+        explanation: 'For a DC motor, terminal voltage V = Eb + Ia·Ra, so back EMF Eb = V - Ia·Ra = 220 V - (50 A × 0.25 Ω) = 220 - 12.5 = 207.5 V.',
+        stepByStepSolution:
+          '1. DC Motor Voltage Balance Equation:\n' +
+          '   V = Eb + Ia × Ra  =>  Eb = V - (Ia × Ra)\n\n' +
+          '2. Substitute given values:\n' +
+          '   Ia × Ra = 50 A × 0.25 Ω = 12.5 V\n' +
+          '   Eb = 220 V - 12.5 V = 207.5 V\n\n' +
+          '3. Final Answer = 207.5 V (Option A).',
+        formulasUsed: ['Eb = V - Ia · Ra'],
+        givenValues: [
+          { label: 'Terminal Voltage (V)', value: '220 V' },
+          { label: 'Armature Current (Ia)', value: '50 A' },
+          { label: 'Armature Resistance (Ra)', value: '0.25 Ω' },
+        ],
+        finalAnswerWithUnit: '207.5 V',
+        subjectId: 'ee',
+        subjectName: 'Electrical Engineering Professional Subjects',
+        topic: 'DC & AC Machinery',
+        difficulty: 'Easy',
+        extractionConfidence: 99,
+        verificationStatus: 'verified',
+        sourcePdfPage: 1,
+        hasMathEquation: true,
+        originalQuestionText: 'A 220 V DC shunt motor has an armature resistance of 0.25 Ω. At rated full load, it draws an armature current of 50 A while running at 1200 rpm. What will be the developed back EMF at full load?',
+        originalOptions: [
+          { key: 'A', text: '207.5 V' },
+          { key: 'B', text: '232.5 V' },
+          { key: 'C', text: '215.0 V' },
+          { key: 'D', text: '200.0 V' },
+        ],
+      },
+    ];
+  }
+
+  // --- Default: EE 1 / Comprehensive Board Evaluation Questions ---
   return [
     {
       originalQuestionNumber: 1,

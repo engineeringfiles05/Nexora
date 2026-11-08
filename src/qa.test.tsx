@@ -83,3 +83,28 @@ test('49.505 percent in one subject must not satisfy the 50 percent floor', () =
   const answers = Object.fromEntries(qs.map((q, i) => [q.id, i < 50 || i >= 101 ? q.correctAnswer : 'wrong']));
   assert.equal(calculateExamScore(qs, answers).isPassed, false);
 });
+
+test('sanitizeForFirestore removes undefined fields recursively for Firestore compatibility', async () => {
+  const { sanitizeForFirestore } = await import('./utils/firebaseSync.ts');
+  const dirtyData = {
+    id: 'ext-123',
+    question: 'Test Question',
+    subtopic: undefined,
+    extractedAnswerKey: undefined,
+    options: [
+      { key: 'A', text: 'Opt A' },
+      { key: 'B', text: 'Opt B' },
+    ],
+    metadata: {
+      nestedUndefined: undefined,
+      validField: 'hello',
+    },
+  };
+  const cleaned = sanitizeForFirestore(dirtyData);
+  assert.equal('subtopic' in cleaned, false);
+  assert.equal('extractedAnswerKey' in cleaned, false);
+  assert.equal('nestedUndefined' in (cleaned as any).metadata, false);
+  assert.equal((cleaned as any).metadata.validField, 'hello');
+  assert.equal(cleaned.question, 'Test Question');
+});
+

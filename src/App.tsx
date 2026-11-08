@@ -330,8 +330,8 @@ export default function App() {
     const published = publishQuestionsToBank(questions, storedSources, newQuestions, sourcePdf);
     setQuestions(published.questions);
     setPdfSources(published.sources);
-    batchSaveQuestionsToFirestore(published.questions).catch((err) =>
-      console.warn('Batch save questions to Firestore:', err)
+    batchSaveQuestionsToFirestore(newQuestions).catch((err) =>
+      console.warn('Batch save new questions to Firestore:', err)
     );
     savePdfSourceToFirestore(sourcePdf).catch((err) =>
       console.warn('Save PDF to Firestore:', err)
