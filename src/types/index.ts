@@ -79,6 +79,30 @@ export interface Question {
   updatedAt: string;
   flaggedReason?: string;
   version?: number;
+  originalQuestionText?: string; // Exact unedited text extracted from PDF
+  originalOptions?: QuestionChoice[]; // Exact unedited choices from PDF
+  ocrQuality?: 'high' | 'medium' | 'low';
+}
+
+export type ExtractionReportStatus = 'verified' | 'needs_review' | 'incomplete' | 'failed';
+
+export interface ExtractionReport {
+  filename: string;
+  fileSize?: string;
+  totalPages: number;
+  totalQuestionsDetected: number;
+  totalQuestionsExtracted: number;
+  totalChoicesDetected: number;
+  questionsRequiringVerification: number;
+  verifiedQuestionsCount: number;
+  flaggedDiscrepanciesCount: number;
+  incompleteQuestionsCount: number;
+  pagesWithIssues: number[];
+  sequenceGaps: string[];
+  overallStatus: ExtractionReportStatus;
+  engineUsed: string;
+  notes: string[];
+  extractionTimestamp: string;
 }
 
 export interface PdfSource {
@@ -97,6 +121,7 @@ export interface PdfSource {
   allowedModes: ('quiz' | 'practice' | 'preboard' | 'mock')[];
   rawContentSnippet?: string;
   notes?: string;
+  extractionReport?: ExtractionReport;
 }
 
 export type ExamType =
