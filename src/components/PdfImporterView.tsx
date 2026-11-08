@@ -948,11 +948,11 @@ D. ₱130,200
 
                   {/* Choices Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                    {q.options.map((opt) => {
+                    {q.options.map((opt, optIdx) => {
                       const isCorrect = opt.key === q.correctAnswer;
                       return (
                         <div
-                          key={opt.key}
+                          key={`${opt.key}-${optIdx}`}
                           className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 ${
                             isCorrect
                               ? 'border-emerald-600/70 bg-emerald-950/30 text-emerald-200 font-semibold'
@@ -1044,7 +1044,7 @@ D. ₱130,200
               {/* Options */}
               <div className="grid grid-cols-2 gap-3">
                 {editingQuestion.options.map((opt, i) => (
-                  <div key={opt.key}>
+                  <div key={`edit-opt-${i}-${opt.key}`}>
                     <label className="block text-slate-400 mb-1">Option {opt.key}:</label>
                     <input
                       type="text"
@@ -1170,9 +1170,9 @@ D. ₱130,200
 
               {/* Options list */}
               <div className="space-y-1.5">
-                {previewQuestion.options.map((opt) => (
+                {previewQuestion.options.map((opt, optIdx) => (
                   <div
-                    key={opt.key}
+                    key={`prev-opt-${optIdx}-${opt.key}`}
                     className={`p-2.5 rounded-lg border flex items-center justify-between ${
                       opt.key === previewQuestion.correctAnswer
                         ? 'border-emerald-600 bg-emerald-950/40 text-emerald-200 font-bold'

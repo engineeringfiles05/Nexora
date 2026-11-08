@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'engineeringfiles05@gmail.com' && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin()) && incoming().id == userId;
+      allow update: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin()) && incoming().id == existing().id;
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // Admins Collection
+    match /admins/{userId} {
+      allow read: if isSignedIn() && isValidId(userId);
+      allow write: if isAdmin() && isValidId(userId);
+    }
+
+    // Question Bank Collection
+    match /questions/{questionId} {
+      allow get: if isSignedIn() && isValidId(questionId) && (isAdmin() || resource.data.isPublished == true);
+      allow list: if isSignedIn() && (isAdmin() || resource.data.isPublished == true);
+      allow create, update, delete: if isAdmin() && isValidId(questionId);
+    }
+
+    // PDF Questionnaires Collection
+    match /pdfSources/{pdfSourceId} {
+      allow get: if isSignedIn() && isValidId(pdfSourceId) && (isAdmin() || resource.data.isPublicToReviewees == true);
+      allow list: if isSignedIn() && (isAdmin() || resource.data.isPublicToReviewees == true);
+      allow create, update, delete: if isAdmin() && isValidId(pdfSourceId);
+    }
+
+    // Exam Results Collection
+    match /examResults/{resultId} {
+      allow get: if isSignedIn() && isValidId(resultId) && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(resultId) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(resultId) && (existing().userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin() && isValidId(resultId);
+    }
+
+    // Administrative Audit Logs
+    match /auditLogs/{logId} {
+      allow read, write: if isAdmin() && isValidId(logId);
+    }
+  }
+}

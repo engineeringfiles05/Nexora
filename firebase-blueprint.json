@@ -1,0 +1,355 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile for reviewees and administrators",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user identifier matching auth UID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the user",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user",
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "description": "System role",
+          "enum": ["admin", "reviewee"]
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Avatar image URL or avatar initials",
+          "maxLength": 500
+        },
+        "title": {
+          "type": "string",
+          "description": "Professional designation or study track",
+          "maxLength": 120
+        },
+        "targetExam": {
+          "type": "string",
+          "description": "Licensure examination target",
+          "maxLength": 100
+        },
+        "examDate": {
+          "type": "string",
+          "description": "Target examination month or year",
+          "maxLength": 50
+        },
+        "enrolledAt": {
+          "type": "string",
+          "description": "Registration ISO timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Administrator permission record",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the administrator",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the administrator",
+          "maxLength": 120
+        },
+        "grantedAt": {
+          "type": "string",
+          "description": "Timestamp when admin rights were granted",
+          "maxLength": 50
+        }
+      },
+      "required": ["userId", "email"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "Board examination question item with step-by-step solution",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique question identifier",
+          "maxLength": 128
+        },
+        "question": {
+          "type": "string",
+          "description": "Problem statement text",
+          "maxLength": 5000
+        },
+        "correctAnswer": {
+          "type": "string",
+          "description": "Letter of the correct answer",
+          "enum": ["A", "B", "C", "D"]
+        },
+        "explanation": {
+          "type": "string",
+          "description": "Conceptual explanation",
+          "maxLength": 5000
+        },
+        "stepByStepSolution": {
+          "type": "string",
+          "description": "Step by step mathematical derivation",
+          "maxLength": 10000
+        },
+        "subjectId": {
+          "type": "string",
+          "description": "Subject category code",
+          "enum": ["math", "esas", "ee"]
+        },
+        "subjectName": {
+          "type": "string",
+          "description": "Full subject name",
+          "maxLength": 100
+        },
+        "topic": {
+          "type": "string",
+          "description": "Topic within the subject",
+          "maxLength": 100
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "Question difficulty level",
+          "enum": ["Easy", "Average", "Difficult"]
+        },
+        "extractionConfidence": {
+          "type": "number",
+          "description": "Confidence percentage score of PDF extraction"
+        },
+        "verificationStatus": {
+          "type": "string",
+          "description": "Review status by engineer or educator",
+          "enum": ["verified", "needs_verification", "discrepancy_flagged", "manual_override"]
+        },
+        "isPublished": {
+          "type": "boolean",
+          "description": "Whether this question is published for reviewees"
+        },
+        "sourcePdfId": {
+          "type": "string",
+          "description": "ID of the source PDF document",
+          "maxLength": 128
+        },
+        "sourcePdfName": {
+          "type": "string",
+          "description": "File name of the source PDF",
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO creation timestamp",
+          "maxLength": 50
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO last update timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "question", "correctAnswer", "subjectId", "topic", "isPublished"]
+    },
+    "PdfSource": {
+      "title": "PdfSource",
+      "description": "Uploaded PDF document questionnaire details",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique PDF document ID",
+          "maxLength": 128
+        },
+        "filename": {
+          "type": "string",
+          "description": "File name of the PDF document",
+          "maxLength": 255
+        },
+        "originalName": {
+          "type": "string",
+          "description": "Original file name",
+          "maxLength": 255
+        },
+        "fileSize": {
+          "type": "string",
+          "description": "Human readable file size",
+          "maxLength": 50
+        },
+        "pageCount": {
+          "type": "number",
+          "description": "Total pages in PDF"
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Upload date timestamp",
+          "maxLength": 50
+        },
+        "status": {
+          "type": "string",
+          "description": "Processing status",
+          "enum": ["uploaded", "processing", "extracted", "published", "error"]
+        },
+        "questionsCount": {
+          "type": "number",
+          "description": "Number of questions extracted"
+        },
+        "verifiedCount": {
+          "type": "number",
+          "description": "Number of verified questions"
+        },
+        "needsReviewCount": {
+          "type": "number",
+          "description": "Number of questions needing review"
+        },
+        "isPublicToReviewees": {
+          "type": "boolean",
+          "description": "Whether available for reviewees to take as quizzes"
+        }
+      },
+      "required": ["id", "filename", "status", "questionsCount", "isPublicToReviewees"]
+    },
+    "ExamResult": {
+      "title": "ExamResult",
+      "description": "Examination attempt result for a candidate",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Result document ID",
+          "maxLength": 128
+        },
+        "examId": {
+          "type": "string",
+          "description": "Session examination ID",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "User identifier who took the exam",
+          "maxLength": 128
+        },
+        "userName": {
+          "type": "string",
+          "description": "Name of the candidate",
+          "maxLength": 100
+        },
+        "type": {
+          "type": "string",
+          "description": "Examination type",
+          "enum": ["pre_test", "quiz", "practice", "pre_board", "final_mock", "pdf_quiz"]
+        },
+        "title": {
+          "type": "string",
+          "description": "Examination title",
+          "maxLength": 200
+        },
+        "completedAt": {
+          "type": "string",
+          "description": "ISO completion timestamp",
+          "maxLength": 50
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Total duration spent in seconds"
+        },
+        "totalQuestions": {
+          "type": "number",
+          "description": "Total questions count in exam"
+        },
+        "correctCount": {
+          "type": "number",
+          "description": "Number of questions answered correctly"
+        },
+        "incorrectCount": {
+          "type": "number",
+          "description": "Number of questions answered incorrectly"
+        },
+        "scorePercentage": {
+          "type": "number",
+          "description": "Final score percentage"
+        },
+        "isPassed": {
+          "type": "boolean",
+          "description": "Whether passing criteria was met"
+        }
+      },
+      "required": ["id", "userId", "type", "title", "scorePercentage", "isPassed"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Administrative actions audit log",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Audit log entry identifier",
+          "maxLength": 128
+        },
+        "adminName": {
+          "type": "string",
+          "description": "Name of administrator",
+          "maxLength": 100
+        },
+        "action": {
+          "type": "string",
+          "description": "Action performed",
+          "maxLength": 120
+        },
+        "details": {
+          "type": "string",
+          "description": "Details of the action",
+          "maxLength": 1000
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of action",
+          "maxLength": 50
+        },
+        "badge": {
+          "type": "string",
+          "description": "Status badge label",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "adminName", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Registered user profile information"
+    },
+    "/admins/{userId}": {
+      "schema": "AdminRecord",
+      "description": "Administrator authority records"
+    },
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Board examination question bank collection"
+    },
+    "/pdfSources/{pdfSourceId}": {
+      "schema": "PdfSource",
+      "description": "Uploaded PDF questionnaires and extraction metadata"
+    },
+    "/examResults/{resultId}": {
+      "schema": "ExamResult",
+      "description": "Candidate exam submissions, ratings, and analytics"
+    },
+    "/auditLogs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Administrative audit trail of actions"
+    }
+  }
+}

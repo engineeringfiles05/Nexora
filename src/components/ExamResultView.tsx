@@ -393,13 +393,13 @@ export const ExamResultView: React.FC<Props> = ({
 
                 {/* Choices breakdown */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                  {q.options.map((opt) => {
+                  {q.options.map((opt, optIdx) => {
                     const isBoardAnswer = opt.key === q.correctAnswer;
                     const isUserChoice = opt.key === userAnswer;
 
                     return (
                       <div
-                        key={opt.key}
+                        key={`${opt.key}-${optIdx}`}
                         className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
                           isBoardAnswer
                             ? 'border-emerald-600/70 bg-emerald-950/40 text-emerald-200 font-bold'

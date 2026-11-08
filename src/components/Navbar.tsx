@@ -17,6 +17,9 @@ import {
   ChevronDown,
   Clock,
   History,
+  Cloud,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 import { UserProfile, UserRole } from '../types/index.ts';
 
@@ -28,6 +31,10 @@ interface Props {
   allUsers: UserProfile[];
   onSelectUser: (user: UserProfile) => void;
   pendingVerificationCount: number;
+  firebaseUser?: any;
+  onLoginWithGoogle?: () => void;
+  onLogout?: () => void;
+  isFirebaseConnected?: boolean;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -38,6 +45,10 @@ export const Navbar: React.FC<Props> = ({
   allUsers,
   onSelectUser,
   pendingVerificationCount,
+  firebaseUser,
+  onLoginWithGoogle,
+  onLogout,
+  isFirebaseConnected = true,
 }) => {
   const isAdmin = currentUser.role === 'admin';
 
@@ -53,6 +64,10 @@ export const Navbar: React.FC<Props> = ({
           <span className="hidden md:inline text-slate-500">|</span>
           <span className="hidden md:inline text-slate-400">
             REE Board Exam Countdown: <strong className="text-white">148 Days Remaining</strong>
+          </span>
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-950/80 border border-indigo-700/50 text-indigo-300">
+            <Cloud className="w-3 h-3 text-indigo-400" />
+            Firebase Connected
           </span>
         </div>
 
@@ -304,26 +319,63 @@ export const Navbar: React.FC<Props> = ({
 
           {/* User Profile & Active Account */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-9 h-9 rounded-full object-cover border-2 border-slate-700"
-              />
-              <div className="hidden sm:block text-left">
-                <div className="text-xs font-semibold text-white truncate max-w-[150px]">
-                  {currentUser.name}
+            {firebaseUser ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+                <img
+                  src={firebaseUser.photoURL || currentUser.avatar}
+                  alt={firebaseUser.displayName || currentUser.name}
+                  className="w-9 h-9 rounded-full object-cover border-2 border-emerald-500"
+                />
+                <div className="hidden sm:block text-left">
+                  <div className="text-xs font-semibold text-white truncate max-w-[150px]">
+                    {firebaseUser.displayName || currentUser.name}
+                  </div>
+                  <div className="text-[10px] text-emerald-400 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    {isAdmin ? 'Admin (Google)' : 'Reviewee (Google)'}
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <span
-                    className={`inline-block w-1.5 h-1.5 rounded-full ${
-                      isAdmin ? 'bg-indigo-400' : 'bg-emerald-400'
-                    }`}
-                  />
-                  {isAdmin ? 'Administrator' : 'REE Candidate'}
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    title="Sign out from Google"
+                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition ml-1"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
+                {onLoginWithGoogle && (
+                  <button
+                    onClick={onLoginWithGoogle}
+                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    Sign in with Google
+                  </button>
+                )}
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-9 h-9 rounded-full object-cover border-2 border-slate-700"
+                />
+                <div className="hidden sm:block text-left">
+                  <div className="text-xs font-semibold text-white truncate max-w-[150px]">
+                    {currentUser.name}
+                  </div>
+                  <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                    <span
+                      className={`inline-block w-1.5 h-1.5 rounded-full ${
+                        isAdmin ? 'bg-indigo-400' : 'bg-emerald-400'
+                      }`}
+                    />
+                    {isAdmin ? 'Administrator' : 'REE Candidate'}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

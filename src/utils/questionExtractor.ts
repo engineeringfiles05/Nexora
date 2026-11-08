@@ -118,17 +118,36 @@ export function parseQuestionsFromRawText(
 
     questionStatement = stemLines.join(' ').replace(/\[?\s*(?:Answer|Key).*?\]?/gi, '').trim();
 
-    // If options are missing or less than 2, provide standard choices
-    if (options.length < 2) {
+    // Ensure options are sanitized with strictly unique keys (A, B, C, D)
+    const standardLetters = ['A', 'B', 'C', 'D'];
+    let sanitizedOptions: { key: string; text: string }[] = [];
+    const usedKeys = new Set<string>();
+
+    for (let i = 0; i < options.length; i++) {
+      let k = options[i].key.toUpperCase();
+      if (usedKeys.has(k) || !standardLetters.includes(k)) {
+        const nextLetter = standardLetters.find((l) => !usedKeys.has(l));
+        if (nextLetter) {
+          k = nextLetter;
+        } else {
+          k = String.fromCharCode(65 + sanitizedOptions.length);
+        }
+      }
+      usedKeys.add(k);
+      sanitizedOptions.push({ key: k, text: options[i].text });
+    }
+
+    if (sanitizedOptions.length < 2) {
       if (questionStatement.length < 15) continue; // Skip non-questions
-      options.length = 0;
-      options.push(
+      sanitizedOptions = [
         { key: 'A', text: 'Option A' },
         { key: 'B', text: 'Option B' },
         { key: 'C', text: 'Option C' },
-        { key: 'D', text: 'Option D' }
-      );
+        { key: 'D', text: 'Option D' },
+      ];
     }
+
+    const finalOptions = sanitizedOptions;
 
     // Determine subject and topic from text content
     const lower = (questionStatement + ' ' + options.map((o) => o.text).join(' ')).toLowerCase();
@@ -306,7 +325,7 @@ export function parseQuestionsFromRawText(
     results.push({
       originalQuestionNumber: qNum,
       question: questionStatement,
-      options,
+      options: finalOptions,
       correctAnswer,
       extractedAnswerKey: answerKey,
       explanation,

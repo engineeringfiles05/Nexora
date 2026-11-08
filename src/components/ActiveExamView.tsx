@@ -263,11 +263,11 @@ export const ActiveExamView: React.FC<Props> = ({
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                   Select Answer Choice (Press A, B, C, or D):
                 </span>
-                {currentQuestion.options.map((option) => {
+                {currentQuestion.options.map((option, optIdx) => {
                   const isSelected = currentSelected === option.key;
                   return (
                     <div
-                      key={option.key}
+                      key={`${option.key}-${optIdx}`}
                       onClick={() => handleSelectOption(option.key)}
                       className={`p-4 rounded-xl border text-sm sm:text-base cursor-pointer transition flex items-center gap-4 ${
                         isSelected

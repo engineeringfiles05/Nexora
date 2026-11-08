@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   UserProfile,
   UserRole,
@@ -31,6 +31,20 @@ import {
   selectExamQuestions,
 } from './utils/bank.ts';
 import { isRecordArray, usePersistentState } from './utils/persistence.ts';
+import { auth, loginWithGoogle, logout, db } from './firebase.ts';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import {
+  saveQuestionToFirestore,
+  deleteQuestionFromFirestore,
+  batchSaveQuestionsToFirestore,
+  savePdfSourceToFirestore,
+  saveExamResultToFirestore,
+  saveAuditLogToFirestore,
+  saveUserProfileToFirestore,
+  seedInitialFirestoreData,
+  isUserAdmin,
+} from './utils/firebaseSync.ts';
 
 // Components
 import { Navbar } from './components/Navbar.tsx';
@@ -50,6 +64,7 @@ export default function App() {
   // State
   const [currentUser, setCurrentUser] = useState<UserProfile>(DEMO_USERS[1]); // default to Reviewee
   const [currentView, setCurrentView] = useState<string>('reviewee-dashboard');
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
 
   // Saved in this browser only. See utils/persistence.ts.
   const [failedSaves, setFailedSaves] = useState<string[]>([]);
@@ -84,6 +99,105 @@ export default function App() {
   const [launcherTopic, setLauncherTopic] = useState<string | undefined>(undefined);
   const [launcherPdfSourceId, setLauncherPdfSourceId] = useState<string | undefined>(undefined);
   const [launcherNotice, setLauncherNotice] = useState<string | undefined>(undefined);
+
+  // Synchronize Firebase Auth & Firestore
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      if (user) {
+        const isAdmin = isUserAdmin(user.email);
+        const profile: UserProfile = {
+          id: user.uid,
+          name: user.displayName || user.email?.split('@')[0] || 'Candidate',
+          email: user.email || '',
+          role: isAdmin ? 'admin' : 'reviewee',
+          avatar:
+            user.photoURL ||
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          title: isAdmin ? 'Board Review Director' : 'REE Licensure Candidate',
+          targetExam: 'REE Licensure Examination',
+          enrolledAt: new Date().toISOString(),
+        };
+        setCurrentUser(profile);
+        saveUserProfileToFirestore(profile).catch(() => {});
+
+        if (isAdmin) {
+          seedInitialFirestoreData(INITIAL_QUESTIONS, INITIAL_PDF_SOURCES, INITIAL_AUDIT_LOGS);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Listen for real-time Firestore updates when authenticated
+  useEffect(() => {
+    if (!firebaseUser) return;
+
+    const unsubQuestions = onSnapshot(
+      collection(db, 'questions'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: Question[] = [];
+          snapshot.forEach((d) => loaded.push(d.data() as Question));
+          setQuestions(loaded);
+        }
+      },
+      (err) => console.warn('Questions sync warning:', err)
+    );
+
+    const unsubSources = onSnapshot(
+      collection(db, 'pdfSources'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: PdfSource[] = [];
+          snapshot.forEach((d) => loaded.push(d.data() as PdfSource));
+          setPdfSources(loaded);
+        }
+      },
+      (err) => console.warn('PDF sources sync warning:', err)
+    );
+
+    const resultsQuery =
+      currentUser.role === 'admin'
+        ? collection(db, 'examResults')
+        : query(collection(db, 'examResults'), where('userId', '==', firebaseUser.uid));
+
+    const unsubResults = onSnapshot(
+      resultsQuery,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: ExamResult[] = [];
+          snapshot.forEach((d) => loaded.push(d.data() as ExamResult));
+          setExamResults(loaded);
+        }
+      },
+      (err) => console.warn('Exam results sync warning:', err)
+    );
+
+    return () => {
+      unsubQuestions();
+      unsubSources();
+      unsubResults();
+    };
+  }, [firebaseUser, currentUser.role]);
+
+  const handleLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (err) {
+      console.error('Google login failed:', err);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setCurrentUser(DEMO_USERS[1]);
+      setCurrentView('reviewee-dashboard');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  };
 
   const handleResetDemoData = () => {
     setQuestions(INITIAL_QUESTIONS);
@@ -198,6 +312,7 @@ export default function App() {
     };
 
     setExamResults((prev) => [...prev, newResult]);
+    saveExamResultToFirestore(newResult).catch((err) => console.warn('Save result to Firestore:', err));
     setActiveResult(newResult);
     setCurrentView('exam-result');
   };
@@ -215,6 +330,12 @@ export default function App() {
     const published = publishQuestionsToBank(questions, storedSources, newQuestions, sourcePdf);
     setQuestions(published.questions);
     setPdfSources(published.sources);
+    batchSaveQuestionsToFirestore(published.questions).catch((err) =>
+      console.warn('Batch save questions to Firestore:', err)
+    );
+    savePdfSourceToFirestore(sourcePdf).catch((err) =>
+      console.warn('Save PDF to Firestore:', err)
+    );
   };
 
   // Admin audit log adder
@@ -228,6 +349,9 @@ export default function App() {
       badge,
     };
     setAuditLogs((prev) => [newLog, ...prev]);
+    saveAuditLogToFirestore(newLog).catch((err) =>
+      console.warn('Save audit log to Firestore:', err)
+    );
   };
 
   const pendingVerificationCount = questions.filter(
@@ -246,32 +370,25 @@ export default function App() {
           allUsers={DEMO_USERS}
           onSelectUser={(u) => setCurrentUser(u)}
           pendingVerificationCount={pendingVerificationCount}
+          firebaseUser={firebaseUser}
+          onLoginWithGoogle={handleLogin}
+          onLogout={handleLogout}
+          isFirebaseConnected={true}
         />
       )}
 
       {currentView !== 'active-exam' && (
-        <div className="px-4 py-1.5 bg-amber-950/40 border-b border-amber-900/40 text-[11px] text-amber-200 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
-          <span>
-            {failedSaves.length > 0
-              ? 'Demo mode: changes could not be saved in this browser and will be lost on refresh.'
-              : 'Demo mode: no sign-in. Changes are saved in this browser only and are not shared with other users or devices.'}
-          </span>
-          {currentUser.role === 'admin' &&
-            (confirmingReset ? (
-              <span className="flex items-center gap-2">
-                Erase all changes in this browser?
-                <button onClick={handleResetDemoData} className="underline font-semibold hover:text-white">
-                  Yes, reset
-                </button>
-                <button onClick={() => setConfirmingReset(false)} className="underline hover:text-white">
-                  Keep
-                </button>
-              </span>
-            ) : (
-              <button onClick={() => setConfirmingReset(true)} className="underline hover:text-white">
-                Reset demo data
-              </button>
-            ))}
+        <div className="px-4 py-1.5 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-300 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+          {firebaseUser ? (
+            <span className="flex items-center gap-1.5 text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Firebase Firestore Active • Authenticated as <strong className="text-white">{firebaseUser.email}</strong> • Cloud Project: <code className="font-mono text-xs bg-slate-950 px-1.5 py-0.5 rounded text-indigo-300">gen-lang-client-0457110273</code>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <span>Firebase connected to <strong className="text-white font-mono text-[10px]">gen-lang-client-0457110273</strong>. Click <strong className="text-white">Sign in with Google</strong> to sync examination history across devices, or continue in local demo mode.</span>
+            </span>
+          )}
         </div>
       )}
 
@@ -396,14 +513,17 @@ export default function App() {
             pdfSources={pdfSources}
             onAddQuestion={(q) => {
               setQuestions((prev) => [q, ...prev]);
+              saveQuestionToFirestore(q).catch((err) => console.warn('Save question to Firestore:', err));
               handleAddAuditLog('Manual Question Created', `Created Question #${q.id} in ${q.subjectName}.`);
             }}
             onUpdateQuestion={(q) => {
               setQuestions((prev) => prev.map((item) => (item.id === q.id ? q : item)));
+              saveQuestionToFirestore(q).catch((err) => console.warn('Save question to Firestore:', err));
               handleAddAuditLog('Question Updated', `Updated parameters for Question #${q.id}.`);
             }}
             onDeleteQuestion={(id) => {
               setQuestions((prev) => prev.filter((item) => item.id !== id));
+              deleteQuestionFromFirestore(id).catch((err) => console.warn('Delete question from Firestore:', err));
               handleAddAuditLog('Question Deleted', `Removed Question #${id} from repository.`);
             }}
             onTogglePublish={(id) => {
@@ -412,13 +532,20 @@ export default function App() {
                   if (item.id !== id) return item;
                   // Unpublishing is always allowed; publishing needs a reviewed answer.
                   if (!item.isPublished && !isReviewedForExams(item)) return item;
-                  return { ...item, isPublished: !item.isPublished };
+                  const updated = { ...item, isPublished: !item.isPublished };
+                  saveQuestionToFirestore(updated).catch((err) => console.warn('Save question to Firestore:', err));
+                  return updated;
                 })
               );
             }}
             onApproveQuestion={(id) => {
               setQuestions((prev) =>
-                prev.map((item) => (item.id === id ? { ...item, verificationStatus: 'manual_override' } : item))
+                prev.map((item) => {
+                  if (item.id !== id) return item;
+                  const updated: Question = { ...item, verificationStatus: 'manual_override' };
+                  saveQuestionToFirestore(updated).catch((err) => console.warn('Save question to Firestore:', err));
+                  return updated;
+                })
               );
               handleAddAuditLog('Answer Approved by Admin', `Manually approved the answer for Question #${id}.`, 'Override');
             }}
@@ -432,6 +559,7 @@ export default function App() {
               setPdfSources((prev) =>
                 prev.map((p) => (p.id === updated.id ? updated : p))
               );
+              savePdfSourceToFirestore(updated).catch((err) => console.warn('Save PDF to Firestore:', err));
               handleAddAuditLog('PDF Permissions Updated', `Updated permissions for "${updated.filename}".`);
             }}
             onNavigateToImporter={() => setCurrentView('pdf-importer')}

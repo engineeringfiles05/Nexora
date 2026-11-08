@@ -467,9 +467,9 @@ export const QuestionBankView: React.FC<Props> = ({
 
                   {/* Choices list */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    {q.options.map((opt) => (
+                    {q.options.map((opt, optIdx) => (
                       <div
-                        key={opt.key}
+                        key={`${opt.key}-${optIdx}`}
                         className={`p-2 rounded-lg border flex items-center gap-1.5 truncate ${
                           opt.key === q.correctAnswer
                             ? 'border-emerald-600 bg-emerald-950/40 text-emerald-300 font-bold'
@@ -540,7 +540,7 @@ export const QuestionBankView: React.FC<Props> = ({
               {/* Choices A, B, C, D */}
               <div className="grid grid-cols-2 gap-3">
                 {newQuestion.options?.map((opt, i) => (
-                  <div key={opt.key}>
+                  <div key={`new-opt-${i}-${opt.key}`}>
                     <label className="block text-slate-400 mb-1">Option {opt.key}:</label>
                     <input
                       type="text"
@@ -679,7 +679,7 @@ export const QuestionBankView: React.FC<Props> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 {editingQuestion.options.map((opt, i) => (
-                  <div key={opt.key}>
+                  <div key={`edit-bank-opt-${i}-${opt.key}`}>
                     <label className="block text-slate-400 mb-1">Option {opt.key}:</label>
                     <input
                       type="text"
@@ -703,8 +703,8 @@ export const QuestionBankView: React.FC<Props> = ({
                     onChange={(e) => setEditingQuestion({ ...editingQuestion, correctAnswer: e.target.value })}
                     className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
                   >
-                    {editingQuestion.options.map((opt) => (
-                      <option key={opt.key} value={opt.key}>
+                    {editingQuestion.options.map((opt, optIdx) => (
+                      <option key={`edit-choice-${optIdx}-${opt.key}`} value={opt.key}>
                         Choice {opt.key}
                       </option>
                     ))}
@@ -846,9 +846,9 @@ export const QuestionBankView: React.FC<Props> = ({
               </div>
 
               <div className="space-y-1.5">
-                {inspectQuestion.options.map((opt) => (
+                {inspectQuestion.options.map((opt, optIdx) => (
                   <div
-                    key={opt.key}
+                    key={`insp-opt-${optIdx}-${opt.key}`}
                     className={`p-2.5 rounded-lg border flex items-center justify-between ${
                       opt.key === inspectQuestion.correctAnswer
                         ? 'border-emerald-600 bg-emerald-950/40 text-emerald-200 font-bold'
