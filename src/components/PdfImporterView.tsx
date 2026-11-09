@@ -79,8 +79,9 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   const [presetId, setPresetId] = useState<string>('custom');
   const [rawText, setRawText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [token, setToken] = useState<string>(() => readSessionToken() || 'admin');
+  const [token, setToken] = useState<string>(() => readSessionToken());
   const [imageReading, setImageReading] = useState<boolean | null>(null);
+  const [tokenRequired, setTokenRequired] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ----- processing -----
@@ -111,10 +112,8 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   useEffect(() => {
     getServerCapabilities().then((c) => {
       setImageReading(c.imageReading);
-      if (c.defaultToken && !readSessionToken()) {
-        setToken(c.defaultToken);
-        writeSessionToken(c.defaultToken);
-      }
+      // Development servers without NEXORA_ADMIN_TOKEN need no token, so the field is hidden.
+      setTokenRequired(c.adminTokenRequired);
     });
   }, []);
 
@@ -560,19 +559,25 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
         </div>
 
         <div className="flex flex-col md:flex-row md:items-end gap-3 pt-1">
-          <label className="flex-1 max-w-md text-xs">
-            <span className="flex items-center gap-1.5 text-slate-300 font-semibold mb-1">
-              <KeyRound className="w-3.5 h-3.5" /> Admin access token
-            </span>
-            <input
-              type="password"
-              autoComplete="off"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="Required when the server sets NEXORA_ADMIN_TOKEN"
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
-            />
-          </label>
+          {tokenRequired ? (
+            <label className="flex-1 max-w-md text-xs">
+              <span className="flex items-center gap-1.5 text-slate-300 font-semibold mb-1">
+                <KeyRound className="w-3.5 h-3.5" /> Admin access token
+              </span>
+              <input
+                type="password"
+                autoComplete="off"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="The NEXORA_ADMIN_TOKEN value set on the server"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
+              />
+            </label>
+          ) : (
+            <p className="flex-1 text-xs text-slate-400 flex items-center gap-1.5">
+              <KeyRound className="w-3.5 h-3.5" /> Development server: no admin token needed.
+            </p>
+          )}
           <div className="flex gap-2 md:ml-auto">
             {processing && (
               <button onClick={() => (cancelRef.current.cancelled = true)} className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold">

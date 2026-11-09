@@ -65,7 +65,8 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     hasApiKey: Boolean(apiKey),
     imageReading: Boolean(reader),
-    defaultToken: process.env.NEXORA_ADMIN_TOKEN || 'admin',
+    // Never return the admin token here: this route is public. Development doesn't need one.
+    adminTokenRequired: Boolean(process.env.NEXORA_ADMIN_TOKEN) || process.env.NODE_ENV === 'production',
     service: 'NEXORA ACADEMY AI Examination Engine',
   });
 });

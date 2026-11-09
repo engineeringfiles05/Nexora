@@ -54,6 +54,13 @@ test('unknown API routes return a JSON 404 instead of the SPA page', async () =>
   assert.equal((await fetch(`${base}/api/health`)).status, 200);
 });
 
+test('the public health check never reveals the admin token', async () => {
+  const base = await startServer(3317, { NEXORA_ADMIN_TOKEN: 'super-secret-token' });
+  const text = await (await fetch(`${base}/api/health`)).text();
+  assert.doesNotMatch(text, /super-secret-token/);
+  assert.equal(JSON.parse(text).adminTokenRequired, true);
+});
+
 test('production fails closed when no admin token is configured', async () => {
   const base = await startServer(3312, {});
   for (const route of ['extract-pdf', 'solve-question']) {
