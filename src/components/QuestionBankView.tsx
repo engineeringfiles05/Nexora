@@ -24,7 +24,9 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Question, Subject, PdfSource, SubjectId, DifficultyLevel, VerificationStatus } from '../types/index.ts';
-import { isReviewedForExams } from '../utils/bank.ts';
+import { isApprovedForReviewees, isReviewedForExams } from '../utils/bank.ts';
+
+const canPublishQuestion = (q: Question) => isReviewedForExams(q) && isApprovedForReviewees(q);
 
 interface Props {
   questions: Question[];
@@ -129,14 +131,14 @@ export const QuestionBankView: React.FC<Props> = ({
     selectedIds.forEach((id) => {
       const target = questions.find((q) => q.id === id);
       if (!target || target.isPublished === publish) return;
-      if (publish && !isReviewedForExams(target)) {
+      if (publish && !canPublishQuestion(target)) {
         held += 1;
         return;
       }
       onTogglePublish(id);
     });
     setSelectedIds([]);
-    setBulkNotice(held > 0 ? `${held} question(s) were not published because their answers still need review.` : null);
+    setBulkNotice(held > 0 ? `${held} question(s) were not published because their answers or their PDF extraction still need review.` : null);
   };
 
   const handleConfirmDelete = () => {
@@ -423,8 +425,8 @@ export const QuestionBankView: React.FC<Props> = ({
                       )}
                       <button
                         onClick={() => onTogglePublish(q.id)}
-                        disabled={!q.isPublished && !isReviewedForExams(q)}
-                        title={!q.isPublished && !isReviewedForExams(q) ? 'Approve the answer before publishing.' : undefined}
+                        disabled={!q.isPublished && !canPublishQuestion(q)}
+                        title={!q.isPublished && !canPublishQuestion(q) ? (isReviewedForExams(q) ? 'Approve this imported question in the PDF Importer before publishing.' : 'Approve the answer before publishing.') : undefined}
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold transition disabled:opacity-50 ${
                           q.isPublished
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'

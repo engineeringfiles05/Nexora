@@ -25,6 +25,7 @@ import {
 import { calculateExamScore } from './utils/examEngine.ts';
 import {
   getReviewQuestions,
+  isApprovedForReviewees,
   isReviewedForExams,
   publishQuestionsToBank,
   reconcileSourceCounts,
@@ -330,12 +331,14 @@ export default function App() {
     const published = publishQuestionsToBank(questions, storedSources, newQuestions, sourcePdf);
     setQuestions(published.questions);
     setPdfSources(published.sources);
-    batchSaveQuestionsToFirestore(newQuestions).catch((err) =>
-      console.warn('Batch save new questions to Firestore:', err)
-    );
-    savePdfSourceToFirestore(sourcePdf).catch((err) =>
-      console.warn('Save PDF to Firestore:', err)
-    );
+    // Save the questions as published (with the source ID they were filed under), not the staged copies.
+    const added = published.questions.slice(questions.length);
+    const savedSource = published.sources.find((s) => added[0] && s.id === added[0].sourcePdfId) ?? sourcePdf;
+    if (added.length > 0) {
+      batchSaveQuestionsToFirestore(added).catch((err) => console.warn('Batch save new questions to Firestore:', err));
+      savePdfSourceToFirestore(savedSource).catch((err) => console.warn('Save PDF to Firestore:', err));
+    }
+    return { added: added.length, skipped: published.skipped.length };
   };
 
   // Admin audit log adder
@@ -530,8 +533,9 @@ export default function App() {
               setQuestions((prev) =>
                 prev.map((item) => {
                   if (item.id !== id) return item;
-                  // Unpublishing is always allowed; publishing needs a reviewed answer.
-                  if (!item.isPublished && !isReviewedForExams(item)) return item;
+                  // Unpublishing is always allowed; publishing needs a reviewed answer and,
+                  // for imported questions, an admin's approval against the PDF.
+                  if (!item.isPublished && (!isReviewedForExams(item) || !isApprovedForReviewees(item))) return item;
                   const updated = { ...item, isPublished: !item.isPublished };
                   saveQuestionToFirestore(updated).catch((err) => console.warn('Save question to Firestore:', err));
                   return updated;

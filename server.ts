@@ -7,12 +7,12 @@ import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
-import {
-  parseQuestionsFromRawText,
-  generateEvaluationExamQuestions,
-  validateExtractionReport,
-} from './src/utils/questionExtractor.ts';
+import { GoogleGenAI } from '@google/genai';
+import { createRateLimiter, rateLimitAi, requireAiAccess } from './server/aiGuards.ts';
+import { createGeminiReader } from './server/extraction/imageReader.ts';
+import { createJobStore } from './server/extraction/jobs.ts';
+import { ExtractionError, runExtraction, type PipelineResult } from './server/extraction/pipeline.ts';
+import { solveWithAi } from './server/extraction/solver.ts';
 
 dotenv.config();
 
@@ -22,427 +22,193 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Number of reverse proxies in front of the app, so limits see real client addresses.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 0);
 
-// Ensure all /api responses have JSON content-type
-app.use('/api', (_req, res, next) => {
-  res.setHeader('Content-Type', 'application/json');
-  next();
+const HOUR_MS = 60 * 60 * 1000;
+const envLimit = (name: string, fallback: number) => Number(process.env[name]) || fallback;
+
+// Checked before bodies are parsed, so rejected callers can't make the server read a large upload.
+const aiAccess = requireAiAccess({
+  token: process.env.NEXORA_ADMIN_TOKEN || '',
+  isProduction: process.env.NODE_ENV === 'production',
 });
+const aiDailyBudget = createRateLimiter({ limit: envLimit('AI_DAILY_LIMIT', 500), windowMs: 24 * HOUR_MS });
+const solveLimit = rateLimitAi(
+  createRateLimiter({ limit: envLimit('AI_SOLVE_HOURLY_LIMIT', 120), windowMs: HOUR_MS }),
+  aiDailyBudget
+);
+const extractLimit = rateLimitAi(
+  createRateLimiter({ limit: envLimit('AI_EXTRACT_HOURLY_LIMIT', 30), windowMs: HOUR_MS }),
+  aiDailyBudget
+);
 
-// Server-side Gemini API client
+const MAX_QUESTION_CHARS = 5_000;
+const MAX_OPTIONS = 10;
+const MAX_RAW_TEXT_CHARS = 1_000_000;
+const MAX_PDF_BYTES = 60 * 1024 * 1024;
+
 const apiKey = process.env.GEMINI_API_KEY || '';
-const ai = new GoogleGenAI({
-  apiKey: apiKey,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    },
-  },
-});
+const ai = apiKey
+  ? new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } })
+  : null;
+const READER_MODEL = process.env.GEMINI_READER_MODEL || 'gemini-3.8-flash';
+const SOLVER_MODEL = process.env.GEMINI_SOLVER_MODEL || 'gemini-3.8-flash';
+const reader = ai ? createGeminiReader(ai, READER_MODEL) : null;
+const jobs = createJobStore({ maxRunning: envLimit('EXTRACTION_MAX_PARALLEL_JOBS', 2) });
 
-console.log(`[Nexora Backend] Initializing with Gemini API key available: ${Boolean(apiKey)}`);
+console.log(`[Nexora Backend] Gemini API key available: ${Boolean(apiKey)} (page-image reading ${reader ? 'on' : 'off'})`);
 
-// Health check endpoint
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     hasApiKey: Boolean(apiKey),
+    imageReading: Boolean(reader),
     service: 'NEXORA ACADEMY AI Examination Engine',
   });
 });
 
-// Dedicated Question Solver endpoint
-app.post('/api/solve-question', async (req, res) => {
+// ---------------------------------------------------------------------------
+// AI-assisted answers. Output is stored apart from the question; it never edits it.
+// ---------------------------------------------------------------------------
+
+app.post('/api/solve-question', aiAccess, solveLimit, express.json({ limit: '1mb' }), async (req, res) => {
+  const { question, options, subject, topic } = req.body ?? {};
+  if (!question || typeof question !== 'string') {
+    return res.status(400).json({ error: 'Question statement is required.' });
+  }
+  if (question.length > MAX_QUESTION_CHARS) {
+    return res.status(413).json({ error: `Question statement must be ${MAX_QUESTION_CHARS} characters or fewer.` });
+  }
+  if (options !== undefined && (!Array.isArray(options) || options.length > MAX_OPTIONS)) {
+    return res.status(400).json({ error: `Options must be a list of at most ${MAX_OPTIONS} choices.` });
+  }
+  const choices = (options ?? []).filter((o: any) => typeof o?.key === 'string' && typeof o?.text === 'string');
+  if (!ai) {
+    return res.status(503).json({ error: 'AI solving is unavailable: GEMINI_API_KEY is not configured on the server.' });
+  }
   try {
-    const { question, options, subject, topic } = req.body;
-    if (!question) {
-      return res.status(400).json({ error: 'Question statement is required.' });
-    }
-
-    if (apiKey) {
-      try {
-        const prompt = `You are a master engineering board examination examiner.
-Solve the following multiple-choice problem with rigorous mathematical precision and engineering principles:
-Question: "${question}"
-Options: ${JSON.stringify(options || [])}
-Subject: ${subject || 'Engineering'}
-Topic: ${topic || 'General'}
-
-Output JSON with:
-- correctAnswer: The single letter of the correct choice ("A", "B", "C", or "D").
-- explanation: Detailed explanation of why this answer is correct and why other choices are incorrect.
-- stepByStepSolution: Step-by-Step mathematical derivation showing formula selection, value substitution, and unit verification.
-- formulasUsed: Array of formula strings used in the derivation.
-- givenValues: Array of { label: string, value: string } extracted from the problem.
-- finalAnswerWithUnit: Final computed value with engineering unit.
-- difficulty: "Easy", "Average", or "Difficult"
-- verificationStatus: "verified" if high confidence, "needs_verification" if ambiguous.`;
-
-        const aiCall = ai.models.generateContent({
-          model: 'gemini-3.8-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: 'application/json',
-            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-          },
-        });
-
-        let timer: NodeJS.Timeout | undefined;
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new Error('AI solve latency exceeded limit')), 5000);
-        });
-
-        const response = await Promise.race([aiCall, timeoutPromise]).finally(() => clearTimeout(timer));
-
-        const parsed = JSON.parse(response.text || '{}');
-        if (parsed.correctAnswer) {
-          return res.json(parsed);
-        }
-      } catch (geminiErr: any) {
-        console.warn('[Gemini solve-question fallback]:', geminiErr.message);
-      }
-    }
-
-    // Fallback solver if Gemini is unavailable
-    const rawFallbackText = `1. ${question}\n${(options || []).map((o: any) => `${o.key}. ${o.text}`).join('\n')}`;
-    const extracted = parseQuestionsFromRawText(rawFallbackText);
-    if (extracted.length > 0) {
-      const q = extracted[0];
-      return res.json({
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
-        stepByStepSolution: q.stepByStepSolution,
-        formulasUsed: q.formulasUsed,
-        givenValues: q.givenValues,
-        finalAnswerWithUnit: q.finalAnswerWithUnit,
-        difficulty: q.difficulty,
-        verificationStatus: q.verificationStatus,
-      });
-    }
-
-    return res.json({
-      correctAnswer: 'A',
-      explanation: 'Verified in accordance with PRC Board Examination standard specifications.',
-      stepByStepSolution: '1. Apply fundamental governing principles.\n2. Evaluate numerical constraints.\n3. Verify Option A.',
-      formulasUsed: ['Standard Engineering Equation'],
-      givenValues: [],
-      finalAnswerWithUnit: 'Option A',
-      difficulty: 'Average',
-      verificationStatus: 'verified',
+    const solution = await solveWithAi(ai, SOLVER_MODEL, {
+      question,
+      options: choices,
+      subject: typeof subject === 'string' ? subject : undefined,
+      topic: typeof topic === 'string' ? topic : undefined,
     });
+    return res.json({ solution });
   } catch (error: any) {
-    console.error('[Solve Question Error]:', error);
-    return res.status(500).json({ error: 'The solver service could not process this question.' });
+    console.error('[Solve Question Error]:', error?.message);
+    return res.status(502).json({ error: 'The AI service could not solve this question. Please try again.' });
   }
 });
 
-const EXTRACTION_TIMEOUT_MS = 60_000; // 60s timeout for accurate multimodal OCR and derivation
+// ---------------------------------------------------------------------------
+// PDF / questionnaire extraction
+// ---------------------------------------------------------------------------
 
-// Advanced AI-Powered PDF / Questionnaire Question Importer Endpoint
-app.post('/api/extract-pdf', async (req, res) => {
-  const { rawText, base64Pdf, filename = 'Uploaded_Document.pdf', isPreset = false, fileSize = 'Unknown' } = req.body;
+type ExtractionRequest = { bytes?: Uint8Array; text?: string; filename: string; fileSize?: string; crossCheck?: boolean };
 
-  if (!rawText && !base64Pdf) {
-    return res.status(400).json({ error: 'No document text or PDF data provided.' });
+function readExtractionRequest(body: any): ExtractionRequest | { status: number; error: string } {
+  const { rawText, base64Pdf } = body ?? {};
+  if (!rawText && !base64Pdf) return { status: 400, error: 'No document text or PDF data provided.' };
+  if ((rawText && typeof rawText !== 'string') || (base64Pdf && typeof base64Pdf !== 'string')) {
+    return { status: 400, error: 'Document text and PDF data must be strings.' };
   }
-
-  console.log(`[Nexora Backend] Processing questionnaire: "${filename}" (isPreset: ${Boolean(isPreset)})`);
-
-  let totalPages = 1;
-  let pdfTextWithPages = (rawText || '').trim();
-  let rawExtractedText = pdfTextWithPages;
-
-  // 1. Native PDF Extraction & Page Mapping via PDFParse
+  if (rawText && rawText.length > MAX_RAW_TEXT_CHARS) {
+    return { status: 413, error: 'This document is too long. Please split it into smaller files.' };
+  }
+  const filename = typeof body.filename === 'string' && body.filename.trim() ? body.filename.slice(0, 255) : 'Uploaded_Document.pdf';
+  const fileSize = typeof body.fileSize === 'string' ? body.fileSize.slice(0, 32) : undefined;
+  const crossCheck = typeof body.crossCheck === 'boolean' ? body.crossCheck : undefined;
   if (base64Pdf) {
-    try {
-      const { PDFParse } = await import('pdf-parse');
-      const buffer = Buffer.from(base64Pdf, 'base64');
-      const parser = new PDFParse({ data: new Uint8Array(buffer), verbosity: 0 });
-      const textResult = await parser.getText();
-
-      if (textResult) {
-        totalPages = textResult.total || 1;
-        if (Array.isArray(textResult.pages) && textResult.pages.length > 0) {
-          pdfTextWithPages = textResult.pages
-            .map((p: any) => `--- PAGE ${p.num || 1} ---\n${p.text || ''}`)
-            .join('\n\n');
-          rawExtractedText = textResult.text || pdfTextWithPages;
-        } else if (typeof textResult.text === 'string') {
-          pdfTextWithPages = textResult.text;
-          rawExtractedText = textResult.text;
-        }
-        console.log(`[Nexora Backend] PDFParse extracted ${totalPages} page(s) and ${rawExtractedText.length} characters from "${filename}"`);
-      }
-    } catch (pdfErr: any) {
-      console.warn(`[Nexora Backend] PDFParse native reading note for "${filename}":`, pdfErr.message);
+    const bytes = new Uint8Array(Buffer.from(base64Pdf, 'base64'));
+    if (bytes.length > MAX_PDF_BYTES) return { status: 413, error: 'This PDF is larger than 60 MB. Please split it into smaller files.' };
+    if (bytes.length < 5 || Buffer.from(bytes.subarray(0, 5)).toString('latin1') !== '%PDF-') {
+      return { status: 400, error: 'The uploaded file is not a PDF.' };
     }
+    return { bytes, filename, fileSize, crossCheck };
   }
+  return { text: rawText, filename, fileSize, crossCheck };
+}
 
-  // 2. High-Fidelity Gemini AI Multimodal Vision OCR & Independent Solver
-  if (apiKey) {
-    try {
-      const systemInstruction = `You are NEXORA ACADEMY's Senior Forensic Examination Document Digitizer and Engineering Solver.
-Your goal is 100% CONTENT FIDELITY and VERBATIM ACCURACY.
+const runRequest = (r: ExtractionRequest, onProgress?: (p: any) => void) =>
+  runExtraction({ ...r, reader, onProgress, scannedPasses: process.env.OCR_SINGLE_PASS === 'true' ? 1 : 2 });
 
-STRICT EXTRACTION CONSTITUTION (DO NOT DEVIATE):
-1. ABSOLUTE VERBATIM ACCURACY:
-   - Extract every single question and choice EXACTLY as presented in the uploaded document.
-   - DO NOT rewrite, paraphrase, simplify, rephrase, or summarize question statements or choices.
-   - DO NOT fix grammar, spelling, or apparent typographical errors in the original PDF.
-   - Preserve all mathematical equations, formulas, numerical values, and engineering units (e.g. Ω, µF, mH, kW, kVA, VAR, ∠, °, ², ³, ±, √, π, θ, λ, ω).
-   - Preserve the exact numbering sequence (e.g. 1, 2, 3...) and choice keys (A, B, C, D...).
-   - Capture all inline answer choices (e.g. "A. 0.43 Ω   B. 0.86 Ω   C. 1.72 Ω   D. 2.15 Ω") and multi-column grid layouts.
-2. TRACEABILITY:
-   - Record originalQuestionNumber: the exact integer question number printed in the document.
-   - Record sourcePdfPage: the 1-indexed page number in the PDF where the question appears.
-   - Record hasDiagram: true if the question refers to a schematic, circuit diagram, graph, or figure.
-   - Record hasMathEquation: true if mathematical formulas, integrals, fractions, or exponents appear.
-   - Record extractedAnswerKey: if an answer key is indicated in the text (e.g. [Answer: B], Ans: B, Key: B), extract it verbatim.
-3. SEPARATE AI MATHEMATICAL DERIVATION:
-   - correctAnswer: The single letter ("A", "B", "C", or "D") matching the verified correct choice.
-   - stepByStepSolution: Rigorous mathematical derivation starting with given values, governing equation, unit conversions, and step-by-step substitution.
-   - explanation: Clear conceptual explanation of the engineering principles involved.
-   - formulasUsed: Array of governing formulas applied in the derivation.
-   - givenValues: Array of { label, value } parameters extracted from the problem.
-   - finalAnswerWithUnit: The final computed numerical answer with engineering unit.
-   - subjectId: "math" (Mathematics), "esas" (Engineering Sciences & Allied Subjects), or "ee" (Electrical Engineering Professional Subjects).
-   - topic: Relevant engineering topic name.
-   - difficulty: "Easy", "Average", or "Difficult".
-   - extractionConfidence: Integer 0 to 100 reflecting visual/textual clarity.
-   - verificationStatus: "verified" if question, choices, and solution are completely solid; "discrepancy_flagged" if the extracted answer key disagrees with the derived solution; "needs_verification" if ambiguous or incomplete.
+const resultBody = (result: PipelineResult) => ({
+  success: true,
+  filename: result.filename,
+  totalPages: result.totalPages,
+  documentHash: result.documentHash,
+  sourcePdfId: result.sourcePdfId,
+  questionsCount: result.questions.length,
+  questions: result.questions,
+  report: result.report,
+  documentIssues: result.documentIssues,
+  preamble: result.preamble,
+  pageTexts: result.pageTexts,
+  rawExtractedText: result.pageTexts.map((p) => `--- PAGE ${p.page} ---\n${p.text}`).join('\n\n'),
+  engine: result.engine,
+});
 
-RESTRICTION: Under NO circumstances should missing choices be fabricated. If a question is missing choices or truncated, extract only what is actually printed in the PDF and mark verificationStatus as "needs_verification".`;
+// Starts an extraction in the background; poll GET /api/extraction-jobs/:id for progress.
+app.post('/api/extraction-jobs', aiAccess, extractLimit, express.json({ limit: '85mb' }), (req, res) => {
+  const request = readExtractionRequest(req.body);
+  if ('error' in request) return res.status(request.status).json({ error: request.error });
+  const job = jobs.start((onProgress) => runRequest(request, onProgress));
+  return res.status(202).json({ jobId: job.id, status: job.status });
+});
 
-      let contents: any;
-      if (base64Pdf) {
-        contents = {
-          parts: [
-            {
-              inlineData: {
-                mimeType: 'application/pdf',
-                data: base64Pdf,
-              },
-            },
-            {
-              text: `Perform exact character-for-character extraction of all examination questions and answer choices from this PDF file (${filename}). Preserve all symbols, units, equations, and choice letters. Independently solve each question and return JSON conforming to the requested schema.`,
-            },
-          ],
-        };
-      } else {
-        contents = {
-          parts: [
-            {
-              text: `Document text from ${filename}:\n\n${pdfTextWithPages}\n\nPerform exact character-for-character extraction of all examination questions and answer choices. Preserve all symbols, units, equations, and choice letters. Independently solve each question and return JSON conforming to the requested schema.`,
-            },
-          ],
-        };
-      }
-
-      const aiCall = ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: contents,
-        config: {
-          systemInstruction: systemInstruction,
-          responseMimeType: 'application/json',
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                originalQuestionNumber: { type: Type.INTEGER },
-                sourcePdfPage: { type: Type.INTEGER },
-                question: { type: Type.STRING },
-                options: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      key: { type: Type.STRING },
-                      text: { type: Type.STRING },
-                    },
-                    required: ['key', 'text'],
-                  },
-                },
-                correctAnswer: { type: Type.STRING },
-                extractedAnswerKey: { type: Type.STRING },
-                explanation: { type: Type.STRING },
-                stepByStepSolution: { type: Type.STRING },
-                formulasUsed: {
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING },
-                },
-                givenValues: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      label: { type: Type.STRING },
-                      value: { type: Type.STRING },
-                    },
-                  },
-                },
-                finalAnswerWithUnit: { type: Type.STRING },
-                subjectId: { type: Type.STRING },
-                subjectName: { type: Type.STRING },
-                topic: { type: Type.STRING },
-                subtopic: { type: Type.STRING },
-                difficulty: { type: Type.STRING },
-                extractionConfidence: { type: Type.INTEGER },
-                verificationStatus: { type: Type.STRING },
-                hasDiagram: { type: Type.BOOLEAN },
-                hasMathEquation: { type: Type.BOOLEAN },
-                flaggedReason: { type: Type.STRING },
-              },
-              required: [
-                'originalQuestionNumber',
-                'question',
-                'options',
-                'correctAnswer',
-                'explanation',
-                'subjectId',
-                'topic',
-                'difficulty',
-              ],
-            },
-          },
-        },
-      });
-
-      let timer: NodeJS.Timeout | undefined;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error('AI extraction latency exceeded limit')), EXTRACTION_TIMEOUT_MS);
-      });
-
-      const response = await Promise.race([aiCall, timeoutPromise]).finally(() => clearTimeout(timer));
-      const parsed = JSON.parse(response.text || '[]');
-
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Tag with original text copy
-        const finalQuestions = parsed.map((q: any, idx: number) => ({
-          ...q,
-          originalQuestionNumber: q.originalQuestionNumber || idx + 1,
-          sourcePdfPage: q.sourcePdfPage || 1,
-          originalQuestionText: q.question,
-          originalOptions: q.options,
-        }));
-
-        const report = validateExtractionReport(
-          filename,
-          totalPages,
-          finalQuestions,
-          rawExtractedText,
-          'Gemini AI Multimodal Vision OCR Engine',
-          fileSize
-        );
-
-        console.log(`[Nexora Backend] Gemini AI successfully extracted ${finalQuestions.length} questions from ${filename} with status: ${report.overallStatus}`);
-
-        return res.json({
-          success: true,
-          filename,
-          totalPages,
-          questionsCount: finalQuestions.length,
-          questions: finalQuestions,
-          report,
-          rawExtractedText,
-          engine: 'Gemini AI Multimodal Vision OCR Engine',
-        });
-      }
-    } catch (aiErr: any) {
-      console.warn(`[Nexora Backend] Gemini AI extraction fallback on "${filename}":`, aiErr.message);
-    }
-  }
-
-  // 3. High-Fidelity Deterministic Extraction from PDF Text
-  if (pdfTextWithPages && pdfTextWithPages.trim().length > 20) {
-    const extracted = parseQuestionsFromRawText(pdfTextWithPages, filename);
-    if (extracted.length > 0) {
-      const report = validateExtractionReport(
-        filename,
-        totalPages,
-        extracted,
-        rawExtractedText,
-        'Nexora High-Fidelity Text Engine',
-        fileSize
-      );
-
-      console.log(`[Nexora Backend] Deterministic engine extracted ${extracted.length} questions from "${filename}"`);
-
-      return res.json({
-        success: true,
-        filename,
-        totalPages,
-        questionsCount: extracted.length,
-        questions: extracted,
-        report,
-        rawExtractedText,
-        engine: 'Nexora High-Fidelity Text Engine',
-      });
-    }
-  }
-
-  // 4. Forensic Engineering Extraction & Evaluation Exam Knowledge Base
-  // Handles presets, evaluation exam series (EE 1, EE 2, EE 3), and scanned PDFs without embedded text layer
-  const evaluationQuestions = generateEvaluationExamQuestions(filename);
-  const detectedPages = totalPages > 1 ? totalPages : 2;
-  const rawTextSummary = rawExtractedText && rawExtractedText.trim().length > 0
-    ? rawExtractedText
-    : evaluationQuestions.map(q => `${q.originalQuestionNumber}. ${q.question}\n${q.options.map(o => `${o.key}. ${o.text}`).join('\n')}\n[Answer: ${q.correctAnswer}]`).join('\n\n');
-
-  const report = validateExtractionReport(
-    filename,
-    detectedPages,
-    evaluationQuestions,
-    rawTextSummary,
-    'Nexora Forensic Engineering Knowledge Base (Scanned / Evaluation Mode)',
-    fileSize
-  );
-
-  if (!apiKey) {
-    report.notes.push('Multimodal OCR Note: Configure GEMINI_API_KEY in Secrets for live custom optical image recognition.');
-  }
-
-  console.log(`[Nexora Backend] Successfully digitized ${evaluationQuestions.length} questions from "${filename}" via Forensic Knowledge Base`);
-
+app.get('/api/extraction-jobs/:id', aiAccess, (req, res) => {
+  const job = jobs.get(req.params.id);
+  if (!job) return res.status(404).json({ error: 'This extraction job was not found or has expired. Please run the extraction again.' });
   return res.json({
-    success: true,
-    filename,
-    totalPages: detectedPages,
-    questionsCount: evaluationQuestions.length,
-    questions: evaluationQuestions,
-    report,
-    rawExtractedText: rawTextSummary,
-    engine: 'Nexora Forensic Engineering Knowledge Base (Scanned / Evaluation Mode)',
+    jobId: job.id,
+    status: job.status,
+    progress: job.progress,
+    ...(job.status === 'done' && job.result ? { result: resultBody(job.result) } : {}),
+    ...(job.status === 'error' ? { error: job.error, errorStatus: job.errorStatus } : {}),
   });
 });
 
-// Explicit catch-all for /api/* to NEVER let API requests fall through into Vite SPA HTML middleware
+// Same extraction, answered in one request. Kept for scripts and small files.
+app.post('/api/extract-pdf', aiAccess, extractLimit, express.json({ limit: '85mb' }), async (req, res) => {
+  const request = readExtractionRequest(req.body);
+  if ('error' in request) return res.status(request.status).json({ error: request.error });
+  try {
+    const result = await runRequest(request);
+    if (result.questions.length === 0) {
+      return res.status(422).json({
+        error: 'No examination questions could be identified in this document.',
+        report: result.report,
+      });
+    }
+    return res.json(resultBody(result));
+  } catch (error: any) {
+    if (error instanceof ExtractionError) return res.status(error.status).json({ error: error.message });
+    console.error('[Extraction Error]:', error);
+    return res.status(500).json({ error: 'The document could not be processed.' });
+  }
+});
+
+// Explicit catch-all for /api/* so API requests never fall through to the SPA.
 app.all('/api/*', (_req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
 });
 
-// Express global error handler to ensure JSON responses on errors (e.g. body-parser errors)
+// JSON errors for body-parser failures (malformed JSON 400, too large 413) and anything else.
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('[Nexora Server Error]:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'An unexpected server error occurred',
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) console.error('[Nexora Server Error]:', err);
+  res.status(status).json({
+    error: status === 413 ? 'The request is too large.' : status === 400 ? 'The request body is not valid JSON.' : 'An unexpected server error occurred',
   });
 });
 
-// Setup Vite or static serving
 async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
-
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
     app.use(vite.middlewares);
   } else {
     app.use(express.static(path.resolve(__dirname, 'dist')));
@@ -450,7 +216,6 @@ async function startServer() {
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
     });
   }
-
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[NEXORA ACADEMY] Server running on http://0.0.0.0:${PORT}`);
   });
