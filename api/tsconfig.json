@@ -1,0 +1,10 @@
+{
+  // Used by Vercel's function builder (@vercel/node looks for the tsconfig.json nearest the
+  // entry point). It inherits the app settings but swaps the browser-only "vite/client"
+  // ambient types for Node's, which is what the API runs on. The web app keeps the root config.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts"]
+}

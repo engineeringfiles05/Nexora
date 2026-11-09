@@ -22,6 +22,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { UserProfile, UserRole } from '../types/index.ts';
+import { configuredExamDate, countdownLabel, getExamCountdown } from '../utils/examDate.ts';
 
 interface Props {
   currentUser: UserProfile;
@@ -35,6 +36,8 @@ interface Props {
   onLoginWithGoogle?: () => void;
   onLogout?: () => void;
   isFirebaseConnected?: boolean;
+  /** False while signed in: the account's own role applies and demo switching is locked. */
+  canSwitchRole?: boolean;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -49,8 +52,10 @@ export const Navbar: React.FC<Props> = ({
   onLoginWithGoogle,
   onLogout,
   isFirebaseConnected = true,
+  canSwitchRole = true,
 }) => {
   const isAdmin = currentUser.role === 'admin';
+  const countdown = getExamCountdown(configuredExamDate());
 
   return (
     <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white">
@@ -63,7 +68,7 @@ export const Navbar: React.FC<Props> = ({
           </span>
           <span className="hidden md:inline text-slate-500">|</span>
           <span className="hidden md:inline text-slate-400">
-            REE Board Exam Countdown: <strong className="text-white">148 Days Remaining</strong>
+            REE Board Exam: <strong className="text-white">{countdownLabel(countdown)}</strong>
           </span>
           <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-950/80 border border-indigo-700/50 text-indigo-300">
             <Cloud className="w-3 h-3 text-indigo-400" />
@@ -73,13 +78,17 @@ export const Navbar: React.FC<Props> = ({
 
         {/* Quick Role Switcher Pill */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-400" title="Demo only: there is no sign-in, so anyone can switch roles.">
-            Demo Role:
+          <span
+            className="text-[11px] text-slate-400"
+            title={canSwitchRole ? 'Demo mode: switch between the sample reviewee and administrator.' : 'Signed in: your account role applies. Sign out to use demo roles.'}
+          >
+            {canSwitchRole ? 'Demo Role:' : 'Signed-in role:'}
           </span>
-          <div className="inline-flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
+          <div className={`inline-flex rounded-lg bg-slate-800 p-0.5 border border-slate-700 ${canSwitchRole ? '' : 'opacity-60'}`}>
             <button
               onClick={() => onSwitchRole('reviewee')}
-              className={`px-2.5 py-0.5 text-xs rounded-md font-medium transition ${
+              disabled={!canSwitchRole}
+              className={`px-2.5 py-0.5 text-xs rounded-md font-medium transition disabled:cursor-not-allowed ${
                 !isAdmin
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -89,7 +98,8 @@ export const Navbar: React.FC<Props> = ({
             </button>
             <button
               onClick={() => onSwitchRole('admin')}
-              className={`px-2.5 py-0.5 text-xs rounded-md font-medium transition flex items-center gap-1 ${
+              disabled={!canSwitchRole}
+              className={`px-2.5 py-0.5 text-xs rounded-md font-medium transition flex items-center gap-1 disabled:cursor-not-allowed ${
                 isAdmin
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'

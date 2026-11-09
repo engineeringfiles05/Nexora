@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [{ "source": "/api/:path*", "destination": "/api" }],
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 300,
+      "includeFiles": "{node_modules/pdfjs-dist/cmaps/**,node_modules/pdfjs-dist/standard_fonts/**,node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs}"
+    }
+  }
+}

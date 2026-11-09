@@ -21,7 +21,8 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { UserProfile, ExamResult, Subject, ExamType, PdfSource } from '../types/index.ts';
-import { getSelectableSources } from '../utils/bank.ts';
+import { EXAM_MODE_DEFAULTS, getSelectableSources } from '../utils/bank.ts';
+import { configuredExamDate, countdownLabel, formatExamDate, getExamCountdown } from '../utils/examDate.ts';
 
 interface Props {
   user: UserProfile;
@@ -50,6 +51,14 @@ export const RevieweeDashboard: React.FC<Props> = ({
     }
     return undefined;
   };
+
+  // One configured date for the whole app; no made-up fallback.
+  const countdown = getExamCountdown(configuredExamDate());
+  const examDateText =
+    countdown.state === 'upcoming' || countdown.state === 'today'
+      ? `${formatExamDate(countdown.date)} (${countdownLabel(countdown).toLowerCase()})`
+      : countdownLabel(countdown);
+
   const totalCompleted = examResults.length;
   const averageScore =
     totalCompleted > 0
@@ -89,7 +98,7 @@ export const RevieweeDashboard: React.FC<Props> = ({
             <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-1">
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-indigo-400" />
-                Target Exam Date: <strong className="text-white">{user.examDate || 'September 2026'}</strong>
+                Target Exam Date: <strong className="text-white">{examDateText}</strong>
               </span>
               <span>•</span>
               <span className="flex items-center gap-1.5">
@@ -314,7 +323,7 @@ export const RevieweeDashboard: React.FC<Props> = ({
               </p>
             </div>
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-              <span className="text-[11px] text-slate-400 font-mono">12 Questions • 30 mins</span>
+              <span className="text-[11px] text-slate-400 font-mono">{EXAM_MODE_DEFAULTS.pre_test.questionCount} Questions • {EXAM_MODE_DEFAULTS.pre_test.durationMinutes} mins</span>
               <button
                 onClick={() => onStartExam('pre_test')}
                 className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 transition"
@@ -364,7 +373,7 @@ export const RevieweeDashboard: React.FC<Props> = ({
               </p>
             </div>
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-              <span className="text-[11px] text-slate-400 font-mono">20 Questions • 45 mins</span>
+              <span className="text-[11px] text-slate-400 font-mono">{EXAM_MODE_DEFAULTS.practice.questionCount} Questions • {EXAM_MODE_DEFAULTS.practice.durationMinutes} mins</span>
               <button
                 onClick={() => onStartExam('practice')}
                 className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1 transition"

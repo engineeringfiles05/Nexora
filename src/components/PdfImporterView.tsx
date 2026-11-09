@@ -44,6 +44,10 @@ import {
   readSessionToken,
   requestAiSolution,
   runExtractionJob,
+  runExtractionStream,
+  uploadTooLarge,
+  BACKEND_UNAVAILABLE,
+  type ServerCapabilities,
   sha256Hex,
   writeSessionToken,
   type ExtractionResult,
@@ -82,6 +86,7 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   const [token, setToken] = useState<string>(() => readSessionToken());
   const [imageReading, setImageReading] = useState<boolean | null>(null);
   const [tokenRequired, setTokenRequired] = useState(true);
+  const [server, setServer] = useState<ServerCapabilities | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ----- processing -----
@@ -111,6 +116,7 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
 
   useEffect(() => {
     getServerCapabilities().then((c) => {
+      setServer(c);
       setImageReading(c.imageReading);
       // Development servers without NEXORA_ADMIN_TOKEN need no token, so the field is hidden.
       setTokenRequired(c.adminTokenRequired);
@@ -237,6 +243,15 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   // ----- extraction -----
   const startExtraction = async () => {
     if (!hasInput) return;
+    if (server && !server.available) {
+      setError(BACKEND_UNAVAILABLE);
+      return;
+    }
+    const tooLarge = file && server ? uploadTooLarge(file.size, server) : null;
+    if (tooLarge) {
+      setError(tooLarge);
+      return;
+    }
     setProcessing(true);
     setError(null);
     setNotice(null);
@@ -247,7 +262,11 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
       const body = file
         ? { base64Pdf: await fileToBase64(file), filename, fileSize: formatFileSize(file.size) }
         : { rawText, filename, fileSize: formatFileSize(new Blob([rawText]).size) };
-      const data = await runExtractionJob(body, token, setProgress, cancelRef.current);
+      // Streaming works everywhere, including serverless hosting; jobs only on older servers.
+      const data =
+        server?.streamingExtraction || !server?.extractionJobs
+          ? await runExtractionStream(body, token, setProgress, cancelRef.current)
+          : await runExtractionJob(body, token, setProgress, cancelRef.current);
       const { questions, ...meta } = data;
       setResult(meta);
       setStaged(questions);
@@ -472,7 +491,11 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
               <UploadCloud className="w-5 h-5 text-indigo-400" />
               Upload a questionnaire
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">Text PDFs, scanned papers, multi-column layouts, equations, diagrams and tables. Up to 60 MB.</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Text PDFs, scanned papers, multi-column layouts, equations, diagrams and tables. Up to{' '}
+              {server?.maxUploadBytes ? formatFileSize(server.maxUploadBytes) : '60 MB'}
+              {server?.timeLimitSeconds ? ` and about ${Math.floor(server.timeLimitSeconds / 60)} minutes of processing per file on this hosting` : ''}.
+            </p>
           </div>
           <span
             className={`self-start px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
@@ -484,9 +507,23 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                 : 'Without GEMINI_API_KEY on the server, scanned pages cannot be read and text pages are not cross-checked.'
             }
           >
-            {imageReading === null ? 'Checking server…' : imageReading ? 'Page-image reading & cross-check: on' : 'Page-image reading: off (text layer only)'}
+            {server === null
+              ? 'Checking server…'
+              : !server.available
+                ? 'Extraction service unavailable'
+                : imageReading
+                  ? 'Page-image reading & cross-check: on'
+                  : 'Page-image reading: off (text layer only)'}
           </span>
         </div>
+
+        {server && !server.available && (
+          <div role="alert" className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-800/70 text-rose-100 text-xs space-y-1">
+            <p className="font-bold">The PDF importer can't run on this deployment.</p>
+            <p>{BACKEND_UNAVAILABLE}</p>
+            <p className="text-rose-200/80">Nothing you upload here will be processed. The rest of the site keeps working.</p>
+          </div>
+        )}
 
         <div
           onDragOver={(e) => {
@@ -586,7 +623,7 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
             )}
             <button
               onClick={startExtraction}
-              disabled={processing || !hasInput}
+              disabled={processing || !hasInput || server?.available === false}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 disabled:opacity-40 text-white font-bold text-xs flex items-center gap-2"
             >
               {processing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}

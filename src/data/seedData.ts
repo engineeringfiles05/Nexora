@@ -82,7 +82,6 @@ export const DEMO_USERS: UserProfile[] = [
     role: 'reviewee',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
     targetExam: 'Registered Electrical Engineer (REE) Licensure Examination',
-    examDate: 'September 2026',
     enrolledAt: '2025-10-01',
   },
 ];

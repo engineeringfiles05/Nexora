@@ -62,6 +62,16 @@ function shuffled<T>(items: T[], random: () => number): T[] {
 
 export type ExamSelection = { ok: true; questions: Question[] } | { ok: false; error: string };
 
+/** Launcher defaults per mode. The dashboard cards and the launcher both read these. */
+export const EXAM_MODE_DEFAULTS: Record<ExamType, { questionCount: number; durationMinutes: number; instantFeedback: boolean }> = {
+  pre_test: { questionCount: 12, durationMinutes: 30, instantFeedback: false },
+  quiz: { questionCount: 10, durationMinutes: 15, instantFeedback: true },
+  practice: { questionCount: 15, durationMinutes: 30, instantFeedback: false },
+  pre_board: { questionCount: 20, durationMinutes: 45, instantFeedback: false },
+  final_mock: { questionCount: 20, durationMinutes: 60, instantFeedback: false },
+  pdf_quiz: { questionCount: 15, durationMinutes: 30, instantFeedback: false },
+};
+
 /** Builds an exam, or explains why it can't. Never widens filters to avoid an empty exam. */
 export function selectExamQuestions(
   questions: Question[],
@@ -97,6 +107,14 @@ export function selectExamQuestions(
     return {
       ok: false,
       error: 'No published, reviewed questions match these settings. Try a different subject, topic, difficulty or source.',
+    };
+  }
+
+  // Never quietly run a shorter exam than the one requested.
+  if (pool.length < config.questionCount) {
+    return {
+      ok: false,
+      error: `Only ${pool.length} published, reviewed question${pool.length === 1 ? ' matches' : 's match'} these settings, but ${config.questionCount} were requested. Choose ${pool.length} or fewer questions, or widen the subject, topic or difficulty.`,
     };
   }
 
