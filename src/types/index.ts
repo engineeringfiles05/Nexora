@@ -82,6 +82,101 @@ export interface Question {
   originalQuestionText?: string; // Exact unedited text extracted from PDF
   originalOptions?: QuestionChoice[]; // Exact unedited choices from PDF
   ocrQuality?: 'high' | 'medium' | 'low';
+
+  // --- Extraction traceability (absent on questions authored before the strict importer) ---
+  /** Every page the question's text was read from, in order. sourcePdfPage is the first. */
+  sourcePdfPages?: number[];
+  /** Where the question sits on each page, for highlighting in the verification viewer. */
+  sourceRegions?: SourceRegion[];
+  /** SHA-256 of the uploaded file, shared by every question from the same PDF. */
+  sourceDocumentHash?: string;
+  /** Hash of the normalized question text and choices; used to block duplicate imports. */
+  contentFingerprint?: string;
+  /** The text block exactly as read from the PDF, line breaks included. */
+  sourceBlockText?: string;
+  /** A solution or explanation printed in the PDF itself, kept verbatim. */
+  sourceSolutionText?: string;
+  extractionMethod?: ExtractionMethod;
+  extractionIssues?: ExtractionIssue[];
+  /** Whether the text and choices match the PDF. Independent of whether the answer is right. */
+  contentStatus?: ContentStatus;
+  /** Whether a second, independent reading of the page agreed with the extracted text. */
+  crossCheck?: CrossCheckResult;
+  /** Imported questions start 'pending' and reach reviewees only once an admin approves them. */
+  reviewStatus?: ReviewStatus;
+  reviewedAt?: string;
+  answerSource?: AnswerSource;
+  figures?: ExtractedFigure[];
+  /** AI output is stored here and never written into question or options. */
+  aiSolution?: AiSolution;
+}
+
+export type ExtractionMethod = 'native' | 'ocr' | 'native+ocr' | 'text' | 'manual';
+export type ContentStatus = 'verified' | 'needs_review' | 'incomplete';
+export type ReviewStatus = 'pending' | 'approved' | 'rejected';
+export type AnswerSource = 'pdf_key' | 'ai' | 'admin' | 'none';
+export type CrossCheckResult = 'agree' | 'differ' | 'not_run';
+export type IssueSeverity = 'error' | 'warning' | 'info';
+
+export interface ExtractionIssue {
+  code: string;
+  severity: IssueSeverity;
+  message: string;
+  field?: 'stem' | 'choice' | 'answer' | 'figure' | 'number' | 'page';
+  choiceKey?: string;
+  page?: number;
+  /** The two readings when the text layer and the page image disagree. */
+  readings?: { textLayer?: string; pageImage?: string };
+  /** An administrator reviewed this issue and confirmed the question anyway. */
+  acknowledged?: boolean;
+}
+
+/** A rectangle on a page, as fractions of the page size, origin at the top left. */
+export interface SourceRegion {
+  page: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+export interface ExtractedFigure {
+  id: string;
+  page: number;
+  region: SourceRegion;
+  kind: 'image' | 'diagram' | 'table' | 'attachment';
+  dataUrl?: string;
+  /** Text printed inside the figure (circuit labels and the like), verbatim. */
+  labels?: string[];
+  attachedBy: 'auto' | 'admin';
+}
+
+export interface AiSolution {
+  /** Choice key the AI picked, or undefined when it was not confident enough to pick one. */
+  suggestedAnswer?: string;
+  confidence: 'high' | 'medium' | 'low';
+  explanation: string;
+  stepByStepSolution: string;
+  formulasUsed: string[];
+  givenValues: GivenValue[];
+  finalAnswerWithUnit: string;
+  subjectId?: SubjectId;
+  topic?: string;
+  difficulty?: DifficultyLevel;
+  model: string;
+  generatedAt: string;
+}
+
+export interface PageExtractionReport {
+  page: number;
+  method: 'native' | 'ocr' | 'native+ocr' | 'text' | 'none';
+  textLayerChars: number;
+  imageReadingChars?: number;
+  questionNumbers: number[];
+  status: 'ok' | 'warning' | 'error';
+  issues: string[];
+  /** Running headers, footers and page numbers left out of question text, listed so nothing disappears silently. */
+  removedLines: string[];
 }
 
 export type ExtractionReportStatus = 'verified' | 'needs_review' | 'incomplete' | 'failed';
@@ -103,6 +198,17 @@ export interface ExtractionReport {
   engineUsed: string;
   notes: string[];
   extractionTimestamp: string;
+  // --- Strict importer additions ---
+  documentHash?: string;
+  pages?: PageExtractionReport[];
+  missingQuestionNumbers?: number[];
+  duplicateQuestionNumbers?: number[];
+  pagesWithOcrIssues?: number[];
+  warnings?: string[];
+  crossCheckedCount?: number;
+  approvedCount?: number;
+  answerKeyFound?: boolean;
+  imageReadingAvailable?: boolean;
 }
 
 export interface PdfSource {
@@ -122,6 +228,8 @@ export interface PdfSource {
   rawContentSnippet?: string;
   notes?: string;
   extractionReport?: ExtractionReport;
+  /** SHA-256 of the uploaded file, so the same PDF is recognised under any filename. */
+  fileHash?: string;
 }
 
 export type ExamType =

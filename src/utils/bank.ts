@@ -36,8 +36,16 @@ export function getSelectableSources(sources: PdfSource[], type: ExamType): PdfS
   return sources.filter((source) => isSourceAvailableForExam(source, type));
 }
 
+/**
+ * Imported questions carry a reviewStatus and reach reviewees only once an admin approved
+ * them against the PDF. Questions authored before the strict importer have none.
+ */
+export function isApprovedForReviewees(question: Pick<Question, 'reviewStatus'>): boolean {
+  return question.reviewStatus === undefined || question.reviewStatus === 'approved';
+}
+
 export function isQuestionEligibleForExam(question: Question, type: ExamType, sources: PdfSource[]): boolean {
-  if (!question.isPublished || !isReviewedForExams(question)) return false;
+  if (!question.isPublished || !isReviewedForExams(question) || !isApprovedForReviewees(question)) return false;
   if (!question.sourcePdfId) return true; // manually authored questions have no source
   const source = sources.find((item) => item.id === question.sourcePdfId);
   return source ? isSourceAvailableForExam(source, type) : false;
@@ -132,17 +140,51 @@ export function reconcileSourceCounts(source: PdfSource, questions: Question[]):
  * Publishes staged questions. Reimporting a filename keeps that source's ID and settings,
  * and counts are derived from the bank so partial publishes add up.
  */
+/** Bank questions that already hold the same text and choices (same fingerprint). */
+export function findBankDuplicates(bank: Question[], incoming: Question[]): Map<string, Question> {
+  const byFingerprint = new Map<string, Question>();
+  for (const q of bank) if (q.contentFingerprint) byFingerprint.set(q.contentFingerprint, q);
+  const duplicates = new Map<string, Question>();
+  for (const q of incoming) {
+    const match = q.contentFingerprint ? byFingerprint.get(q.contentFingerprint) : undefined;
+    if (match) duplicates.set(q.id, match);
+  }
+  return duplicates;
+}
+
+/**
+ * Publishes staged questions. Reimporting a filename or the same file under another name
+ * keeps that source's ID and settings, counts are derived from the bank so partial publishes
+ * add up, and questions whose text and choices are already in the bank are skipped.
+ */
 export function publishQuestionsToBank(
   questions: Question[],
   sources: PdfSource[],
   incoming: Question[],
   incomingSource: PdfSource
-): { questions: Question[]; sources: PdfSource[] } {
+): { questions: Question[]; sources: PdfSource[]; skipped: Question[] } {
   const existing = sources.find(
-    (source) => source.id === incomingSource.id || source.filename === incomingSource.filename
+    (source) =>
+      source.id === incomingSource.id ||
+      source.filename === incomingSource.filename ||
+      (Boolean(incomingSource.fileHash) && source.fileHash === incomingSource.fileHash)
   );
-  const source: PdfSource = existing ? { ...existing, status: 'published' } : incomingSource;
-  const published = incoming.map((q) => ({
+  const source: PdfSource = existing
+    ? { ...existing, status: 'published', ...(incomingSource.fileHash ? { fileHash: incomingSource.fileHash } : {}) }
+    : incomingSource;
+  const duplicates = findBankDuplicates(questions, incoming);
+  const seen = new Set<string>();
+  const skipped: Question[] = [];
+  const fresh = incoming.filter((q) => {
+    const key = q.contentFingerprint;
+    if (duplicates.has(q.id) || (key && seen.has(key))) {
+      skipped.push(q);
+      return false;
+    }
+    if (key) seen.add(key);
+    return true;
+  });
+  const published = fresh.map((q) => ({
     ...q,
     isPublished: true,
     sourcePdfId: source.id,
@@ -155,12 +197,15 @@ export function publishQuestionsToBank(
     sources: existing
       ? sources.map((item) => (item.id === existing.id ? reconciled : item))
       : [reconciled, ...sources],
+    skipped,
   };
 }
 
-/** Uncertain answers start unselected and stay in the queue until an admin approves them. */
+const canPublish = (q: Question) => isReviewedForExams(q) && isApprovedForReviewees(q);
+
+/** Uncertain answers and unapproved imports start unselected and stay until an admin approves them. */
 export function getDefaultSelectedIds(staged: Question[]): string[] {
-  return staged.filter(isReviewedForExams).map((q) => q.id);
+  return staged.filter(canPublish).map((q) => q.id);
 }
 
 export function splitPublishableQuestions(
@@ -169,7 +214,7 @@ export function splitPublishableQuestions(
 ): { publishable: Question[]; held: Question[] } {
   const selected = staged.filter((q) => selectedIds.includes(q.id));
   return {
-    publishable: selected.filter(isReviewedForExams),
-    held: selected.filter((q) => !isReviewedForExams(q)),
+    publishable: selected.filter(canPublish),
+    held: selected.filter((q) => !canPublish(q)),
   };
 }

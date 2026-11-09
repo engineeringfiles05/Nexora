@@ -127,15 +127,26 @@ export async function deleteQuestionFromFirestore(questionId: string): Promise<v
 export async function batchSaveQuestionsToFirestore(questions: Question[]): Promise<void> {
   const path = 'questions';
   try {
-    const CHUNK_SIZE = 400; // Under Firestore limit of 500
-    for (let i = 0; i < questions.length; i += CHUNK_SIZE) {
-      const chunk = questions.slice(i, i + CHUNK_SIZE);
-      const batch = writeBatch(db);
-      for (const q of chunk) {
-        batch.set(doc(db, 'questions', q.id), sanitizeForFirestore(q));
+    // Firestore allows 500 writes and 10 MiB per batch; figures can make documents large.
+    const MAX_DOCS = 400;
+    const MAX_BYTES = 8 * 1024 * 1024;
+    let batch = writeBatch(db);
+    let docs = 0;
+    let bytes = 0;
+    for (const q of questions) {
+      const clean = sanitizeForFirestore(q);
+      const size = JSON.stringify(clean).length;
+      if (docs > 0 && (docs >= MAX_DOCS || bytes + size > MAX_BYTES)) {
+        await batch.commit();
+        batch = writeBatch(db);
+        docs = 0;
+        bytes = 0;
       }
-      await batch.commit();
+      batch.set(doc(db, 'questions', q.id), clean);
+      docs++;
+      bytes += size;
     }
+    if (docs > 0) await batch.commit();
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }

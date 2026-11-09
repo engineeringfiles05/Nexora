@@ -3,1010 +3,1188 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  Question,
-  SubjectId,
-  DifficultyLevel,
-  VerificationStatus,
+/**
+ * Deterministic questionnaire parser shared by the server pipeline and the admin importer.
+ *
+ * It only segments text: it decides where each question, choice, answer key and printed
+ * solution starts and ends. It never rewrites, corrects, reorders or invents content. The
+ * only changes it makes are joining wrapped lines with a single space and trimming the
+ * whitespace around each piece. Anything it cannot place with confidence becomes an issue
+ * on the question so an administrator sees it before the question can be published.
+ */
+
+import type {
+  ContentStatus,
+  CrossCheckResult,
+  ExtractionIssue,
+  ExtractionMethod,
   ExtractionReport,
   ExtractionReportStatus,
+  PageExtractionReport,
+  Question,
   QuestionChoice,
+  SourceRegion,
+  SubjectId,
 } from '../types/index.ts';
 
-export interface ExtractedQuestionData {
-  originalQuestionNumber: number;
-  question: string;
-  options: { key: string; text: string }[];
-  correctAnswer: string;
-  extractedAnswerKey?: string;
-  explanation: string;
-  stepByStepSolution: string;
-  formulasUsed: string[];
-  givenValues: { label: string; value: string }[];
-  finalAnswerWithUnit: string;
-  subjectId: SubjectId;
-  subjectName: string;
-  topic: string;
-  subtopic?: string;
-  difficulty: DifficultyLevel;
-  extractionConfidence: number;
-  verificationStatus: VerificationStatus;
-  sourcePdfPage?: number;
-  hasDiagram?: boolean;
-  hasMathEquation?: boolean;
-  flaggedReason?: string;
-  originalQuestionText?: string;
-  originalOptions?: QuestionChoice[];
+// ---------------------------------------------------------------------------
+// Input and output shapes
+// ---------------------------------------------------------------------------
+
+export type LineFlag = 'script_notation' | 'unreadable' | 'stacked_math' | 'reading_uncertain';
+
+/** One line of text in reading order, with the page it came from. */
+export interface SourceLine {
+  text: string;
+  page: number;
+  bbox?: SourceRegion;
+  /** Set when the line is a label printed inside a detected diagram. */
+  figureId?: string;
+  flags?: LineFlag[];
+}
+
+export interface ParsedQuestion {
+  number: number;
+  /** Increments when numbering restarts at 1 (Part I, Part II, ...). */
+  section: number;
+  stem: string;
+  options: QuestionChoice[];
+  /** Answer printed next to the question ("Answer: B"). */
+  inlineAnswerKey?: string;
+  /** Choice drawn with a marker such as "*C." or "✓C.". */
+  markedAnswerKey?: string;
+  /** Answer taken from an answer-key section of the document. */
+  sectionAnswerKey?: string;
+  solutionText?: string;
+  pages: number[];
+  regions: SourceRegion[];
+  rawText: string;
+  figureIds: string[];
+  figureLabels: string[];
+  issues: ExtractionIssue[];
+}
+
+export interface AnswerKeyEntry {
+  section: number;
+  number: number;
+  key: string;
+}
+
+export interface ParsedDocument {
+  questions: ParsedQuestion[];
+  answerKey: AnswerKeyEntry[];
+  preamble: string;
+  issues: ExtractionIssue[];
+}
+
+// ---------------------------------------------------------------------------
+// Text helpers
+// ---------------------------------------------------------------------------
+
+/** Characters that mean the text layer or the page reading could not be trusted. */
+const UNREADABLE = /[�-]|\(cid:\d+\)|⟦[^⟧]*⟧/;
+export const UNCERTAIN_MARKER = /⟦([^⟧]*)⟧/g;
+
+export function hasUnreadableText(text: string): boolean {
+  return UNREADABLE.test(text);
 }
 
 /**
- * Extracts question stem and answer choices with 100% character-level fidelity.
- * Supports:
- * - Vertical single-column choices (A. \n B. \n C. \n D.)
- * - Inline horizontal choices (A. ... B. ... C. ... D. ...)
- * - Tabular / two-column grid choices (A. ... C. ... \n B. ... D. ...)
- * - Parenthesized choices: (A) ... (B) ... or [A] ... [B] ...
- * - Multi-line wrapped choice text
- * - Special characters (Ω, µ, ∠, °, ², ³, ±, √, π, θ, λ, ω)
+ * Normalisation used only to compare two readings of the same text. Never stored or shown:
+ * it folds look-alike characters (Ω/Ω, µ/μ, − /-, superscript digits) so that a comparison
+ * flags real differences rather than encoding differences.
  */
-export function extractStemAndChoices(block: string): {
-  stem: string;
-  options: { key: string; text: string }[];
-  answerKey?: string;
-  hasDiagram?: boolean;
-  hasMathEquation?: boolean;
-} {
-  // 1. Detect answer key tag if printed in block: [Answer: B], Ans: B, Key: B, etc.
-  let answerKey: string | undefined;
-  const keyMatch = block.match(/(?:\[?\s*(?:Answer(?:\s*Key)?|Ans|Key)\s*[:=\-]?\s*([A-D])\s*\]?)/i);
-  if (keyMatch) {
-    answerKey = keyMatch[1].toUpperCase();
+export function normalizeForCompare(text: string): string {
+  return text
+    .normalize('NFKC')
+    .replace(/[‐-―−]/g, '-')
+    .replace(/[⋅∙•]/g, '·')
+    .replace(/[‘’‛′]/g, "'")
+    .replace(/[“”″]/g, '"')
+    .replace(/[\s^_{}]/g, '');
+}
+
+/** cyrb53: small, fast, stable string hash. Good enough for duplicate detection keys. */
+export function hashString(input: string, seed = 0): string {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
   }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
 
-  // Detect diagrams or figures
-  const hasDiagram = /(?:figure|fig\.|diagram|schematic|circuit diagram|plot|graph|table\s*\d+)/i.test(block);
+/** Same question text and choices give the same fingerprint, whatever the file or upload. */
+export function fingerprintQuestion(stem: string, options: QuestionChoice[]): string {
+  const body = [normalizeForCompare(stem), ...options.map((o) => `${o.key}:${normalizeForCompare(o.text)}`)].join('|');
+  return `q_${hashString(body)}`;
+}
 
-  // Detect math equations
-  const hasMathEquation = /[=∫∑√πθλαβγω²³⁴⁻½¼±×÷∠]|\b(?:sin|cos|tan|log|ln|exp)\b|\b\d+\s*[\^]\s*\d+/i.test(block);
-
-  // Clean answer key line from block so it doesn't contaminate choices
-  const cleaned = block.replace(/\[?\s*(?:Answer(?:\s*Key)?|Ans|Key)\s*[:=\-]?\s*[A-D]\s*\]?/gi, '').trim();
-
-  // 2. Identify choice markers:
-  // Matches A., B., C., D. or (A), (B), (C), (D) or [A], [B], [C], [D] or a), b), c), d)
-  // when preceded by start of line, newline, or 2+ spaces / tabs
-  const markerRegex = /(?:^|\r?\n|\s{2,}|\t)(?:\(|\[)?([A-D])(?:\)|\.|\:|\])\s+/gi;
-  const matches: { key: string; index: number; markerLen: number }[] = [];
-  let m: RegExpExecArray | null;
-
-  while ((m = markerRegex.exec(cleaned)) !== null) {
-    // Avoid false positives like "Section A." inside a question sentence
-    const preText = cleaned.slice(0, m.index);
-    matches.push({
-      key: m[1].toUpperCase(),
-      index: m.index,
-      markerLen: m[0].length,
-    });
-  }
-
-  // If fewer than 2 markers are found, no reliable multiple-choice options exist in this block
-  if (matches.length < 2) {
-    return {
-      stem: cleaned.trim(),
-      options: [],
-      answerKey,
-      hasDiagram,
-      hasMathEquation,
-    };
-  }
-
-  // Question stem is strictly everything preceding the first choice marker
-  const firstMarker = matches[0];
-  const rawStem = cleaned.slice(0, firstMarker.index).trim();
-  // Strip leading question numbering from stem (e.g. "1. ", "Problem 1: ")
-  const stem = rawStem.replace(/^(?:(?:Question|Prob|Problem|Item|Q)\s*)?\d+[\.\):\-]\s*/i, '').trim();
-
-  // Extract each choice segment between markers
-  const rawOptions: { key: string; text: string }[] = [];
-  for (let i = 0; i < matches.length; i++) {
-    const cur = matches[i];
-    const textStart = cur.index + cur.markerLen;
-    const textEnd = i + 1 < matches.length ? matches[i + 1].index : cleaned.length;
-    const optText = cleaned.slice(textStart, textEnd).trim();
-    rawOptions.push({
-      key: cur.key,
-      text: optText,
-    });
-  }
-
-  // Deduplicate and re-sort choices by key: A, B, C, D
-  const choiceMap = new Map<string, string>();
-  for (const opt of rawOptions) {
-    if (!choiceMap.has(opt.key)) {
-      choiceMap.set(opt.key, opt.text);
+/** Joins wrapped lines. List items and paragraphs keep their own line. */
+function joinLines(lines: string[]): string {
+  let out = '';
+  let pendingBreak = false;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) {
+      pendingBreak = out.length > 0;
+      continue;
     }
+    if (!out) {
+      out = line;
+    } else if (pendingBreak || LIST_ITEM.test(line)) {
+      out += `\n${line}`;
+    } else if (/[A-Za-z]-$/.test(out) && /^[a-z]/.test(line)) {
+      out += line; // hyphenated word split across lines: keep the hyphen, drop the break
+    } else {
+      out += ` ${line}`;
+    }
+    pendingBreak = false;
   }
+  return out;
+}
 
-  const finalOptions = Array.from(choiceMap.entries())
-    .map(([key, text]) => ({ key, text }))
-    .sort((a, b) => a.key.localeCompare(b.key));
+const LIST_ITEM = /^(?:[IVX]{1,4}[.)]|\((?:[ivx]{1,4}|\d{1,2})\)|[ivx]{1,4}\)|\d{1,2}\)\s|[-•▪●◦]\s)\s*/;
 
+// ---------------------------------------------------------------------------
+// Line classifiers
+// ---------------------------------------------------------------------------
+
+interface QuestionStart {
+  number: number;
+  rest: string;
+}
+
+const QUESTION_START =
+  /^(?:(?:Q(?:uestion)?|Item|Prob(?:lem)?\.?)\s*)?(?:\((\d{1,4})\)|(\d{1,4})([.)\]:]|\s+[-–]))(\s*)(.*)$/i;
+
+export function matchQuestionStart(line: string): QuestionStart | null {
+  const m = line.trim().match(QUESTION_START);
+  if (!m) return null;
+  const number = parseInt(m[1] ?? m[2], 10);
+  const delimiter = m[3] ?? ')';
+  const gap = m[4];
+  const rest = m[5] ?? '';
+  if (!Number.isFinite(number) || number < 1 || number > 2000) return null;
+  // "1.72 × 10" or "2:1 ratio" are numbers at the start of a wrapped line, not question numbers.
+  if (!gap && /^\d/.test(rest) && (delimiter === '.' || delimiter === ':')) return null;
+  if (!gap && rest && !/^[A-Za-z(“"']/.test(rest)) return null;
+  return { number, rest };
+}
+
+interface ChoiceStart {
+  key: string;
+  lower: boolean;
+  marked: boolean;
+  text: string;
+}
+
+const CHOICE_START = /^([*✓✔]\s*)?(?:\(([A-Ea-e])\)|\[([A-Ea-e])\]|([A-Ea-e])([.):]))(\s*)(.*)$/;
+
+export function matchChoiceStart(line: string): ChoiceStart | null {
+  const m = line.trim().match(CHOICE_START);
+  if (!m) return null;
+  const letter = m[2] ?? m[3] ?? m[4];
+  const bare = Boolean(m[4]);
+  const gap = m[6];
+  const text = m[7] ?? '';
+  // Bare markers need a space after them, so "A.C. motor" and "D.C." stay text.
+  if (bare && !gap && text) return null;
+  return { key: letter.toUpperCase(), lower: letter === letter.toLowerCase(), marked: Boolean(m[1]), text };
+}
+
+const ANSWER_KEY_HEADING =
+  /^(?:answer\s*keys?|answers?(?:\s*(?:sheet|guide))?|key\s+to\s+corrections?|correct\s+answers?|answer\s+key\s+and\s+solutions?)\s*[:.]?$/i;
+const INSTRUCTION_HEADING = /^(?:general\s+)?(?:instructions?|directions?)\b/i;
+const SOLUTION_START =/^(?:solution|sol(?:'n|n)?\.?|explanation|rationale|answer\s+explanation)\s*[:.\-–]\s*(.*)$/i;
+const INLINE_ANSWER_LINE = /^\[?\s*(?:correct\s+)?(?:answer|ans)\.?(?:\s*key)?\s*[:=\-–]?\s*\(?([A-Ea-e])\)?\s*\]?$/i;
+const TRAILING_ANSWER = /^(.*?\S)(?:\s{2,}|\t|\s)\[?\s*(?:correct\s+)?(?:answer|ans)\.?(?:\s*key)?\s*[:=]\s*\(?([A-Ea-e])\)?\s*\]?$/i;
+const ANSWER_PAIR = /(\d{1,4})\s*[.):\-–]?\s*\(?([A-Ea-e])\)?(?![A-Za-z0-9])/g;
+
+const FIGURE_REFERENCE = /\b(?:figure|fig\.|diagram|shown\s+(?:below|above|in)|circuit\s+(?:below|above|shown)|graph\s+(?:below|above|shown)|table\s+(?:below|above|shown))\b/i;
+
+// ---------------------------------------------------------------------------
+// Parser
+// ---------------------------------------------------------------------------
+
+interface ChoiceBuilder {
+  key: string;
+  lines: string[];
+  marked: boolean;
+}
+
+interface Builder {
+  number: number;
+  section: number;
+  stem: SourceLine[];
+  choices: ChoiceBuilder[];
+  duplicateChoices: { key: string; text: string }[];
+  solution: string[];
+  raw: string[];
+  lines: SourceLine[];
+  state: 'stem' | 'choices' | 'solution';
+  lowerKeys: boolean | null;
+  inlineAnswerKey?: string;
+  markedAnswerKey?: string;
+  figureIds: Set<string>;
+  figureLabels: string[];
+  issues: ExtractionIssue[];
+}
+
+function newBuilder(number: number, section: number): Builder {
   return {
-    stem: stem || rawStem,
-    options: finalOptions,
-    answerKey,
-    hasDiagram,
-    hasMathEquation,
+    number,
+    section,
+    stem: [],
+    choices: [],
+    duplicateChoices: [],
+    solution: [],
+    raw: [],
+    lines: [],
+    state: 'stem',
+    lowerKeys: null,
+    figureIds: new Set(),
+    figureLabels: [],
+    issues: [],
   };
 }
 
-/**
- * Deterministic engineering board examination question extractor.
- * Automatically parses question statements, choices (A-D), answer keys,
- * preserves math/symbols, and maps to exact PDF page numbers.
- */
-export function parseQuestionsFromRawText(
-  rawText: string,
-  filename = 'Uploaded_Questionnaire.pdf'
-): ExtractedQuestionData[] {
-  if (!rawText || !rawText.trim()) return [];
+const keyIndex = (key: string) => key.charCodeAt(0) - 65;
+const keyAt = (index: number) => String.fromCharCode(65 + index);
 
-  // Track page markers if present (e.g. "--- PAGE 1 ---")
-  const lines = rawText.split(/\r?\n/);
-  let currentPage = 1;
-
-  interface RawBlock {
-    qNum: number;
-    lines: string[];
-    page: number;
+/** Splits "A. 0.43 Ω    B. 0.86 Ω" into its choices. Later keys must follow in order. */
+function splitInlineChoices(first: ChoiceStart): { key: string; text: string }[] {
+  const parts: { key: string; text: string }[] = [];
+  const marker = first.lower
+    ? /(\t+|\s{2,}|\s)(?:\(([a-e])\)|([a-e])[.)])(?=\s|$)/g
+    : /(\t+|\s{2,}|\s)(?:\(([A-E])\)|([A-E])[.)])(?=\s|$)/g;
+  let currentKey = first.key;
+  let start = 0;
+  const text = first.text;
+  let m: RegExpExecArray | null;
+  while ((m = marker.exec(text)) !== null) {
+    const key = (m[2] ?? m[3]).toUpperCase();
+    const wide = m[1] !== ' ';
+    const next = keyIndex(key) === keyIndex(currentKey) + 1;
+    if (!(next || (wide && keyIndex(key) > keyIndex(currentKey)))) continue;
+    parts.push({ key: currentKey, text: text.slice(start, m.index) });
+    currentKey = key;
+    start = m.index + m[0].length;
   }
+  parts.push({ key: currentKey, text: text.slice(start) });
+  return parts;
+}
 
-  const blocks: RawBlock[] = [];
-  let currentBlock: RawBlock | null = null;
+/** Last resort for "What is X? (A) 1 (B) 2 (C) 3 (D) 4" written as one paragraph. */
+function findChoicesInsideStem(stem: string): { stem: string; options: { key: string; text: string }[] } | null {
+  for (const lower of [false, true]) {
+    const a = lower ? 'a' : 'A';
+    const marker = lower ? /(^|\s)(\(([a-e])\)|([a-e])[.)])(?=\s)/g : /(^|\s)(\(([A-E])\)|([A-E])[.)])(?=\s)/g;
+    const found: { key: string; index: number; length: number }[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = marker.exec(stem)) !== null) {
+      const key = (m[3] ?? m[4]).toUpperCase();
+      const expected = found.length === 0 ? 'A' : keyAt(keyIndex(found[found.length - 1].key) + 1);
+      if (key !== expected) continue;
+      if (found.length === 0 && (m[3] ?? m[4]) !== a) continue;
+      found.push({ key, index: m.index + m[1].length, length: m[2].length });
+    }
+    if (found.length >= 3) {
+      const options = found.map((f, i) => ({
+        key: f.key,
+        text: stem.slice(f.index + f.length, i + 1 < found.length ? found[i + 1].index : stem.length).trim(),
+      }));
+      return { stem: stem.slice(0, found[0].index).trim(), options };
+    }
+  }
+  return null;
+}
 
-  for (const rawLine of lines) {
-    const trimmed = rawLine.trim();
+export function parseQuestionLines(input: SourceLine[]): ParsedDocument {
+  const questions: ParsedQuestion[] = [];
+  const answerKey: AnswerKeyEntry[] = [];
+  const preamble: string[] = [];
+  const docIssues: ExtractionIssue[] = [];
+  let current: Builder | null = null;
+  let builders: Builder[] = [];
+  let section = 0;
+  let mode: 'body' | 'answerKey' = 'body';
+  let keySection = 0;
+  let lastKeyNumber = 0;
 
-    // Check page header marker
-    const pageHeaderMatch = trimmed.match(/^---\s*PAGE\s*(\d+)\s*---$/i);
-    if (pageHeaderMatch) {
-      currentPage = parseInt(pageHeaderMatch[1], 10);
+  const addRaw = (b: Builder, line: SourceLine) => {
+    b.raw.push(line.text);
+    b.lines.push(line);
+  };
+
+  const finish = () => {
+    if (current) builders.push(current);
+    current = null;
+  };
+
+  for (const line of input) {
+    const trimmed = line.text.trim();
+
+    if (line.figureId) {
+      if (current) {
+        current.figureIds.add(line.figureId);
+        if (trimmed) current.figureLabels.push(trimmed);
+        addRaw(current, line);
+      }
       continue;
     }
 
-    // Detect question number: e.g. "1.", "1)", "Question 1:", "Prob. 1:", "1 - "
-    const numMatch = trimmed.match(/^(?:(?:Question|Prob|Problem|Item|Q)\s*)?(\d+)[\.\):\-]\s+(.*)$/i);
-    const isOptionLine = /^(?:[A-D][\.\):\-]|(?:\(|\[)[A-D](?:\)|\]))\s+/i.test(trimmed);
-
-    if (numMatch && !isOptionLine) {
-      if (currentBlock && currentBlock.lines.length > 0) {
-        blocks.push(currentBlock);
+    if (!trimmed) {
+      if (current) {
+        addRaw(current, line);
+        if (current.state === 'stem') current.stem.push(line);
+        else if (current.state === 'choices') current.choices[current.choices.length - 1]?.lines.push('');
       }
-      currentBlock = {
-        qNum: parseInt(numMatch[1], 10),
-        lines: [numMatch[2] ? numMatch[2] : ''],
-        page: currentPage,
-      };
-    } else if (currentBlock) {
-      currentBlock.lines.push(rawLine);
-    }
-  }
-
-  if (currentBlock && currentBlock.lines.length > 0) {
-    blocks.push(currentBlock);
-  }
-
-  // If no numbered blocks found, fallback to paragraph splitting
-  if (blocks.length === 0) {
-    const paragraphs = rawText.split(/\n\s*\n/);
-    paragraphs.forEach((p, idx) => {
-      const pTrim = p.trim();
-      if (pTrim.length > 25 && !/^---\s*PAGE/i.test(pTrim)) {
-        blocks.push({
-          qNum: idx + 1,
-          lines: p.split(/\r?\n/),
-          page: 1,
-        });
-      }
-    });
-  }
-
-  const results: ExtractedQuestionData[] = [];
-
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-    const fullBlockText = block.lines.join('\n').trim();
-    if (!fullBlockText) continue;
-
-    const { stem, options, answerKey, hasDiagram, hasMathEquation } = extractStemAndChoices(fullBlockText);
-
-    // If stem is too short and no options, skip non-question artifact
-    if (stem.length < 10 && options.length === 0) continue;
-
-    // Categorization and engineering derivation
-    const textForAnalysis = (stem + ' ' + options.map((o) => o.text).join(' ')).toLowerCase();
-    let subjectId: SubjectId = 'ee';
-    let subjectName = 'Electrical Engineering Professional Subjects';
-    let topic = 'General Electrical Engineering';
-    let formulasUsed: string[] = [];
-    const givenValues: { label: string; value: string }[] = [];
-    let finalAnswerWithUnit = '';
-    let explanation = '';
-    let stepByStepSolution = '';
-    let difficulty: DifficultyLevel = 'Average';
-    let correctAnswer = answerKey || (options.length > 0 ? options[0].key : 'A');
-
-    // Engineering subject classification
-    if (
-      textForAnalysis.includes('induction motor') ||
-      textForAnalysis.includes('transformer') ||
-      textForAnalysis.includes('alternator') ||
-      textForAnalysis.includes('synchronous') ||
-      textForAnalysis.includes('generator') ||
-      textForAnalysis.includes('circuit') ||
-      textForAnalysis.includes('reactance') ||
-      textForAnalysis.includes('impedance') ||
-      textForAnalysis.includes('power factor') ||
-      textForAnalysis.includes('flux') ||
-      textForAnalysis.includes('armature')
-    ) {
-      subjectId = 'ee';
-      subjectName = 'Electrical Engineering Professional Subjects';
-      if (textForAnalysis.includes('motor') || textForAnalysis.includes('transformer') || textForAnalysis.includes('generator')) {
-        topic = 'Transformers & Electrical Machinery';
-      } else if (textForAnalysis.includes('circuit') || textForAnalysis.includes('rlc') || textForAnalysis.includes('resonance')) {
-        topic = 'DC & AC Circuits';
-      } else {
-        topic = 'Electrical Power & Energy Systems';
-      }
-    } else if (
-      textForAnalysis.includes('derivative') ||
-      textForAnalysis.includes('integral') ||
-      textForAnalysis.includes('matrix') ||
-      textForAnalysis.includes('probability') ||
-      textForAnalysis.includes('triangle') ||
-      textForAnalysis.includes('calculus') ||
-      textForAnalysis.includes('logarithm')
-    ) {
-      subjectId = 'math';
-      subjectName = 'Mathematics';
-      topic = 'Calculus & Applied Mathematics';
-    } else {
-      subjectId = 'esas';
-      subjectName = 'Engineering Sciences & Allied Subjects';
-      if (textForAnalysis.includes('pec') || textForAnalysis.includes('conduit') || textForAnalysis.includes('code')) {
-        topic = 'Philippine Electrical Code (PEC)';
-      } else if (textForAnalysis.includes('interest') || textForAnalysis.includes('depreciation') || textForAnalysis.includes('annuity')) {
-        topic = 'Engineering Economy';
-      } else {
-        topic = 'Engineering Sciences & Mechanics';
-      }
+      continue;
     }
 
-    // Step-by-step mathematical solution
-    stepByStepSolution =
-      `1. Parameter Identification & Governing Equation:\n` +
-      `   Examine the problem constraints given in the original questionnaire.\n` +
-      `   Apply governing physical laws and formulas of ${subjectName}.\n\n` +
-      `2. Mathematical Computation:\n` +
-      `   Substitute values in consistent SI engineering units.\n` +
-      `   Evaluate the expression and cross-reference with choice options.\n\n` +
-      `3. Verified Solution Conclusion:\n` +
-      `   Option ${correctAnswer} satisfies the board requirements with complete mathematical consistency.`;
-
-    explanation =
-      `Verified against PRC Licensure Examination specifications for ${subjectName}. ` +
-      `The problem statement and choice letters correspond to the uploaded document with 100% content preservation.`;
-
-    // Audit quality and completeness
-    let verificationStatus: VerificationStatus = 'verified';
-    let flaggedReason: string | undefined;
-
-    if (options.length === 0) {
-      verificationStatus = 'needs_verification';
-      flaggedReason = 'No multiple-choice options detected in original document.';
-    } else if (options.length < 4) {
-      verificationStatus = 'needs_verification';
-      flaggedReason = `Incomplete choices: only ${options.length} options found in source PDF.`;
-    } else if (answerKey && answerKey !== correctAnswer) {
-      verificationStatus = 'discrepancy_flagged';
-      flaggedReason = `Extracted key "${answerKey}" differs from derived answer "${correctAnswer}".`;
+    if (ANSWER_KEY_HEADING.test(trimmed)) {
+      finish();
+      mode = 'answerKey';
+      keySection = 0;
+      lastKeyNumber = 0;
+      continue;
     }
 
-    const confidence = options.length >= 4 && stem.length > 20 ? 98 : options.length > 0 ? 85 : 50;
+    if (mode === 'answerKey') {
+      const start = matchQuestionStart(trimmed);
+      const looksLikeQuestion = start && start.rest.length > 25 && /[a-z]{3,}\s+[a-z]{2,}/.test(start.rest);
+      if (!looksLikeQuestion) {
+        let found = false;
+        for (const m of trimmed.matchAll(ANSWER_PAIR)) {
+          const number = parseInt(m[1], 10);
+          if (number <= lastKeyNumber && number === 1) keySection++;
+          lastKeyNumber = number;
+          answerKey.push({ section: keySection, number, key: m[2].toUpperCase() });
+          found = true;
+        }
+        if (!found) {
+          docIssues.push({
+            code: 'ANSWER_KEY_LINE_UNREAD',
+            severity: 'warning',
+            message: `A line in the answer key could not be read as answers: "${trimmed.slice(0, 80)}"`,
+            page: line.page,
+          });
+        }
+        continue;
+      }
+      mode = 'body';
+    }
 
-    results.push({
-      originalQuestionNumber: block.qNum,
-      question: stem,
-      options: options,
-      correctAnswer,
-      extractedAnswerKey: answerKey,
-      explanation,
-      stepByStepSolution,
-      formulasUsed,
-      givenValues,
-      finalAnswerWithUnit,
-      subjectId,
-      subjectName,
-      topic,
-      difficulty,
-      extractionConfidence: confidence,
-      verificationStatus,
-      sourcePdfPage: block.page,
-      hasDiagram,
-      hasMathEquation,
-      flaggedReason,
-      originalQuestionText: stem,
-      originalOptions: options,
-    });
+    // Split off a trailing "Ans: B" so it never ends up inside a choice.
+    let text = trimmed;
+    const trailing = text.match(TRAILING_ANSWER);
+    let trailingKey: string | undefined;
+    if (trailing && current) {
+      text = trailing[1];
+      trailingKey = trailing[2].toUpperCase();
+    }
+
+    const start = matchQuestionStart(text);
+    if (start) {
+      const decision = acceptQuestionStart(start, current, builders, preamble.some((l) => INSTRUCTION_HEADING.test(l.trim())));
+      if (decision.accept) {
+        if (decision.restartFromPreamble) {
+          // Everything so far was numbered instructions with no choices.
+          for (const b of [...builders, ...(current ? [current] : [])]) preamble.push(...b.raw);
+          builders = [];
+          current = null;
+          docIssues.push({
+            code: 'NUMBERED_PREAMBLE',
+            severity: 'info',
+            message: 'Numbered lines before question 1 had no answer choices and were kept as instructions.',
+            page: line.page,
+          });
+        } else {
+          finish();
+        }
+        if (decision.newSection) section++;
+        current = newBuilder(start.number, section);
+        if (decision.issue) current.issues.push({ ...decision.issue, page: line.page });
+        addRaw(current, line);
+        if (start.rest) current.stem.push({ ...line, text: start.rest });
+        if (trailingKey) current.inlineAnswerKey = trailingKey;
+        continue;
+      }
+      if (current && decision.note) current.issues.push({ ...decision.note, page: line.page });
+    }
+
+    if (!current) {
+      preamble.push(line.text);
+      continue;
+    }
+
+    const b: Builder = current;
+    addRaw(b, line);
+    if (trailingKey) setInlineKey(b, trailingKey, line.page);
+
+    const answerLine = text.match(INLINE_ANSWER_LINE);
+    if (answerLine) {
+      setInlineKey(b, answerLine[1].toUpperCase(), line.page);
+      continue;
+    }
+
+    const solution = text.match(SOLUTION_START);
+    if (solution && b.state !== 'stem') {
+      b.state = 'solution';
+      if (solution[1]) b.solution.push(solution[1]);
+      continue;
+    }
+    if (b.state === 'solution') {
+      b.solution.push(text);
+      continue;
+    }
+
+    const choice = matchChoiceStart(text);
+    const choiceAllowed =
+      choice &&
+      (b.lowerKeys === null ? !choice.lower || choice.key === 'A' : b.lowerKeys === choice.lower) &&
+      (b.choices.length > 0 || choice.key === 'A' || b.stem.length > 0);
+    if (choice && choiceAllowed) {
+      if (b.lowerKeys === null) b.lowerKeys = choice.lower;
+      b.state = 'choices';
+      if (choice.marked) {
+        if (b.markedAnswerKey && b.markedAnswerKey !== choice.key) {
+          b.issues.push({
+            code: 'MULTIPLE_MARKED_CHOICES',
+            severity: 'warning',
+            message: `More than one choice is marked (${b.markedAnswerKey} and ${choice.key}).`,
+            field: 'answer',
+            page: line.page,
+          });
+        }
+        b.markedAnswerKey = choice.key;
+      }
+      for (const part of splitInlineChoices(choice)) addChoice(b, part.key, part.text, line);
+      continue;
+    }
+
+    if (b.state === 'choices') {
+      b.choices[b.choices.length - 1].lines.push(text);
+      continue;
+    }
+    b.stem.push({ ...line, text });
   }
+  finish();
 
-  return results;
+  for (const b of builders) questions.push(finalizeQuestion(b));
+  applyAnswerKey(questions, answerKey, docIssues);
+  applyDocumentChecks(questions, docIssues);
+
+  return { questions, answerKey, preamble: joinLines(preamble), issues: docIssues };
 }
 
-/**
- * Validates the extraction results against the original source document
- * and produces a comprehensive audit report with status, sequence gaps, and issues.
- */
-export function validateExtractionReport(
-  filename: string,
-  totalPages: number,
-  questions: (ExtractedQuestionData | Question)[],
-  rawText: string,
-  engineUsed: string,
-  fileSize?: string
-): ExtractionReport {
-  const totalQuestionsDetected = questions.length;
-  const totalQuestionsExtracted = questions.length;
-  let totalChoicesDetected = 0;
-  let questionsRequiringVerification = 0;
-  let verifiedQuestionsCount = 0;
-  let flaggedDiscrepanciesCount = 0;
-  let incompleteQuestionsCount = 0;
-  const pagesWithQuestions = new Set<number>();
-  const pagesWithIssues: number[] = [];
-  const sequenceGaps: string[] = [];
-  const notes: string[] = [];
-
-  // Check question sequence continuity: 1, 2, 3, 4...
-  const extractedNumbers = questions
-    .map((q) => q.originalQuestionNumber)
-    .filter((n): n is number => typeof n === 'number' && n > 0)
-    .sort((a, b) => a - b);
-
-  if (extractedNumbers.length > 1) {
-    const minNum = extractedNumbers[0];
-    const maxNum = extractedNumbers[extractedNumbers.length - 1];
-    const numSet = new Set(extractedNumbers);
-
-    for (let expected = minNum; expected <= maxNum; expected++) {
-      if (!numSet.has(expected)) {
-        sequenceGaps.push(`Item #${expected} is missing from the numbering sequence`);
-      }
-    }
+function setInlineKey(b: Builder, key: string, page: number) {
+  if (b.inlineAnswerKey && b.inlineAnswerKey !== key) {
+    b.issues.push({
+      code: 'CONFLICTING_ANSWER_KEYS',
+      severity: 'warning',
+      message: `The question shows two different answers (${b.inlineAnswerKey} and ${key}).`,
+      field: 'answer',
+      page,
+    });
   }
+  b.inlineAnswerKey = key;
+}
 
-  // Inspect each question
-  for (const q of questions) {
-    const optCount = q.options ? q.options.length : 0;
-    totalChoicesDetected += optCount;
-
-    if (q.sourcePdfPage) {
-      pagesWithQuestions.add(q.sourcePdfPage);
-    }
-
-    if (q.verificationStatus === 'verified') {
-      verifiedQuestionsCount++;
-    } else if (q.verificationStatus === 'discrepancy_flagged') {
-      flaggedDiscrepanciesCount++;
-      questionsRequiringVerification++;
-    } else {
-      questionsRequiringVerification++;
-    }
-
-    if (optCount < 4) {
-      incompleteQuestionsCount++;
-      if (q.sourcePdfPage && !pagesWithIssues.includes(q.sourcePdfPage)) {
-        pagesWithIssues.push(q.sourcePdfPage);
-      }
-    }
+function addChoice(b: Builder, key: string, text: string, line: SourceLine) {
+  if (b.choices.some((c) => c.key === key)) {
+    b.duplicateChoices.push({ key, text: text.trim() });
+    // Keep the text somewhere visible: it stays in rawText and in the issue below.
+    b.issues.push({
+      code: 'DUPLICATE_CHOICE_KEY',
+      severity: 'error',
+      message: `Choice ${key} appears more than once. The second one ("${text.trim().slice(0, 60)}") was not used. A question number may be missing just above it.`,
+      field: 'choice',
+      choiceKey: key,
+      page: line.page,
+    });
+    // Further continuation lines belong to the duplicate, not to the earlier choice.
+    b.choices.push({ key: `${key}#dup`, lines: [text], marked: false });
+    return;
   }
+  b.choices.push({ key, lines: [text], marked: false });
+}
 
-  // Detect unextracted pages
-  for (let p = 1; p <= totalPages; p++) {
-    if (!pagesWithQuestions.has(p) && totalPages > 1) {
-      notes.push(`Page ${p} did not yield any recognized questions (may be title page, cover, or formula sheet).`);
-    }
+interface StartDecision {
+  accept: boolean;
+  newSection?: boolean;
+  restartFromPreamble?: boolean;
+  issue?: ExtractionIssue;
+  note?: ExtractionIssue;
+}
+
+function acceptQuestionStart(start: QuestionStart, current: Builder | null, done: Builder[], sawInstructionHeading: boolean): StartDecision {
+  if (!current) {
+    return { accept: true };
   }
+  const n = start.number;
+  const hasChoices = current.choices.length >= 2;
+  const expected = current.number + 1;
+  const looksLikeStem = start.rest.length >= 12;
 
-  // Determine overall status
-  let overallStatus: ExtractionReportStatus = 'verified';
-
-  if (questions.length === 0) {
-    overallStatus = 'failed';
-    notes.push('Extraction failed: no examination questions could be identified in the uploaded document.');
-  } else if (incompleteQuestionsCount > 0 || sequenceGaps.length > 0) {
-    overallStatus = 'incomplete';
-    if (incompleteQuestionsCount > 0) {
-      notes.push(`${incompleteQuestionsCount} question(s) have missing or incomplete answer choices.`);
-    }
-    if (sequenceGaps.length > 0) {
-      notes.push(`${sequenceGaps.length} numbering sequence gap(s) detected.`);
-    }
-  } else if (questionsRequiringVerification > 0 || flaggedDiscrepanciesCount > 0) {
-    overallStatus = 'needs_review';
-    notes.push(`${questionsRequiringVerification} question(s) flagged for manual review.`);
-  } else {
-    overallStatus = 'verified';
-    notes.push('100% extraction fidelity verified against source questionnaire structure.');
+  if (n === expected) return { accept: true };
+  // "INSTRUCTIONS 1. ... 2. ..." followed by the real question 1. Only when everything so far
+  // was a numbered run from 1 without choices; a question's own "1) ... 2) ..." list stays put.
+  const blocks = [...done, current];
+  const firstNumber = blocks[0].number;
+  if (
+    n === 1 &&
+    !hasChoices &&
+    firstNumber === 1 &&
+    blocks.every((b) => b.choices.length === 0) &&
+    (current.number >= 2 || sawInstructionHeading)
+  ) {
+    return { accept: true, restartFromPreamble: true };
   }
-
+  if (n === 1 && hasChoices) {
+    return {
+      accept: true,
+      newSection: true,
+      issue: {
+        code: 'NUMBERING_RESTART',
+        severity: 'info',
+        message: `Numbering restarts at 1 after question ${current.number}; treated as a new part of the document.`,
+        field: 'number',
+      },
+    };
+  }
+  if (n > expected && n <= expected + 9 && (hasChoices || looksLikeStem)) return { accept: true };
+  if (n === current.number && hasChoices && looksLikeStem) {
+    return {
+      accept: true,
+      issue: {
+        code: 'DUPLICATE_NUMBER',
+        severity: 'error',
+        message: `Question number ${n} appears twice in a row.`,
+        field: 'number',
+      },
+    };
+  }
+  if (hasChoices && looksLikeStem) {
+    return {
+      accept: true,
+      issue: {
+        code: 'NUMBER_OUT_OF_SEQUENCE',
+        severity: 'warning',
+        message: `Question ${n} follows question ${current.number}; check the order against the PDF.`,
+        field: 'number',
+      },
+    };
+  }
   return {
-    filename,
-    fileSize,
-    totalPages,
-    totalQuestionsDetected,
-    totalQuestionsExtracted,
-    totalChoicesDetected,
-    questionsRequiringVerification,
-    verifiedQuestionsCount,
-    flaggedDiscrepanciesCount,
-    incompleteQuestionsCount,
-    pagesWithIssues,
-    sequenceGaps,
-    overallStatus,
-    engineUsed,
-    notes,
-    extractionTimestamp: new Date().toISOString(),
+    accept: false,
+    note: {
+      code: 'NUMBERED_LINE_KEPT',
+      severity: hasChoices ? 'warning' : 'info',
+      message: hasChoices
+        ? `A line starting with "${n}." after the choices of question ${current.number} was kept as part of it. If it is a separate question, split it out.`
+        : `A numbered line ("${n}.") inside question ${current.number} was kept as part of the question text.`,
+      field: 'number',
+    },
   };
 }
 
+function finalizeQuestion(b: Builder): ParsedQuestion {
+  const issues = [...b.issues];
+  let stem = joinLines(b.stem.map((l) => l.text));
+  let options: QuestionChoice[] = b.choices
+    .filter((c) => !c.key.endsWith('#dup'))
+    .map((c) => ({ key: c.key, text: joinLines(c.lines) }));
+
+  if (options.length === 0) {
+    const inline = findChoicesInsideStem(stem);
+    if (inline) {
+      stem = inline.stem;
+      options = inline.options;
+      issues.push({
+        code: 'CHOICES_INSIDE_STEM',
+        severity: 'warning',
+        message: 'The choices were written on the same line as the question and were split by their letters. Check each choice against the PDF.',
+        field: 'choice',
+      });
+    }
+  }
+
+  options.sort((x, y) => x.key.localeCompare(y.key));
+  const pages = [...new Set(b.lines.map((l) => l.page))];
+  const regions = mergeRegions(b.lines.filter((l) => !l.figureId));
+  const firstPage = pages[0];
+
+  if (!stem) {
+    issues.push({ code: 'EMPTY_STEM', severity: 'error', message: 'No question text was found.', field: 'stem', page: firstPage });
+  } else if (stem.length < 8) {
+    issues.push({ code: 'SHORT_STEM', severity: 'warning', message: 'The question text is unusually short; part of it may be missing.', field: 'stem', page: firstPage });
+  }
+
+  if (options.length < 2) {
+    issues.push({
+      code: 'NO_CHOICES',
+      severity: 'error',
+      message: options.length === 0 ? 'No answer choices were found.' : 'Only one answer choice was found.',
+      field: 'choice',
+      page: firstPage,
+    });
+  } else {
+    const keys = options.map((o) => o.key);
+    const last = keyIndex(keys[keys.length - 1]);
+    for (let i = 0; i <= last; i++) {
+      if (!keys.includes(keyAt(i))) {
+        issues.push({
+          code: 'CHOICE_MISSING',
+          severity: 'error',
+          message: `Choice ${keyAt(i)} is missing between ${keys[0]} and ${keys[keys.length - 1]}.`,
+          field: 'choice',
+          choiceKey: keyAt(i),
+          page: firstPage,
+        });
+      }
+    }
+  }
+  for (const option of options) {
+    if (!option.text) {
+      issues.push({ code: 'EMPTY_CHOICE', severity: 'error', message: `Choice ${option.key} has no text.`, field: 'choice', choiceKey: option.key, page: firstPage });
+    }
+  }
+
+  // Unreadable glyphs or uncertain readings, field by field.
+  if (hasUnreadableText(stem)) {
+    issues.push({ code: 'UNREADABLE_TEXT', severity: 'error', message: 'Part of the question text could not be read reliably (marked ⟦ ⟧ or shown as �).', field: 'stem', page: firstPage });
+  }
+  for (const option of options) {
+    if (hasUnreadableText(option.text)) {
+      issues.push({ code: 'UNREADABLE_TEXT', severity: 'error', message: `Part of choice ${option.key} could not be read reliably.`, field: 'choice', choiceKey: option.key, page: firstPage });
+    }
+  }
+
+  const flagged = (flag: LineFlag) => b.lines.some((l) => l.flags?.includes(flag));
+  if (flagged('script_notation')) {
+    issues.push({
+      code: 'SCRIPT_NOTATION',
+      severity: 'warning',
+      message: 'A superscript or subscript had no plain-text equivalent and is written as ^(…) or _(…). Check it against the PDF.',
+      field: 'stem',
+      page: firstPage,
+    });
+  }
+  if (flagged('stacked_math')) {
+    issues.push({
+      code: 'STACKED_MATH',
+      severity: 'warning',
+      message: 'This question appears to contain a built-up fraction or equation that plain text cannot show exactly. Compare it with the page image.',
+      field: 'stem',
+      page: firstPage,
+    });
+  }
+
+  const allText = `${stem}\n${options.map((o) => o.text).join('\n')}`;
+  if (FIGURE_REFERENCE.test(allText) && b.figureIds.size === 0) {
+    issues.push({
+      code: 'FIGURE_NOT_CAPTURED',
+      severity: 'warning',
+      message: 'The question refers to a figure, diagram or table, but none was captured next to it. Attach it from the PDF.',
+      field: 'figure',
+      page: firstPage,
+    });
+  }
+  if (pages.length > 1) {
+    issues.push({
+      code: 'SPANS_PAGES',
+      severity: 'info',
+      message: `This question continues from page ${pages[0]} to page ${pages[pages.length - 1]}.`,
+      page: firstPage,
+    });
+  }
+
+  const solutionText = joinLines(b.solution) || undefined;
+  return {
+    number: b.number,
+    section: b.section,
+    stem,
+    options,
+    inlineAnswerKey: b.inlineAnswerKey,
+    markedAnswerKey: b.markedAnswerKey,
+    solutionText,
+    pages,
+    regions,
+    rawText: b.raw.join('\n').trim(),
+    figureIds: [...b.figureIds],
+    figureLabels: b.figureLabels,
+    issues,
+  };
+}
+
+function mergeRegions(lines: SourceLine[]): SourceRegion[] {
+  const byPage = new Map<number, SourceRegion>();
+  for (const line of lines) {
+    if (!line.bbox || !line.text.trim()) continue;
+    const r = byPage.get(line.page);
+    byPage.set(
+      line.page,
+      r
+        ? { page: line.page, x0: Math.min(r.x0, line.bbox.x0), y0: Math.min(r.y0, line.bbox.y0), x1: Math.max(r.x1, line.bbox.x1), y1: Math.max(r.y1, line.bbox.y1) }
+        : { ...line.bbox, page: line.page }
+    );
+  }
+  return [...byPage.values()];
+}
+
+function applyAnswerKey(questions: ParsedQuestion[], entries: AnswerKeyEntry[], docIssues: ExtractionIssue[]) {
+  if (entries.length === 0) return;
+  const sectionCount = new Set(questions.map((q) => q.section)).size;
+  const keySections = new Set(entries.map((e) => e.section)).size;
+  const matched = new Set<AnswerKeyEntry>();
+  for (const q of questions) {
+    const entry =
+      entries.find((e) => e.number === q.number && (keySections === sectionCount ? e.section === q.section : true));
+    if (!entry) continue;
+    matched.add(entry);
+    q.sectionAnswerKey = entry.key;
+  }
+  const unmatched = entries.filter((e) => !matched.has(e));
+  if (unmatched.length > 0) {
+    docIssues.push({
+      code: 'ANSWER_KEY_UNMATCHED',
+      severity: 'warning',
+      message: `The answer key lists ${unmatched.length} item(s) with no matching question: ${unmatched
+        .slice(0, 12)
+        .map((e) => e.number)
+        .join(', ')}${unmatched.length > 12 ? ', …' : ''}.`,
+      field: 'number',
+    });
+  }
+}
+
+/** Checks that need the whole document: answer validity, choice counts, duplicates. */
+function applyDocumentChecks(questions: ParsedQuestion[], docIssues: ExtractionIssue[]) {
+  const counts = new Map<number, number>();
+  for (const q of questions) if (q.options.length >= 2) counts.set(q.options.length, (counts.get(q.options.length) ?? 0) + 1);
+  const typical = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  const seen = new Map<string, ParsedQuestion>();
+  for (const q of questions) {
+    const keys = q.options.map((o) => o.key);
+    for (const [code, key, label] of [
+      ['INLINE', q.inlineAnswerKey, 'printed answer'],
+      ['MARKED', q.markedAnswerKey, 'marked choice'],
+      ['SECTION', q.sectionAnswerKey, 'answer key'],
+    ] as const) {
+      if (key && keys.length > 0 && !keys.includes(key)) {
+        q.issues.push({
+          code: `ANSWER_${code}_INVALID`,
+          severity: 'error',
+          message: `The ${label} is "${key}", but the question has no choice ${key}.`,
+          field: 'answer',
+        });
+      }
+    }
+    const given = [q.inlineAnswerKey, q.markedAnswerKey, q.sectionAnswerKey].filter(Boolean);
+    if (new Set(given).size > 1) {
+      q.issues.push({
+        code: 'CONFLICTING_ANSWER_KEYS',
+        severity: 'warning',
+        message: `The document gives different answers for this question (${given.join(', ')}).`,
+        field: 'answer',
+      });
+    }
+
+    if (typical && q.options.length >= 2 && q.options.length < typical) {
+      q.issues.push({
+        code: 'FEWER_CHOICES_THAN_USUAL',
+        severity: 'error',
+        message: `Only ${q.options.length} choices were found; most questions in this document have ${typical}. A choice may be on another page or column.`,
+        field: 'choice',
+      });
+    }
+
+    if (q.stem) {
+      const fp = fingerprintQuestion(q.stem, q.options);
+      const earlier = seen.get(fp);
+      if (earlier) {
+        q.issues.push({
+          code: 'DUPLICATE_CONTENT',
+          severity: 'warning',
+          message: `Same text and choices as question ${earlier.number}${earlier.section !== q.section ? ` (part ${earlier.section + 1})` : ''}.`,
+        });
+      } else {
+        seen.set(fp, q);
+      }
+    }
+  }
+
+  // Numbering gaps and repeats, per part of the document.
+  const sections = [...new Set(questions.map((q) => q.section))];
+  for (const s of sections) {
+    const nums = questions.filter((q) => q.section === s).map((q) => q.number);
+    const missing = findMissingNumbers(nums);
+    if (missing.length > 0) {
+      docIssues.push({
+        code: 'MISSING_NUMBERS',
+        severity: 'error',
+        message: `Question number(s) ${missing.join(', ')}${sections.length > 1 ? ` in part ${s + 1}` : ''} were not found.`,
+        field: 'number',
+      });
+    }
+  }
+}
+
+export function findMissingNumbers(numbers: number[]): number[] {
+  if (numbers.length === 0) return [];
+  const set = new Set(numbers);
+  const min = Math.min(...numbers);
+  const max = Math.max(...numbers);
+  const missing: number[] = [];
+  // Starts at the first number found: a file may legitimately hold items 51-100 only.
+  for (let i = min; i <= max; i++) if (!set.has(i)) missing.push(i);
+  return missing;
+}
+
+// ---------------------------------------------------------------------------
+// Plain text input (TXT files and presets)
+// ---------------------------------------------------------------------------
+
+/** Page breaks are form feeds or "--- PAGE n ---" lines. */
+export function textToSourceLines(text: string): SourceLine[] {
+  const out: SourceLine[] = [];
+  let page = 1;
+  const pages = text.replace(/\r\n?/g, '\n').split('\f');
+  pages.forEach((chunk, i) => {
+    if (i > 0) page++;
+    for (const raw of chunk.split('\n')) {
+      const marker = raw.trim().match(/^-{2,}\s*PAGE\s*(\d+)\s*-{2,}$/i);
+      if (marker) {
+        page = parseInt(marker[1], 10);
+        continue;
+      }
+      out.push({ text: raw, page });
+    }
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Classification suggestions (shown as suggestions; never part of the extracted text)
+// ---------------------------------------------------------------------------
+
+export const SUBJECT_NAMES: Record<SubjectId, string> = {
+  math: 'Mathematics',
+  esas: 'Engineering Sciences & Allied Subjects',
+  ee: 'Electrical Engineering Professional Subjects',
+};
+
+export function suggestClassification(text: string): { subjectId: SubjectId; topic: string } {
+  const t = text.toLowerCase();
+  const has = (...words: string[]) => words.some((w) => t.includes(w));
+  if (has('pec', 'philippine electrical code', 'conduit', 'ampacity')) return { subjectId: 'ee', topic: 'Philippine Electrical Code (PEC)' };
+  if (has('induction motor', 'transformer', 'alternator', 'synchronous', 'generator', 'armature', 'dc motor', 'shunt motor')) {
+    return { subjectId: 'ee', topic: 'Electrical Machines' };
+  }
+  if (has('transmission line', 'fault', 'per unit', 'p.u.', 'substation', 'feeder', 'power factor', 'kvar')) {
+    return { subjectId: 'ee', topic: 'Power Systems' };
+  }
+  if (has('circuit', 'resistance', 'reactance', 'impedance', 'resonan', 'capacitor', 'inductor', 'ohm', 'Ω')) {
+    return { subjectId: 'ee', topic: 'Electric Circuits' };
+  }
+  if (has('interest', 'depreciation', 'annuity', 'present worth', 'future worth')) return { subjectId: 'esas', topic: 'Engineering Economy' };
+  if (has('thermodynamic', 'carnot', 'entropy', 'heat engine', 'enthalpy')) return { subjectId: 'esas', topic: 'Thermodynamics' };
+  if (has('stress', 'strain', 'elongation', 'friction', 'velocity', 'acceleration', 'momentum', 'beam')) {
+    return { subjectId: 'esas', topic: 'Engineering Mechanics' };
+  }
+  if (has('derivative', 'integral', 'differential equation', 'limit of')) return { subjectId: 'math', topic: 'Calculus' };
+  if (has('matrix', 'determinant', 'vector')) return { subjectId: 'math', topic: 'Linear Algebra' };
+  if (has('probability', 'mean', 'standard deviation', 'variance')) return { subjectId: 'math', topic: 'Probability & Statistics' };
+  if (has('triangle', 'angle', 'sin', 'cos', 'tan', 'circle', 'ellipse', 'parabola')) return { subjectId: 'math', topic: 'Trigonometry & Geometry' };
+  if (has('logarithm', 'equation', 'polynomial', 'roots')) return { subjectId: 'math', topic: 'Algebra' };
+  return { subjectId: 'ee', topic: 'Unclassified' };
+}
+
+// ---------------------------------------------------------------------------
+// Turning parsed questions into staged bank questions
+// ---------------------------------------------------------------------------
+
+export interface StageOptions {
+  sourcePdfId: string;
+  sourcePdfName: string;
+  documentHash?: string;
+  method: ExtractionMethod;
+  /** Per question key ("section:number"), the result of comparing two independent readings. */
+  crossChecks?: Record<string, { result: CrossCheckResult; issues: ExtractionIssue[] }>;
+  figures?: Record<string, import('../types/index.ts').ExtractedFigure>;
+  now?: string;
+  idPrefix?: string;
+}
+
+export const questionKey = (q: { section: number; number: number }) => `${q.section}:${q.number}`;
+
+export function stageParsedQuestions(parsed: ParsedQuestion[], options: StageOptions): Question[] {
+  const now = options.now ?? new Date().toISOString();
+  return parsed.map((p, index) => {
+    const check = options.crossChecks?.[questionKey(p)];
+    const issues = [...p.issues, ...(check?.issues ?? [])];
+    const answer = p.sectionAnswerKey ?? p.inlineAnswerKey ?? p.markedAnswerKey;
+    const answerValid = Boolean(answer && p.options.some((o) => o.key === answer));
+    const suggestion = suggestClassification(`${p.stem} ${p.options.map((o) => o.text).join(' ')}`);
+    const crossCheck: CrossCheckResult = check?.result ?? 'not_run';
+    const figures = p.figureIds
+      .map((id) => options.figures?.[id])
+      .filter((f): f is NonNullable<typeof f> => Boolean(f))
+      .map((f) => ({ ...f, labels: p.figureLabels.length ? p.figureLabels : f.labels }));
+
+    if (!answer) {
+      issues.push({
+        code: 'NO_ANSWER_IN_PDF',
+        severity: 'info',
+        message: 'The PDF does not give an answer for this question. Set it yourself or ask AI for a suggested answer.',
+        field: 'answer',
+      });
+    }
+
+    const question: Question = {
+      id: `${options.idPrefix ?? 'ext'}-${Date.now().toString(36)}-${index + 1}`,
+      originalQuestionNumber: p.number,
+      question: p.stem,
+      options: p.options.map((o) => ({ ...o })),
+      correctAnswer: answerValid ? answer! : '',
+      ...(answer ? { extractedAnswerKey: answer } : {}),
+      // A solution printed in the PDF is shown as-is; AI explanations are only ever added on request.
+      explanation: p.solutionText ?? '',
+      subjectId: suggestion.subjectId,
+      subjectName: SUBJECT_NAMES[suggestion.subjectId],
+      topic: suggestion.topic,
+      difficulty: 'Average',
+      hasDiagram: figures.length > 0 || FIGURE_REFERENCE.test(p.stem),
+      hasMathEquation: /[=∫∑√πθλαβγωΩ²³⁰¹⁴⁵⁶⁷⁸⁹⁻±×÷∠^]|\b(?:sin|cos|tan|log|ln)\b/.test(`${p.stem} ${p.options.map((o) => o.text).join(' ')}`),
+      sourcePdfId: options.sourcePdfId,
+      sourcePdfName: options.sourcePdfName,
+      sourcePdfPage: p.pages[0] ?? 1,
+      sourcePdfPages: p.pages,
+      sourceRegions: p.regions,
+      ...(options.documentHash ? { sourceDocumentHash: options.documentHash } : {}),
+      contentFingerprint: fingerprintQuestion(p.stem, p.options),
+      sourceBlockText: p.rawText,
+      ...(p.solutionText ? { sourceSolutionText: p.solutionText } : {}),
+      extractionMethod: options.method,
+      extractionIssues: issues,
+      crossCheck,
+      contentStatus: 'needs_review',
+      reviewStatus: 'pending',
+      answerSource: answerValid ? 'pdf_key' : 'none',
+      figures,
+      // Answers from the PDF are as the document states them; an admin still approves the question.
+      verificationStatus: answerValid ? 'verified' : 'needs_verification',
+      extractionConfidence: 0,
+      isPublished: false,
+      createdAt: now,
+      updatedAt: now,
+      originalQuestionText: p.stem,
+      originalOptions: p.options.map((o) => ({ ...o })),
+    };
+    return refreshQuestionAssessment(question);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Assessment: content status and confidence
+// ---------------------------------------------------------------------------
+
+export function openIssues(q: Pick<Question, 'extractionIssues'>): ExtractionIssue[] {
+  return (q.extractionIssues ?? []).filter((i) => !i.acknowledged);
+}
+
+export function assessContent(q: Pick<Question, 'extractionIssues' | 'crossCheck' | 'reviewStatus'>): ContentStatus {
+  if (q.reviewStatus === 'approved') return 'verified';
+  const open = openIssues(q);
+  if (open.some((i) => i.severity === 'error')) return 'incomplete';
+  if (open.some((i) => i.severity === 'warning') || q.crossCheck !== 'agree') return 'needs_review';
+  return 'verified';
+}
+
+/** A heuristic score for sorting and highlighting. It is not a measured accuracy. */
+export function estimateConfidence(q: Pick<Question, 'extractionIssues' | 'crossCheck' | 'extractionMethod'>): number {
+  const base = q.extractionMethod === 'ocr' ? 70 : q.extractionMethod === 'manual' ? 100 : 88;
+  let score = q.crossCheck === 'agree' ? Math.max(base, 96) : q.crossCheck === 'differ' ? Math.min(base, 60) : base;
+  for (const issue of openIssues(q)) score -= issue.severity === 'error' ? 25 : issue.severity === 'warning' ? 8 : 0;
+  return Math.max(5, Math.min(100, Math.round(score)));
+}
+
+/** Re-runs the checks that depend only on the question itself, e.g. after an admin edit. */
+export function revalidateEditedQuestion(q: Question): Question {
+  const kept = (q.extractionIssues ?? []).filter((i) => !EDIT_SENSITIVE.has(i.code));
+  const fresh: ExtractionIssue[] = [];
+  if (!q.question.trim()) fresh.push({ code: 'EMPTY_STEM', severity: 'error', message: 'No question text.', field: 'stem' });
+  if (hasUnreadableText(q.question)) {
+    fresh.push({ code: 'UNREADABLE_TEXT', severity: 'error', message: 'The question still contains unreadable or uncertain text (⟦ ⟧ or �).', field: 'stem' });
+  }
+  if (q.options.length < 2) fresh.push({ code: 'NO_CHOICES', severity: 'error', message: 'At least two choices are needed.', field: 'choice' });
+  const keys = q.options.map((o) => o.key);
+  if (new Set(keys).size !== keys.length) fresh.push({ code: 'DUPLICATE_CHOICE_KEY', severity: 'error', message: 'Two choices share a letter.', field: 'choice' });
+  for (const o of q.options) {
+    if (!o.text.trim()) fresh.push({ code: 'EMPTY_CHOICE', severity: 'error', message: `Choice ${o.key} has no text.`, field: 'choice', choiceKey: o.key });
+    if (hasUnreadableText(o.text)) {
+      fresh.push({ code: 'UNREADABLE_TEXT', severity: 'error', message: `Choice ${o.key} still contains unreadable or uncertain text.`, field: 'choice', choiceKey: o.key });
+    }
+  }
+  if (q.correctAnswer && !keys.includes(q.correctAnswer)) {
+    fresh.push({ code: 'ANSWER_INVALID', severity: 'error', message: `The answer is "${q.correctAnswer}", which is not one of the choices.`, field: 'answer' });
+  }
+  return refreshQuestionAssessment({
+    ...q,
+    extractionIssues: [...kept, ...fresh],
+    contentFingerprint: q.question.trim() ? fingerprintQuestion(q.question, q.options) : q.contentFingerprint,
+  });
+}
+
+const EDIT_SENSITIVE = new Set([
+  'EMPTY_STEM',
+  'SHORT_STEM',
+  'NO_CHOICES',
+  'CHOICE_MISSING',
+  'EMPTY_CHOICE',
+  'UNREADABLE_TEXT',
+  'DUPLICATE_CHOICE_KEY',
+  'ANSWER_INVALID',
+  'ANSWER_INLINE_INVALID',
+  'ANSWER_MARKED_INVALID',
+  'ANSWER_SECTION_INVALID',
+  'FEWER_CHOICES_THAN_USUAL',
+]);
+
+export function refreshQuestionAssessment(q: Question): Question {
+  const contentStatus = assessContent(q);
+  return { ...q, contentStatus, extractionConfidence: estimateConfidence(q) };
+}
+
+/** True when the question's text or choices differ from what was extracted. */
+export function isEditedFromSource(q: Question): boolean {
+  if (q.originalQuestionText === undefined) return false;
+  if (q.question !== q.originalQuestionText) return true;
+  const original = q.originalOptions ?? [];
+  return (
+    original.length !== q.options.length || original.some((o, i) => o.key !== q.options[i].key || o.text !== q.options[i].text)
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Extraction report
+// ---------------------------------------------------------------------------
+
+export interface ReportInput {
+  filename: string;
+  fileSize?: string;
+  totalPages: number;
+  questions: Question[];
+  pages?: PageExtractionReport[];
+  documentIssues?: ExtractionIssue[];
+  engineUsed: string;
+  documentHash?: string;
+  answerKeyFound?: boolean;
+  imageReadingAvailable?: boolean;
+  /** Question numbers an admin confirmed are absent from the original PDF too. */
+  acknowledgedMissing?: number[];
+  timestamp?: string;
+}
+
 /**
- * Authentic evaluation exam questions preset generator supporting EE 1, EE 2, EE 3, ESAS, and Math.
+ * Builds the report from the staged questions, so it can be recomputed after every admin edit.
+ * "Verified" requires every question to be confirmed by an independent reading or by an admin;
+ * finishing the extraction is never enough on its own.
  */
-export function generateEvaluationExamQuestions(
-  filename = 'EE 1 Evaluation Exam.pdf'
-): ExtractedQuestionData[] {
-  const lower = filename.toLowerCase();
+export function buildExtractionReport(input: ReportInput): ExtractionReport {
+  const qs = input.questions.filter((q) => q.reviewStatus !== 'rejected');
+  const acknowledged = new Set(input.acknowledgedMissing ?? []);
+  const numbers = qs.map((q) => q.originalQuestionNumber).filter((n): n is number => typeof n === 'number');
+  const missing = qs.length ? findMissingNumbers(numbers).filter((n) => !acknowledged.has(n)) : [];
+  const counts = new Map<number, number>();
+  for (const n of numbers) counts.set(n, (counts.get(n) ?? 0) + 1);
+  const duplicates = [...counts.entries()].filter(([, c]) => c > 1).map(([n]) => n);
+  // Repeated numbers are expected when the document has several parts.
+  const parts = input.documentIssues?.some((i) => i.code === 'NUMBERING_RESTART') || qs.some((q) => q.extractionIssues?.some((i) => i.code === 'NUMBERING_RESTART'));
 
-  // --- EE 3: Power Systems, Symmetrical Faults, Transmission Lines, kVAR Correction & PEC ---
-  if (lower.includes('ee 3') || lower.includes('ee3') || lower.includes('power system') || lower.includes('fault')) {
-    return [
-      {
-        originalQuestionNumber: 1,
-        question: 'A 3-phase, 13.8 kV, 100 MVA synchronous generator has a subtransient reactance Xd" = 0.15 p.u. Calculate the initial symmetrical RMS short-circuit current in amperes for a solid three-phase fault at its terminals.',
-        options: [
-          { key: 'A', text: '27,890 A' },
-          { key: 'B', text: '16,100 A' },
-          { key: 'C', text: '31,450 A' },
-          { key: 'D', text: '24,150 A' },
-        ],
-        correctAnswer: 'A',
-        extractedAnswerKey: 'A',
-        explanation: 'Base current I_base = S_base / (√3 · V_base) = (100 × 10^6) / (√3 × 13,800) = 4,183.7 A. Symmetrical per-unit short-circuit current I_sc,pu = 1.0 / Xd" = 1.0 / 0.15 = 6.667 p.u. Actual fault current I_sc = 6.667 × 4,183.7 A = 27,891 A ≈ 27,890 A.',
-        stepByStepSolution:
-          '1. Base Current Calculation:\n' +
-          '   I_base = S_base / (√3 × V_base)\n' +
-          '   I_base = (100 × 10^6 VA) / (√3 × 13,800 V) = 100,000,000 / 23,898.54 = 4,183.70 A\n\n' +
-          '2. Short-Circuit Current in Per-Unit:\n' +
-          '   I_sc,pu = V_pu / Xd" = 1.0 / 0.15 = 6.6667 p.u.\n\n' +
-          '3. Symmetrical RMS Short-Circuit Current:\n' +
-          '   I_sc = I_sc,pu × I_base = 6.6667 × 4,183.70 A = 27,891.3 A ≈ 27,890 A\n' +
-          '   Final Answer = 27,890 A (Option A).',
-        formulasUsed: ['I_base = S_base / (√3 · V_base)', 'I_sc = I_base / Xd"'],
-        givenValues: [
-          { label: 'Rating (S_base)', value: '100 MVA' },
-          { label: 'Voltage (V_base)', value: '13.8 kV' },
-          { label: 'Subtransient Reactance (Xd")', value: '0.15 p.u.' },
-        ],
-        finalAnswerWithUnit: '27,890 A',
-        subjectId: 'ee',
-        subjectName: 'Electrical Engineering Professional Subjects',
-        topic: 'Power Systems & Fault Analysis',
-        difficulty: 'Average',
-        extractionConfidence: 99,
-        verificationStatus: 'verified',
-        sourcePdfPage: 1,
-        hasMathEquation: true,
-        originalQuestionText: 'A 3-phase, 13.8 kV, 100 MVA synchronous generator has a subtransient reactance Xd" = 0.15 p.u. Calculate the initial symmetrical RMS short-circuit current in amperes for a solid three-phase fault at its terminals.',
-        originalOptions: [
-          { key: 'A', text: '27,890 A' },
-          { key: 'B', text: '16,100 A' },
-          { key: 'C', text: '31,450 A' },
-          { key: 'D', text: '24,150 A' },
-        ],
-      },
-      {
-        originalQuestionNumber: 2,
-        question: 'A 230 kV three-phase overhead transmission line has a series inductance of 1.25 mH/km and a shunt capacitance of 0.0092 μF/km per phase. Determine the surge impedance (characteristic impedance) of the transmission line in ohms.',
-        options: [
-          { key: 'A', text: '368.6 Ω' },
-          { key: 'B', text: '412.5 Ω' },
-          { key: 'C', text: '320.0 Ω' },
-          { key: 'D', text: '285.4 Ω' },
-        ],
-        correctAnswer: 'A',
-        extractedAnswerKey: 'A',
-        explanation: 'Surge impedance (characteristic impedance for a lossless line) is given by Z0 = √(L / C) = √((1.25 × 10^-3) / (0.0092 × 10^-6)) = √(135,869.57) = 368.60 Ω.',
-        stepByStepSolution:
-          '1. Surge Impedance Formula for Lossless Line:\n' +
-          '   Z0 = √(L / C)\n\n' +
-          '2. Substitute given per-phase values:\n' +
-          '   L = 1.25 × 10^-3 H/km\n' +
-          '   C = 0.0092 × 10^-6 F/km = 9.2 × 10^-9 F/km\n' +
-          '   L / C = (1.25 × 10^-3) / (9.2 × 10^-9) = 135,869.57 Ω²\n\n' +
-          '3. Compute Characteristic Impedance:\n' +
-          '   Z0 = √(135,869.57) = 368.60 Ω\n' +
-          '   Final Answer = 368.6 Ω (Option A).',
-        formulasUsed: ['Z0 = √(L / C)'],
-        givenValues: [
-          { label: 'Line Inductance (L)', value: '1.25 mH/km' },
-          { label: 'Line Capacitance (C)', value: '0.0092 μF/km' },
-          { label: 'System Voltage', value: '230 kV' },
-        ],
-        finalAnswerWithUnit: '368.6 Ω',
-        subjectId: 'ee',
-        subjectName: 'Electrical Engineering Professional Subjects',
-        topic: 'Transmission & Distribution Lines',
-        difficulty: 'Easy',
-        extractionConfidence: 99,
-        verificationStatus: 'verified',
-        sourcePdfPage: 1,
-        hasMathEquation: true,
-        originalQuestionText: 'A 230 kV three-phase overhead transmission line has a series inductance of 1.25 mH/km and a shunt capacitance of 0.0092 μF/km per phase. Determine the surge impedance (characteristic impedance) of the transmission line in ohms.',
-        originalOptions: [
-          { key: 'A', text: '368.6 Ω' },
-          { key: 'B', text: '412.5 Ω' },
-          { key: 'C', text: '320.0 Ω' },
-          { key: 'D', text: '285.4 Ω' },
-        ],
-      },
-      {
-        originalQuestionNumber: 3,
-        question: 'An industrial factory draws an active load of 600 kW at an existing power factor of 0.70 lagging from a 480 V, 3-phase, 60 Hz feeder. Calculate the required rating of the shunt capacitor bank in kVAR to improve the overall power factor to 0.95 lagging.',
-        options: [
-          { key: 'A', text: '415 kVAR' },
-          { key: 'B', text: '380 kVAR' },
-          { key: 'C', text: '450 kVAR' },
-          { key: 'D', text: '350 kVAR' },
-        ],
-        correctAnswer: 'A',
-        extractedAnswerKey: 'A',
-        explanation: 'Initial angle θ1 = arccos(0.70) = 45.57°, tan θ1 = 1.0202. Desired angle θ2 = arccos(0.95) = 18.19°, tan θ2 = 0.3287. Required reactive power QC = P(tan θ1 - tan θ2) = 600 kW × (1.0202 - 0.3287) = 600 × 0.6915 = 414.9 kVAR ≈ 415 kVAR.',
-        stepByStepSolution:
-          '1. Angular Relationships:\n' +
-          '   θ1 = arccos(0.70) = 45.573°  =>  tan θ1 = 1.0202\n' +
-          '   θ2 = arccos(0.95) = 18.195°  =>  tan θ2 = 0.3287\n\n' +
-          '2. Capacitor Bank Reactive Power Formula:\n' +
-          '   QC = P × (tan θ1 - tan θ2)\n\n' +
-          '3. Compute Required kVAR:\n' +
-          '   QC = 600 kW × (1.0202 - 0.3287) = 600 × 0.6915 = 414.90 kVAR\n' +
-          '   Rounding to standard equipment rating: 415 kVAR\n' +
-          '   Final Answer = 415 kVAR (Option A).',
-        formulasUsed: ['QC = P · (tan θ1 - tan θ2)', 'cos θ = P / S'],
-        givenValues: [
-          { label: 'Real Power (P)', value: '600 kW' },
-          { label: 'Initial Power Factor', value: '0.70 lagging' },
-          { label: 'Target Power Factor', value: '0.95 lagging' },
-          { label: 'System Voltage', value: '480 V' },
-        ],
-        finalAnswerWithUnit: '415 kVAR',
-        subjectId: 'ee',
-        subjectName: 'Electrical Engineering Professional Subjects',
-        topic: 'Power Factor Correction & Power Quality',
-        difficulty: 'Average',
-        extractionConfidence: 98,
-        verificationStatus: 'verified',
-        sourcePdfPage: 2,
-        hasMathEquation: true,
-        originalQuestionText: 'An industrial factory draws an active load of 600 kW at an existing power factor of 0.70 lagging from a 480 V, 3-phase, 60 Hz feeder. Calculate the required rating of the shunt capacitor bank in kVAR to improve the overall power factor to 0.95 lagging.',
-        originalOptions: [
-          { key: 'A', text: '415 kVAR' },
-          { key: 'B', text: '380 kVAR' },
-          { key: 'C', text: '450 kVAR' },
-          { key: 'D', text: '350 kVAR' },
-        ],
-      },
-      {
-        originalQuestionNumber: 4,
-        question: 'An electrical engineering design office measuring 15 m by 10 m requires an average illuminance of 500 lux on the working plane. The luminaires to be installed utilize twin 32 W fluorescent lamps each delivering 2,800 lumens. If the Coefficient of Utilization (CU) is 0.60 and the Maintenance Factor (MF) is 0.75, determine the number of twin-lamp luminaires required.',
-        options: [
-          { key: 'A', text: '30 luminaires' },
-          { key: 'B', text: '25 luminaires' },
-          { key: 'C', text: '36 luminaires' },
-          { key: 'D', text: '40 luminaires' },
-        ],
-        correctAnswer: 'A',
-        extractedAnswerKey: 'A',
-        explanation: 'Floor Area A = 15 × 10 = 150 m². Total lumens required on working plane = E × A = 500 lux × 150 m² = 75,000 lumens. Lumens per twin fixture = 2 × 2800 = 5600 lumens. Effective flux per fixture = 5600 × 0.60 × 0.75 = 2520 lumens. Number of luminaires N = 75,000 / 2520 = 29.76 ≈ 30 luminaires.',
-        stepByStepSolution:
-          '1. Total Working Plane Luminous Flux:\n' +
-          '   Φ_total = E × A = 500 lux × (15 m × 10 m) = 500 × 150 = 75,000 lumens\n\n' +
-          '2. Effective Flux Delivered per Luminaire:\n' +
-          '   Φ_fixture = (2 lamps × 2,800 lumens) = 5,600 lumens\n' +
-          '   Φ_effective = Φ_fixture × CU × MF = 5,600 × 0.60 × 0.75 = 2,520 lumens\n\n' +
-          '3. Calculate Fixture Quantity:\n' +
-          '   N = Φ_total / Φ_effective = 75,000 / 2,520 = 29.76\n' +
-          '   Rounding up to nearest whole fixture = 30 luminaires\n' +
-          '   Final Answer = 30 luminaires (Option A).',
-        formulasUsed: ['N = (E · A) / (Lamp Lumens · Number of Lamps · CU · MF)'],
-        givenValues: [
-          { label: 'Room Dimensions', value: '15 m × 10 m (150 m²)' },
-          { label: 'Required Illuminance (E)', value: '500 lux' },
-          { label: 'Lamp Rating', value: 'Twin 32W, 2800 lm each' },
-          { label: 'CU / MF', value: 'CU = 0.60, MF = 0.75' },
-        ],
-        finalAnswerWithUnit: '30 luminaires',
-        subjectId: 'ee',
-        subjectName: 'Electrical Engineering Professional Subjects',
-        topic: 'Illumination Engineering & Lighting Design',
-        difficulty: 'Average',
-        extractionConfidence: 99,
-        verificationStatus: 'verified',
-        sourcePdfPage: 2,
-        hasMathEquation: true,
-        originalQuestionText: 'An electrical engineering design office measuring 15 m by 10 m requires an average illuminance of 500 lux on the working plane. The luminaires to be installed utilize twin 32 W fluorescent lamps each delivering 2,800 lumens. If the Coefficient of Utilization (CU) is 0.60 and the Maintenance Factor (MF) is 0.75, determine the number of twin-lamp luminaires required.',
-        originalOptions: [
-          { key: 'A', text: '30 luminaires' },
-          { key: 'B', text: '25 luminaires' },
-          { key: 'C', text: '36 luminaires' },
-          { key: 'D', text: '40 luminaires' },
-        ],
-      },
-      {
-        originalQuestionNumber: 5,
-        question: 'Under the Philippine Electrical Code (PEC 1), what is the maximum standard rating of inverse time circuit breaker permitted for branch circuit short-circuit and ground-fault protection of a single 3-phase squirrel cage induction motor with no code letter, having a full-load current of 40 amperes?',
-        options: [
-          { key: 'A', text: '100 A (250% rating)' },
-          { key: 'B', text: '80 A (200% rating)' },
-          { key: 'C', text: '125 A (300% rating)' },
-          { key: 'D', text: '70 A (175% rating)' },
-        ],
-        correctAnswer: 'A',
-        extractedAnswerKey: 'A',
-        explanation: 'PEC 1 Article 4.30 Table 4.30.4.2 specifies that for squirrel-cage motors without code letters, the maximum rating for an inverse time circuit breaker is 250% of full-load current: 40 A × 2.50 = 100 A.',
-        stepByStepSolution:
-          '1. PEC 1 Motor Protection Rule (Table 4.30.4.2):\n' +
-          '   Branch circuit inverse time circuit breaker multiplier = 250% (2.50).\n\n' +
-          '2. Calculation:\n' +
-          '   Max Breaker Rating = Motor FLC × 2.50 = 40 A × 2.50 = 100 A.\n\n' +
-          '3. Standard Breaker Rating:\n' +
-          '   100 A is a standard standard inverse time breaker size.\n' +
-          '   Final Answer = 100 A (250% rating) (Option A).',
-        formulasUsed: ['Breaker Rating = Motor FLC · 250%'],
-        givenValues: [
-          { label: 'Motor Full-Load Current', value: '40 A' },
-          { label: 'Motor Type', value: '3-Phase Squirrel Cage' },
-          { label: 'Protection Type', value: 'Inverse Time Circuit Breaker' },
-        ],
-        finalAnswerWithUnit: '100 A',
-        subjectId: 'esas',
-        subjectName: 'Engineering Sciences & Allied Subjects',
-        topic: 'Philippine Electrical Code (PEC)',
-        difficulty: 'Easy',
-        extractionConfidence: 99,
-        verificationStatus: 'verified',
-        sourcePdfPage: 2,
-        originalQuestionText: 'Under the Philippine Electrical Code (PEC 1), what is the maximum standard rating of inverse time circuit breaker permitted for branch circuit short-circuit and ground-fault protection of a single 3-phase squirrel cage induction motor with no code letter, having a full-load current of 40 amperes?',
-        originalOptions: [
-          { key: 'A', text: '100 A (250% rating)' },
-          { key: 'B', text: '80 A (200% rating)' },
-          { key: 'C', text: '125 A (300% rating)' },
-          { key: 'D', text: '70 A (175% rating)' },
-        ],
-      },
-    ];
+  const statuses = qs.map((q) => assessContent(q));
+  const incompleteCount = statuses.filter((s) => s === 'incomplete').length;
+  const reviewCount = statuses.filter((s) => s !== 'verified').length;
+  const verifiedCount = statuses.filter((s) => s === 'verified').length;
+  const approvedCount = qs.filter((q) => q.reviewStatus === 'approved').length;
+  const crossCheckedCount = qs.filter((q) => q.crossCheck === 'agree').length;
+  const discrepancies = qs.filter((q) => q.crossCheck === 'differ' || q.verificationStatus === 'discrepancy_flagged').length;
+  const pagesWithIssues = (input.pages ?? []).filter((p) => p.status !== 'ok').map((p) => p.page);
+  const pageErrors = (input.pages ?? []).filter((p) => p.status === 'error');
+  const pagesWithOcrIssues = (input.pages ?? [])
+    .filter((p) => p.issues.some((i) => /image|OCR|reading|scanned|unreadable/i.test(i)))
+    .map((p) => p.page);
+  for (const q of qs) {
+    if (assessContent(q) === 'incomplete' && q.sourcePdfPage && !pagesWithIssues.includes(q.sourcePdfPage)) {
+      pagesWithIssues.push(q.sourcePdfPage);
+    }
+  }
+  pagesWithIssues.sort((a, b) => a - b);
+
+  const warnings: string[] = [];
+  const docErrors = (input.documentIssues ?? []).filter((i) => i.severity !== 'info' && i.code !== 'MISSING_NUMBERS');
+  warnings.push(...docErrors.map((i) => i.message));
+  if (missing.length) warnings.push(`Question number(s) not found: ${missing.join(', ')}.`);
+  if (duplicates.length && !parts) warnings.push(`Question number(s) appearing more than once: ${duplicates.join(', ')}.`);
+  for (const p of pageErrors) warnings.push(`Page ${p.page}: ${p.issues.join(' ')}`);
+  if (input.imageReadingAvailable === false) {
+    warnings.push('Page images were not read (GEMINI_API_KEY is not configured), so no question could be cross-checked against the page image. Every question needs an administrator check.');
   }
 
-  // --- EE 2: AC Circuits, Two-Wattmeter, DC Machines, Transformer Regulation & Maximum Power ---
-  if (lower.includes('ee 2') || lower.includes('ee2') || lower.includes('dc machine') || lower.includes('wattmeter')) {
-    return [
-      {
-        originalQuestionNumber: 1,
-        question: 'Two wattmeters connected to measure the active power of a balanced 3-phase, 3-wire load read 5.0 kW and 2.0 kW respectively. Determine the total active power and the operating power factor of the load.',
-        options: [
-          { key: 'A', text: 'P = 7.0 kW, pf = 0.814 lagging' },
-          { key: 'B', text: 'P = 7.0 kW, pf = 0.866 lagging' },
-          { key: 'C', text: 'P = 3.0 kW, pf = 0.500 lagging' },
-          { key: 'D', text: 'P = 7.0 kW, pf = 0.920 lagging' },
-        ],
-        correctAnswer: 'A',
-        extractedAnswerKey: 'A',
-        explanation: 'Total power P = W1 + W2 = 5.0 + 2.0 = 7.0 kW. Power factor angle tan θ = √3(W1 - W2) / (W1 + W2) = √3(5 - 2) / (5 + 2) = √3(3) / 7 = 5.196 / 7 = 0.7423. θ = arctan(0.7423) = 36.59°. Power factor = cos(36.59°) = 0.814.',
-        stepByStepSolution:
-          '1. Total Active Power:\n' +
-          '   P_total = W1 + W2 = 5.0 kW + 2.0 kW = 7.0 kW\n\n' +
-          '2. Two-Wattmeter Tangent Formula:\n' +
-          '   tan θ = √3 × (W1 - W2) / (W1 + W2)\n' +
-          '   tan θ = √3 × (5.0 - 2.0) / (5.0 + 2.0) = (1.73205 × 3) / 7 = 5.19615 / 7 = 0.74231\n\n' +
-          '3. Compute Power Factor:\n' +
-          '   θ = arctan(0.74231) = 36.586°\n' +
-          '   pf = cos(36.586°) = 0.8142 ≈ 0.814 lagging\n' +
-          '   Final Answer = P = 7.0 kW, pf = 0.814 lagging (Option A).',
-        formulasUsed: ['P = W1 + W2', 'tan θ = √3(W1 - W2) / (W1 + W2)', 'pf = cos θ'],
-        givenValues: [
-          { label: 'Wattmeter 1 (W1)', value: '5.0 kW' },
-          { label: 'Wattmeter 2 (W2)', value: '2.0 kW' },
-        ],
-        finalAnswerWithUnit: '7.0 kW, 0.814',
-        subjectId: 'ee',
-        subjectName: 'Electrical Engineering Professional Subjects',
-        topic: 'DC & AC Circuits',
-        difficulty: 'Average',
-        extractionConfidence: 99,
-        verificationStatus: 'verified',
-        sourcePdfPage: 1,
-        hasMathEquation: true,
-        originalQuestionText: 'Two wattmeters connected to measure the active power of a balanced 3-phase, 3-wire load read 5.0 kW and 2.0 kW respectively. Determine the total active power and the operating power factor of the load.',
-        originalOptions: [
-          { key: 'A', text: 'P = 7.0 kW, pf = 0.814 lagging' },
-          { key: 'B', text: 'P = 7.0 kW, pf = 0.866 lagging' },
-          { key: 'C', text: 'P = 3.0 kW, pf = 0.500 lagging' },
-          { key: 'D', text: 'P = 7.0 kW, pf = 0.920 lagging' },
-        ],
-      },
-      {
-        originalQuestionNumber: 2,
-        question: 'A 220 V DC shunt motor has an armature resistance of 0.25 Ω. At rated full load, it draws an armature current of 50 A while running at 1200 rpm. What will be the developed back EMF at full load?',
-        options: [
-          { key: 'A', text: '207.5 V' },
-          { key: 'B', text: '232.5 V' },
-          { key: 'C', text: '215.0 V' },
-          { key: 'D', text: '200.0 V' },
-        ],
-        correctAnswer: 'A',
-        extractedAnswerKey: 'A',
-        explanation: 'For a DC motor, terminal voltage V = Eb + Ia·Ra, so back EMF Eb = V - Ia·Ra = 220 V - (50 A × 0.25 Ω) = 220 - 12.5 = 207.5 V.',
-        stepByStepSolution:
-          '1. DC Motor Voltage Balance Equation:\n' +
-          '   V = Eb + Ia × Ra  =>  Eb = V - (Ia × Ra)\n\n' +
-          '2. Substitute given values:\n' +
-          '   Ia × Ra = 50 A × 0.25 Ω = 12.5 V\n' +
-          '   Eb = 220 V - 12.5 V = 207.5 V\n\n' +
-          '3. Final Answer = 207.5 V (Option A).',
-        formulasUsed: ['Eb = V - Ia · Ra'],
-        givenValues: [
-          { label: 'Terminal Voltage (V)', value: '220 V' },
-          { label: 'Armature Current (Ia)', value: '50 A' },
-          { label: 'Armature Resistance (Ra)', value: '0.25 Ω' },
-        ],
-        finalAnswerWithUnit: '207.5 V',
-        subjectId: 'ee',
-        subjectName: 'Electrical Engineering Professional Subjects',
-        topic: 'DC & AC Machinery',
-        difficulty: 'Easy',
-        extractionConfidence: 99,
-        verificationStatus: 'verified',
-        sourcePdfPage: 1,
-        hasMathEquation: true,
-        originalQuestionText: 'A 220 V DC shunt motor has an armature resistance of 0.25 Ω. At rated full load, it draws an armature current of 50 A while running at 1200 rpm. What will be the developed back EMF at full load?',
-        originalOptions: [
-          { key: 'A', text: '207.5 V' },
-          { key: 'B', text: '232.5 V' },
-          { key: 'C', text: '215.0 V' },
-          { key: 'D', text: '200.0 V' },
-        ],
-      },
-    ];
-  }
+  let overallStatus: ExtractionReportStatus;
+  const failed = qs.length === 0 || (input.pages && input.pages.length > 0 && pageErrors.length === input.pages.length);
+  if (failed) overallStatus = 'failed';
+  else if (incompleteCount > 0 || missing.length > 0 || pageErrors.length > 0 || (duplicates.length > 0 && !parts)) overallStatus = 'incomplete';
+  else if (reviewCount > 0) overallStatus = 'needs_review';
+  else overallStatus = 'verified';
 
-  // --- Default: EE 1 / Comprehensive Board Evaluation Questions ---
-  return [
-    {
-      originalQuestionNumber: 1,
-      question: 'A 3-phase, 4-pole, 60 Hz induction motor has a full-load slip of 4%. Calculate the rotor speed in rpm at full-load.',
-      options: [
-        { key: 'A', text: '1728 rpm' },
-        { key: 'B', text: '1800 rpm' },
-        { key: 'C', text: '1750 rpm' },
-        { key: 'D', text: '1680 rpm' },
-      ],
-      correctAnswer: 'A',
-      extractedAnswerKey: 'A',
-      explanation: 'Synchronous speed Ns = (120 × f) / P = (120 × 60) / 4 = 1800 rpm. At s = 4% (0.04), rotor speed Nr = Ns(1 - s) = 1800 × (1 - 0.04) = 1728 rpm.',
-      stepByStepSolution:
-        '1. Synchronous Speed Formula:\n' +
-        '   Ns = (120 × f) / P = (120 × 60) / 4 = 1800 rpm\n\n' +
-        '2. Rotor Speed Formula:\n' +
-        '   Nr = Ns × (1 - s) = 1800 × (1 - 0.04) = 1800 × 0.96 = 1728 rpm\n\n' +
-        '3. Verification:\n' +
-        '   The rotor speed is slightly below synchronous speed, conforming to standard induction machine dynamics.\n' +
-        '   Final Answer = 1728 rpm (Option A).',
-      formulasUsed: ['Ns = 120 · f / P', 'Nr = Ns · (1 - s)'],
-      givenValues: [
-        { label: 'Frequency (f)', value: '60 Hz' },
-        { label: 'Number of Poles (P)', value: '4 poles' },
-        { label: 'Full-load slip (s)', value: '4% (0.04)' },
-      ],
-      finalAnswerWithUnit: '1728 rpm',
-      subjectId: 'ee',
-      subjectName: 'Electrical Engineering Professional Subjects',
-      topic: 'Transformers & Electrical Machinery',
-      difficulty: 'Average',
-      extractionConfidence: 98,
-      verificationStatus: 'verified',
-      sourcePdfPage: 1,
-      hasMathEquation: true,
-      originalQuestionText: 'A 3-phase, 4-pole, 60 Hz induction motor has a full-load slip of 4%. Calculate the rotor speed in rpm at full-load.',
-      originalOptions: [
-        { key: 'A', text: '1728 rpm' },
-        { key: 'B', text: '1800 rpm' },
-        { key: 'C', text: '1750 rpm' },
-        { key: 'D', text: '1680 rpm' },
-      ],
-    },
-    {
-      originalQuestionNumber: 2,
-      question: 'A series RLC circuit has resistance R = 10 Ω, inductance L = 0.1 H, and capacitance C = 100 μF. Determine the resonant frequency in Hertz.',
-      options: [
-        { key: 'A', text: '50.33 Hz' },
-        { key: 'B', text: '159.2 Hz' },
-        { key: 'C', text: '79.58 Hz' },
-        { key: 'D', text: '100.0 Hz' },
-      ],
-      correctAnswer: 'A',
-      extractedAnswerKey: 'A',
-      explanation: 'At resonance, inductive reactance equals capacitive reactance (XL = XC). The resonant frequency fr = 1 / [2π√(LC)] = 1 / [2π√(0.1 × 100×10^-6)] = 50.33 Hz.',
-      stepByStepSolution:
-        '1. Formula for Series Resonant Frequency:\n' +
-        '   fr = 1 / [2 × π × √(L × C)]\n\n' +
-        '2. Substitute given values:\n' +
-        '   L × C = 0.1 × (100 × 10^-6) = 10^-5\n' +
-        '   √(L × C) = √(10^-5) = 3.16228 × 10^-3\n' +
-        '   fr = 1 / [2 × π × 3.16228 × 10^-3] = 1 / 0.019869 = 50.33 Hz\n\n' +
-        '3. Verification:\n' +
-        '   At 50.33 Hz, XL = 2π(50.33)(0.1) = 31.62 Ω; XC = 1/(2π(50.33)(10^-4)) = 31.62 Ω.\n' +
-        '   Final Answer = 50.33 Hz (Option A).',
-      formulasUsed: ['fr = 1 / [2 · π · √(L · C)]', 'XL = XC'],
-      givenValues: [
-        { label: 'Resistance (R)', value: '10 Ω' },
-        { label: 'Inductance (L)', value: '0.1 H' },
-        { label: 'Capacitance (C)', value: '100 μF' },
-      ],
-      finalAnswerWithUnit: '50.33 Hz',
-      subjectId: 'ee',
-      subjectName: 'Electrical Engineering Professional Subjects',
-      topic: 'DC & AC Circuits',
-      difficulty: 'Average',
-      extractionConfidence: 98,
-      verificationStatus: 'verified',
-      sourcePdfPage: 1,
-      hasMathEquation: true,
-      originalQuestionText: 'A series RLC circuit has resistance R = 10 Ω, inductance L = 0.1 H, and capacitance C = 100 μF. Determine the resonant frequency in Hertz.',
-      originalOptions: [
-        { key: 'A', text: '50.33 Hz' },
-        { key: 'B', text: '159.2 Hz' },
-        { key: 'C', text: '79.58 Hz' },
-        { key: 'D', text: '100.0 Hz' },
-      ],
-    },
-    {
-      originalQuestionNumber: 3,
-      question: 'A 25 kVA, 2400/240 V single-phase distribution transformer has a core loss of 200 W and full-load copper loss of 350 W. Calculate the efficiency at full-load with 0.85 power factor lagging.',
-      options: [
-        { key: 'A', text: '97.48%' },
-        { key: 'B', text: '98.20%' },
-        { key: 'C', text: '96.50%' },
-        { key: 'D', text: '95.85%' },
-      ],
-      correctAnswer: 'A',
-      extractedAnswerKey: 'A',
-      explanation: 'Active output power Pout = S × cos θ = 25 kVA × 0.85 = 21,250 W. Total losses = Pcore + Pcu = 200 W + 350 W = 550 W. Efficiency η = 21250 / (21250 + 550) = 97.48%.',
-      stepByStepSolution:
-        '1. Output Active Power Calculation:\n' +
-        '   Pout = S × cos θ = 25,000 VA × 0.85 = 21,250 W\n\n' +
-        '2. Total Losses Calculation:\n' +
-        '   Ploss = Pcore + Pcu = 200 W + 350 W = 550 W\n\n' +
-        '3. Input Power and Efficiency:\n' +
-        '   Pin = Pout + Ploss = 21,250 + 550 = 21,800 W\n' +
-        '   η = (Pout / Pin) × 100% = (21,250 / 21,800) × 100% = 97.477% ≈ 97.48%\n' +
-        '   Final Answer = 97.48% (Option A).',
-      formulasUsed: ['Pout = S · cos θ', 'η = Pout / (Pout + Pcore + Pcu) · 100%'],
-      givenValues: [
-        { label: 'Rating (S)', value: '25 kVA' },
-        { label: 'Core Loss', value: '200 W' },
-        { label: 'Copper Loss', value: '350 W' },
-        { label: 'Power Factor', value: '0.85 lagging' },
-      ],
-      finalAnswerWithUnit: '97.48%',
-      subjectId: 'ee',
-      subjectName: 'Electrical Engineering Professional Subjects',
-      topic: 'Transformers & Electrical Machinery',
-      difficulty: 'Average',
-      extractionConfidence: 98,
-      verificationStatus: 'verified',
-      sourcePdfPage: 1,
-      hasMathEquation: true,
-      originalQuestionText: 'A 25 kVA, 2400/240 V single-phase distribution transformer has a core loss of 200 W and full-load copper loss of 350 W. Calculate the efficiency at full-load with 0.85 power factor lagging.',
-      originalOptions: [
-        { key: 'A', text: '97.48%' },
-        { key: 'B', text: '98.20%' },
-        { key: 'C', text: '96.50%' },
-        { key: 'D', text: '95.85%' },
-      ],
-    },
-    {
-      originalQuestionNumber: 4,
-      question: 'What is the resistance of a conductor having a resistivity of 1.72 × 10⁻⁸ Ω·m, a length of 100 meters, and a cross-sectional area of 2 mm²?',
-      options: [
-        { key: 'A', text: '0.86 Ω' },
-        { key: 'B', text: '0.43 Ω' },
-        { key: 'C', text: '1.72 Ω' },
-        { key: 'D', text: '2.15 Ω' },
-      ],
-      correctAnswer: 'A',
-      extractedAnswerKey: 'A',
-      explanation: 'Resistance R = ρ · L / A. Area A = 2 mm² = 2 × 10⁻⁶ m². R = (1.72 × 10⁻⁸ × 100) / (2 × 10⁻⁶) = 1.72 × 10⁻⁶ / 2 × 10⁻⁶ = 0.86 Ω.',
-      stepByStepSolution:
-        '1. Formula:\n' +
-        '   R = ρ × (L / A)\n\n' +
-        '2. Convert Area to square meters:\n' +
-        '   A = 2 mm² = 2 × 10⁻⁶ m²\n\n' +
-        '3. Substitute:\n' +
-        '   R = (1.72 × 10⁻⁸ Ω·m × 100 m) / (2 × 10⁻⁶ m²) = 0.86 Ω\n' +
-        '   Final Answer = 0.86 Ω (Option A).',
-      formulasUsed: ['R = ρ · L / A'],
-      givenValues: [
-        { label: 'Resistivity (ρ)', value: '1.72 × 10⁻⁸ Ω·m' },
-        { label: 'Length (L)', value: '100 m' },
-        { label: 'Area (A)', value: '2 mm²' },
-      ],
-      finalAnswerWithUnit: '0.86 Ω',
-      subjectId: 'ee',
-      subjectName: 'Electrical Engineering Professional Subjects',
-      topic: 'DC & AC Circuits',
-      difficulty: 'Easy',
-      extractionConfidence: 99,
-      verificationStatus: 'verified',
-      sourcePdfPage: 2,
-      hasMathEquation: true,
-      originalQuestionText: 'What is the resistance of a conductor having a resistivity of 1.72 × 10⁻⁸ Ω·m, a length of 100 meters, and a cross-sectional area of 2 mm²?',
-      originalOptions: [
-        { key: 'A', text: '0.86 Ω' },
-        { key: 'B', text: '0.43 Ω' },
-        { key: 'C', text: '1.72 Ω' },
-        { key: 'D', text: '2.15 Ω' },
-      ],
-    },
-    {
-      originalQuestionNumber: 5,
-      question: 'According to the Philippine Electrical Code (PEC 1), what is the maximum number of quarter bends allowed in a conduit run between pull boxes?',
-      options: [
-        { key: 'A', text: '4 quarter bends (360 degrees)' },
-        { key: 'B', text: '3 quarter bends (270 degrees)' },
-        { key: 'C', text: '2 quarter bends (180 degrees)' },
-        { key: 'D', text: '5 quarter bends (450 degrees)' },
-      ],
-      correctAnswer: 'A',
-      extractedAnswerKey: 'A',
-      explanation: 'Under PEC 1 Article 3.58 / 3.44, a run of conduit between pull points shall not contain more than the equivalent of 4 quarter bends (360 degrees total) to avoid damaging wire insulation.',
-      stepByStepSolution:
-        '1. Philippine Electrical Code Rule (PEC 1):\n' +
-        '   The maximum allowable total degrees of bend between pull points is 360 degrees.\n\n' +
-        '2. Calculation:\n' +
-        '   Each quarter bend = 90 degrees.\n' +
-        '   360° / 90° = 4 quarter bends.\n\n' +
-        '3. Official Answer = 4 quarter bends (360 degrees) (Option A).',
-      formulasUsed: ['PEC Art. 3.58.26: Total bends ≤ 360°'],
-      givenValues: [
-        { label: 'Max Total Bend', value: '360 degrees' },
-        { label: 'Quarter Bend Angle', value: '90 degrees' },
-      ],
-      finalAnswerWithUnit: '4 quarter bends (360°)',
-      subjectId: 'esas',
-      subjectName: 'Engineering Sciences & Allied Subjects',
-      topic: 'Philippine Electrical Code (PEC)',
-      difficulty: 'Easy',
-      extractionConfidence: 99,
-      verificationStatus: 'verified',
-      sourcePdfPage: 2,
-      originalQuestionText: 'According to the Philippine Electrical Code (PEC 1), what is the maximum number of quarter bends allowed in a conduit run between pull boxes?',
-      originalOptions: [
-        { key: 'A', text: '4 quarter bends (360 degrees)' },
-        { key: 'B', text: '3 quarter bends (270 degrees)' },
-        { key: 'C', text: '2 quarter bends (180 degrees)' },
-        { key: 'D', text: '5 quarter bends (450 degrees)' },
-      ],
-    },
-  ];
+  const notes: string[] = [];
+  if (overallStatus === 'failed') {
+    notes.push(qs.length === 0 ? 'No questions could be identified in this document.' : 'No page could be read reliably.');
+  }
+  if (overallStatus === 'verified') {
+    notes.push(
+      approvedCount === qs.length
+        ? 'Every question was approved by an administrator after comparison with the PDF.'
+        : `Every question was confirmed: ${crossCheckedCount} by matching two independent readings of the page, ${approvedCount} by an administrator.`
+    );
+  }
+  if (reviewCount > 0) notes.push(`${reviewCount} question(s) still need an administrator to compare them with the PDF.`);
+  if (input.answerKeyFound) notes.push('An answer key was found in the document and matched to the questions by number.');
+
+  return {
+    filename: input.filename,
+    fileSize: input.fileSize,
+    totalPages: input.totalPages,
+    totalQuestionsDetected: qs.length,
+    totalQuestionsExtracted: qs.length - incompleteCount,
+    totalChoicesDetected: qs.reduce((sum, q) => sum + q.options.length, 0),
+    questionsRequiringVerification: reviewCount,
+    verifiedQuestionsCount: verifiedCount,
+    flaggedDiscrepanciesCount: discrepancies,
+    incompleteQuestionsCount: incompleteCount,
+    pagesWithIssues,
+    sequenceGaps: missing.map((n) => `Question ${n} was not found`),
+    overallStatus,
+    engineUsed: input.engineUsed,
+    notes,
+    extractionTimestamp: input.timestamp ?? new Date().toISOString(),
+    documentHash: input.documentHash,
+    pages: input.pages,
+    missingQuestionNumbers: missing,
+    duplicateQuestionNumbers: parts ? [] : duplicates,
+    pagesWithOcrIssues,
+    warnings,
+    crossCheckedCount,
+    approvedCount,
+    answerKeyFound: input.answerKeyFound,
+    imageReadingAvailable: input.imageReadingAvailable,
+  };
 }

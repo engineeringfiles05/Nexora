@@ -70,7 +70,18 @@ test('AI routes need the right token, then validate input, then need a Gemini ke
   assert.equal((await post(route, { rawText: 'x' }, 'wrong-token')).status, 401);
   assert.equal((await post(route, {}, 'correct-token')).status, 400);
   assert.equal((await post(route, { rawText: 123 }, 'correct-token')).status, 400);
-  assert.equal((await post(route, { rawText: 'x' }, 'correct-token')).status, 503);
+  assert.equal((await post(route, { base64Pdf: Buffer.from('not a pdf').toString('base64') }, 'correct-token')).status, 400);
+  // Text extraction is deterministic and needs no Gemini key: text with no questions is a 422,
+  // never a set of invented questions.
+  const empty = await post(route, { rawText: 'x' }, 'correct-token');
+  assert.equal(empty.status, 422);
+  assert.match((await empty.json()).error, /no examination questions/i);
+  const real = await post(route, { rawText: '1. What is 2 + 2?\nA. 3\nB. 4\nC. 5\nD. 6\nAnswer: B' }, 'correct-token');
+  assert.equal(real.status, 200);
+  const body = await real.json();
+  assert.equal(body.questions[0].question, 'What is 2 + 2?');
+  assert.equal(body.questions[0].correctAnswer, 'B');
+  assert.equal(body.questions[0].reviewStatus, 'pending');
 
   const solve = `${base}/api/solve-question`;
   assert.equal((await post(solve, { question: 'x' })).status, 401);
@@ -98,13 +109,33 @@ test('malformed and oversized bodies get JSON errors', async () => {
 test('AI usage over the limit gets 429 with Retry-After', async () => {
   const base = await startServer(3315, { NEXORA_ADMIN_TOKEN: 't', AI_EXTRACT_HOURLY_LIMIT: '2' });
   const route = `${base}/api/extract-pdf`;
-  assert.equal((await post(route, { rawText: 'x' }, 't')).status, 503);
-  assert.equal((await post(route, { rawText: 'x' }, 't')).status, 503);
+  assert.equal((await post(route, { rawText: 'x' }, 't')).status, 422);
+  assert.equal((await post(route, { rawText: 'x' }, 't')).status, 422);
   const limited = await post(route, { rawText: 'x' }, 't');
   assert.equal(limited.status, 429);
   assert.ok(Number(limited.headers.get('retry-after')) > 0);
   // Rejected callers don't use up the allowance.
   assert.equal((await post(route, { rawText: 'x' })).status, 401);
+});
+
+test('extraction jobs report progress, then the result; unknown jobs are 404', async () => {
+  const base = await startServer(3316, { NEXORA_ADMIN_TOKEN: 't' });
+  const jobRoute = `${base}/api/extraction-jobs`;
+  assert.equal((await post(jobRoute, { rawText: '1. Q?\nA. a\nB. b' })).status, 401);
+  assert.equal((await post(jobRoute, {}, 't')).status, 400);
+  const started = await post(jobRoute, { rawText: '1. Which is a vector?\nA. mass\nB. velocity\nC. time\nD. speed', filename: 'v.txt' }, 't');
+  assert.equal(started.status, 202);
+  const { jobId } = await started.json();
+  let job: any;
+  for (let i = 0; i < 50; i++) {
+    job = await (await fetch(`${jobRoute}/${jobId}`, { headers: { 'x-nexora-admin-token': 't' } })).json();
+    if (job.status === 'done' || job.status === 'error') break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  assert.equal(job.status, 'done');
+  assert.deepEqual(job.result.questions[0].options.map((o: any) => o.text), ['mass', 'velocity', 'time', 'speed']);
+  assert.equal((await fetch(`${jobRoute}/nope`, { headers: { 'x-nexora-admin-token': 't' } })).status, 404);
+  assert.equal((await fetch(`${jobRoute}/${jobId}`)).status, 401);
 });
 
 test('rate limiter resets after its window and tracks clients separately', () => {
