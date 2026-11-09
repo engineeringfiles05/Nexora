@@ -20,13 +20,19 @@ export function tokensMatch(provided: string, expected: string): boolean {
  */
 export function requireAiAccess(options: { token: string; isProduction: boolean }) {
   return (req: Request, res: Response, next: NextFunction) => {
+    // In local development or AI Studio preview (non-production), AI features are accessible
+    // without requiring users in the UI to manually guess or configure an admin secret.
+    if (!options.isProduction) {
+      const provided = req.get(ADMIN_TOKEN_HEADER);
+      if (!provided) return next();
+      if (!options.token || tokensMatch(provided, options.token)) return next();
+      return res.status(401).json({ error: 'A valid admin access token is required to use AI features.' });
+    }
+
     if (!options.token) {
-      if (options.isProduction) {
-        return res.status(503).json({
-          error: 'AI features are disabled: NEXORA_ADMIN_TOKEN is not configured on the server.',
-        });
-      }
-      return next();
+      return res.status(503).json({
+        error: 'AI features are disabled: NEXORA_ADMIN_TOKEN is not configured on the server.',
+      });
     }
     const provided = req.get(ADMIN_TOKEN_HEADER);
     if (!provided || !tokensMatch(provided, options.token)) {

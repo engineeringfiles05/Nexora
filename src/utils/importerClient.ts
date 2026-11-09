@@ -58,11 +58,14 @@ async function readJson(res: Response): Promise<any> {
   return res.json();
 }
 
-export async function getServerCapabilities(): Promise<{ imageReading: boolean }> {
+export async function getServerCapabilities(): Promise<{ imageReading: boolean; defaultToken?: string }> {
   try {
     const res = await fetch('/api/health');
     const data = await readJson(res);
-    return { imageReading: Boolean(data.imageReading ?? data.hasApiKey) };
+    return {
+      imageReading: Boolean(data.imageReading ?? data.hasApiKey),
+      defaultToken: typeof data.defaultToken === 'string' ? data.defaultToken : undefined,
+    };
   } catch {
     return { imageReading: false };
   }

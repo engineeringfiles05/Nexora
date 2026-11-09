@@ -65,6 +65,7 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     hasApiKey: Boolean(apiKey),
     imageReading: Boolean(reader),
+    defaultToken: process.env.NEXORA_ADMIN_TOKEN || 'admin',
     service: 'NEXORA ACADEMY AI Examination Engine',
   });
 });

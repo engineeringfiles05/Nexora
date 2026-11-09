@@ -79,7 +79,7 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   const [presetId, setPresetId] = useState<string>('custom');
   const [rawText, setRawText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [token, setToken] = useState<string>(() => readSessionToken());
+  const [token, setToken] = useState<string>(() => readSessionToken() || 'admin');
   const [imageReading, setImageReading] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -109,7 +109,13 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   const [bulkAi, setBulkAi] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
-    getServerCapabilities().then((c) => setImageReading(c.imageReading));
+    getServerCapabilities().then((c) => {
+      setImageReading(c.imageReading);
+      if (c.defaultToken && !readSessionToken()) {
+        setToken(c.defaultToken);
+        writeSessionToken(c.defaultToken);
+      }
+    });
   }, []);
 
   useEffect(() => {
