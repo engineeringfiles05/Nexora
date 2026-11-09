@@ -23,7 +23,8 @@ export interface ReadLine {
 
 export interface PageImageReader {
   name: string;
-  read(png: Buffer, pageNumber: number, pass: 1 | 2): Promise<ReadLine[]>;
+  /** `signal` aborts the read (deadline or disconnect); implementations should stop promptly. */
+  read(png: Buffer, pageNumber: number, pass: 1 | 2, signal?: AbortSignal): Promise<ReadLine[]>;
 }
 
 const INSTRUCTIONS = `You transcribe pages of engineering examination papers into plain text. You are a transcriber, not an editor.
@@ -46,7 +47,7 @@ const SECOND_PASS = `This is an independent check reading. Read slowly, line by 
 export function createGeminiReader(ai: GoogleGenAI, model: string, timeoutMs = 90_000): PageImageReader {
   return {
     name: `Gemini page-image reading (${model})`,
-    async read(png, pageNumber, pass) {
+    async read(png, pageNumber, pass, signal) {
       const call = () =>
         ai.models.generateContent({
           model,
@@ -60,6 +61,8 @@ export function createGeminiReader(ai: GoogleGenAI, model: string, timeoutMs = 9
             },
           ],
           config: {
+            // Cancels the HTTP request to the model when the extraction stops.
+            ...(signal ? { abortSignal: signal } : {}),
             systemInstruction: INSTRUCTIONS,
             temperature: 0,
             responseMimeType: 'application/json',
@@ -83,7 +86,7 @@ export function createGeminiReader(ai: GoogleGenAI, model: string, timeoutMs = 9
             },
           },
         });
-      const response = await withRetry(() => withTimeout(call(), timeoutMs), 2);
+      const response = await withRetry(() => withTimeout(call(), timeoutMs, signal), 2, signal);
       const parsed = JSON.parse(response.text || '{}');
       const lines: ReadLine[] = [];
       for (const raw of Array.isArray(parsed.lines) ? parsed.lines : []) {
@@ -103,26 +106,55 @@ export function createGeminiReader(ai: GoogleGenAI, model: string, timeoutMs = 9
 
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 
-async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+/** One attempt: rejects at its own timeout, or as soon as `signal` aborts. */
+async function withTimeout<T>(promise: Promise<T>, ms: number, signal?: AbortSignal): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<never>((_, reject) => {
+  let onAbort: (() => void) | undefined;
+  const stop = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error(`Page reading took longer than ${Math.round(ms / 1000)} s`)), ms);
+    if (signal) {
+      onAbort = () => reject(signal.reason ?? new Error('Page reading was cancelled.'));
+      if (signal.aborted) onAbort();
+      else signal.addEventListener('abort', onAbort, { once: true });
+    }
   });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  promise.catch(() => {}); // the losing side of the race must not become an unhandled rejection
+  return Promise.race([promise, stop]).finally(() => {
+    clearTimeout(timer);
+    if (signal && onAbort) signal.removeEventListener('abort', onAbort);
+  });
 }
 
-export async function withRetry<T>(fn: () => Promise<T>, retries: number): Promise<T> {
+/** Retries transient failures with backoff. Once `signal` aborts there are no more attempts or waits. */
+export async function withRetry<T>(fn: () => Promise<T>, retries: number, signal?: AbortSignal): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    if (signal?.aborted) throw signal.reason;
     try {
       return await fn();
     } catch (error: any) {
       lastError = error;
+      if (signal?.aborted) throw signal.reason;
       const status = error?.status ?? error?.code;
       const retryable = status === 429 || (typeof status === 'number' && status >= 500) || /timeout|ECONNRESET|fetch failed/i.test(String(error?.message));
       if (!retryable || attempt === retries) break;
-      await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt));
+      await abortableSleep(1500 * 2 ** attempt, signal);
     }
   }
   throw lastError;
+}
+
+function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal!.reason);
+    };
+    if (signal?.aborted) onAbort();
+    else signal?.addEventListener('abort', onAbort, { once: true });
+  });
 }

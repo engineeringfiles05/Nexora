@@ -56,6 +56,10 @@ export interface PipelineOptions {
   scannedPasses?: 1 | 2;
   concurrency?: number;
   onProgress?: (p: ExtractionProgress) => void;
+  /** Epoch ms after which the extraction stops with a clear error (serverless time limits). */
+  deadline?: number;
+  /** Aborted when the caller goes away (client disconnect); the run stops and reads are cancelled. */
+  signal?: AbortSignal;
 }
 
 export interface PipelineResult {
@@ -85,6 +89,73 @@ export async function runExtraction(options: PipelineOptions): Promise<PipelineR
 }
 
 const sha256 = (data: Uint8Array | string) => createHash('sha256').update(data).digest('hex');
+
+const deadlineMessage = (done: number, total: number) =>
+  `This document needs more processing time than this hosting allows (stopped after ${done} of ${total} page(s)). Split the PDF into smaller files and import them one at a time.`;
+
+/**
+ * Stops a run at its deadline or when the caller goes away. Every awaited step is raced
+ * against it, so a slow page reading can't run past the hosting's time limit, and the abort
+ * signal is passed on to the page reader so the request to the model is cancelled too.
+ */
+export class RunControl {
+  private readonly controller = new AbortController();
+  private timer?: ReturnType<typeof setTimeout>;
+  done = 0;
+  total = 0;
+
+  constructor(deadline?: number, cancel?: AbortSignal) {
+    if (cancel) {
+      const onCancel = () => this.controller.abort(new ExtractionError('The extraction was cancelled because the connection closed.', 499));
+      if (cancel.aborted) onCancel();
+      else cancel.addEventListener('abort', onCancel, { once: true });
+    }
+    if (deadline !== undefined && !this.signal.aborted) {
+      this.timer = setTimeout(() => this.controller.abort(new ExtractionError(deadlineMessage(this.done, this.total), 504)), Math.max(0, deadline - Date.now()));
+    }
+  }
+
+  get signal(): AbortSignal {
+    return this.controller.signal;
+  }
+
+  check() {
+    if (this.signal.aborted) throw this.signal.reason;
+  }
+
+  /** Resolves with the work, or rejects as soon as the run is stopped. */
+  guard<T>(work: Promise<T>): Promise<T> {
+    if (this.signal.aborted) {
+      work.catch(() => {});
+      return Promise.reject(this.signal.reason);
+    }
+    return new Promise<T>((resolve, reject) => {
+      const onAbort = () => reject(this.signal.reason);
+      this.signal.addEventListener('abort', onAbort, { once: true });
+      work.then(
+        (value) => {
+          this.signal.removeEventListener('abort', onAbort);
+          resolve(value);
+        },
+        (error) => {
+          this.signal.removeEventListener('abort', onAbort);
+          reject(this.signal.aborted ? this.signal.reason : error);
+        }
+      );
+    });
+  }
+
+  dispose() {
+    if (this.timer) clearTimeout(this.timer);
+  }
+}
+
+/** Stops before the hosting's time limit cuts the request off without an answer. */
+export function checkDeadline(deadline: number | undefined, done: number, total: number, now = Date.now()) {
+  if (deadline !== undefined && now > deadline) {
+    throw new ExtractionError(deadlineMessage(done, total), 504);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Plain text
@@ -167,7 +238,24 @@ function pageNeedsImage(l: PageLayout): string[] {
 
 async function extractPdf(options: PipelineOptions): Promise<PipelineResult> {
   const bytes = options.bytes!;
-  const progress = options.onProgress ?? (() => {});
+  const control = new RunControl(options.deadline, options.signal);
+  // No progress after the run stopped (the client may be gone).
+  const progress = (p: ExtractionProgress) => {
+    if (!control.signal.aborted) options.onProgress?.(p);
+  };
+  try {
+    return await extractPdfWith(options, bytes, control, progress);
+  } finally {
+    control.dispose();
+  }
+}
+
+async function extractPdfWith(
+  options: PipelineOptions,
+  bytes: Uint8Array,
+  control: RunControl,
+  progress: (p: ExtractionProgress) => void
+): Promise<PipelineResult> {
   const documentHash = sha256(bytes);
   const sourcePdfId = `pdf-${documentHash.slice(0, 16)}`;
   const reader = options.reader ?? null;
@@ -184,10 +272,13 @@ async function extractPdf(options: PipelineOptions): Promise<PipelineResult> {
 
   try {
     const totalPages = doc.numPages;
+    control.total = totalPages;
     const states: PageState[] = [];
     for (let p = 1; p <= totalPages; p++) {
+      control.done = p - 1;
+      control.check();
       progress({ stage: `Reading the text layer of page ${p} of ${totalPages}`, percent: Math.round((p / totalPages) * 30), page: p, totalPages });
-      const layout = await analyzePage(doc, p);
+      const layout = await control.guard(analyzePage(doc, p));
       const reasons = pageNeedsImage(layout);
       states.push({ layout, imageMode: reasons.length > 0, reasons, imageFigures: [] });
     }
@@ -197,28 +288,33 @@ async function extractPdf(options: PipelineOptions): Promise<PipelineResult> {
     // Page images: read where needed, crop figures everywhere.
     const crops = new Map<string, ExtractedFigure>();
     let done = 0;
+    control.done = 0;
     await pool(states, options.concurrency ?? 2, async (state) => {
+      control.check();
       const p = state.layout.page;
       const wantFirst = reader && (state.imageMode || crossCheck);
       const wantSecond = reader && state.imageMode && scannedPasses === 2;
       const hasFigures = state.layout.figures.length > 0;
       try {
         if (wantFirst || hasFigures) {
-          const high = await renderPage(doc, p, state.imageMode ? 2.5 : 2);
-          if (wantFirst) state.first = await reader!.read(high.png(), p, 1);
+          const high = await control.guard(renderPage(doc, p, state.imageMode ? 2.5 : 2));
+          if (wantFirst) state.first = await control.guard(reader!.read(high.png(), p, 1, control.signal));
           if (state.first) state.imageFigures = figuresFromReading(state.first, state.layout);
           for (const fig of [...state.layout.figures, ...(state.imageMode ? state.imageFigures : [])]) {
             crops.set(fig.id, toExtractedFigure(fig, state.layout, cropToDataUrl(high, fig.box)));
           }
         }
         if (wantSecond) {
-          const other = await renderPage(doc, p, 2);
-          state.second = await reader!.read(other.png(), p, 2);
+          const other = await control.guard(renderPage(doc, p, 2));
+          state.second = await control.guard(reader!.read(other.png(), p, 2, control.signal));
         }
       } catch (error: any) {
+        // A stopped run ends the extraction; any other failure is reported on its page.
+        if (control.signal.aborted) throw control.signal.reason;
         state.readError = String(error?.message || error);
       }
       done++;
+      control.done = done;
       progress({
         stage: reader ? `Reading page images (${done} of ${totalPages})` : `Capturing figures (${done} of ${totalPages})`,
         percent: 30 + Math.round((done / totalPages) * 55),

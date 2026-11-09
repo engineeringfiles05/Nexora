@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import {
   UserProfile,
   UserRole,
@@ -31,7 +31,7 @@ import {
   reconcileSourceCounts,
   selectExamQuestions,
 } from './utils/bank.ts';
-import { isRecordArray, usePersistentState } from './utils/persistence.ts';
+import { isRecordArray, useDemoPersistentState } from './utils/persistence.ts';
 import { auth, loginWithGoogle, logout, db } from './firebase.ts';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -46,6 +46,16 @@ import {
   seedInitialFirestoreData,
   isUserAdmin,
 } from './utils/firebaseSync.ts';
+import {
+  canSwitchDemoRole,
+  cloudQueryPlan,
+  cloudReducer,
+  describeSyncError,
+  emptyCloudState,
+  sortAuditLogs,
+  visibleResults,
+  type CloudCollection,
+} from './utils/session.ts';
 
 // Components
 import { Navbar } from './components/Navbar.tsx';
@@ -77,10 +87,46 @@ export default function App() {
       return [...others, key];
     });
   }, []);
-  const [questions, setQuestions] = usePersistentState<Question[]>('questions', INITIAL_QUESTIONS, isRecordArray<Question>, handleSaved);
-  const [storedSources, setPdfSources] = usePersistentState<PdfSource[]>('sources', INITIAL_PDF_SOURCES, isRecordArray<PdfSource>, handleSaved);
-  const [examResults, setExamResults] = usePersistentState<ExamResult[]>('results', INITIAL_EXAM_RESULTS, isRecordArray<ExamResult>, handleSaved);
-  const [auditLogs, setAuditLogs] = usePersistentState<AuditLog[]>('audit', INITIAL_AUDIT_LOGS, isRecordArray<AuditLog>, handleSaved);
+  // Demo mode (signed out): sample data kept in this browser.
+  const [demoQuestions, setDemoQuestions] = useDemoPersistentState<Question[]>('questions', INITIAL_QUESTIONS, isRecordArray<Question>, handleSaved);
+  const [demoSources, setDemoSources] = useDemoPersistentState<PdfSource[]>('sources', INITIAL_PDF_SOURCES, isRecordArray<PdfSource>, handleSaved);
+  const [demoResults, setDemoResults] = useDemoPersistentState<ExamResult[]>('results', INITIAL_EXAM_RESULTS, isRecordArray<ExamResult>, handleSaved);
+  const [demoAudit, setDemoAudit] = useDemoPersistentState<AuditLog[]>('audit', INITIAL_AUDIT_LOGS, isRecordArray<AuditLog>, handleSaved);
+
+  // Signed in: the account's own Firestore data, in memory only and cleared on every account change.
+  const [cloud, dispatchCloud] = useReducer(cloudReducer, emptyCloudState());
+  const [accountRole, setAccountRole] = useState<UserRole>('reviewee');
+  const signedInUid = firebaseUser?.uid ?? null;
+
+  const questions = signedInUid ? cloud.questions ?? [] : demoQuestions;
+  const storedSources = signedInUid ? cloud.pdfSources ?? [] : demoSources;
+  const examResults = signedInUid ? cloud.examResults ?? [] : demoResults;
+  // Admin-only collections: reviewees never query them, so they stay null (shown as empty).
+  const auditLogs = signedInUid ? sortAuditLogs(cloud.auditLogs ?? []) : demoAudit;
+  const isSignedInAdmin = Boolean(signedInUid) && accountRole === 'admin';
+  const rosterReviewees: UserProfile[] = signedInUid
+    ? (cloud.users ?? []).filter((u) => u.role === 'reviewee')
+    : [DEMO_USERS[1]]; // the sample roster exists only in demo mode
+
+  // Setters write to whichever data set is active. Account edits are optimistic; the next
+  // Firestore snapshot replaces them with what the server actually holds.
+  const scopedSetter =
+    <T,>(collection: CloudCollection, setDemo: React.Dispatch<React.SetStateAction<T[]>>) =>
+    (update: React.SetStateAction<T[]>) => {
+      if (!signedInUid) return setDemo(update);
+      const fn = typeof update === 'function' ? (update as (prev: T[]) => T[]) : () => update;
+      dispatchCloud({ type: 'local', uid: signedInUid, collection, update: fn });
+    };
+  const setQuestions = scopedSetter<Question>('questions', setDemoQuestions);
+  const setPdfSources = scopedSetter<PdfSource>('pdfSources', setDemoSources);
+  const setExamResults = scopedSetter<ExamResult>('examResults', setDemoResults);
+  const setAuditLogs = scopedSetter<AuditLog>('auditLogs', setDemoAudit);
+
+  // Cloud write failures are shown, not just logged.
+  const reportSaveError = (label: string) => (err: unknown) => {
+    console.warn(`${label}:`, err);
+    if (signedInUid) dispatchCloud({ type: 'error', uid: signedInUid, collection: 'write', message: describeSyncError('write', err) });
+  };
 
   // Counts always come from the bank, so edits, deletes and partial publishes can't drift.
   const pdfSources = useMemo(
@@ -104,7 +150,19 @@ export default function App() {
   // Synchronize Firebase Auth & Firestore
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // Every sign-in, sign-out or account switch starts from a clean slate: nothing from the
+      // previous account (or from demo mode) stays on screen.
+      dispatchCloud({ type: 'reset', uid: user?.uid ?? null });
       setFirebaseUser(user);
+      setActiveExamConfig(null);
+      setActiveExamQuestions([]);
+      setActiveResult(null);
+      setLauncherModalOpen(false);
+      if (!user) {
+        setAccountRole('reviewee');
+        setCurrentUser(DEMO_USERS[1]);
+        setCurrentView('reviewee-dashboard');
+      }
       if (user) {
         const isAdmin = isUserAdmin(user.email);
         const profile: UserProfile = {
@@ -119,7 +177,9 @@ export default function App() {
           targetExam: 'REE Licensure Examination',
           enrolledAt: new Date().toISOString(),
         };
+        setAccountRole(profile.role);
         setCurrentUser(profile);
+        setCurrentView(isAdmin ? 'admin-dashboard' : 'reviewee-dashboard');
         saveUserProfileToFirestore(profile).catch(() => {});
 
         if (isAdmin) {
@@ -130,57 +190,26 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Listen for real-time Firestore updates when authenticated
+  // Real-time Firestore data for the signed-in account. Queries follow firestore.rules for the
+  // account's role (reviewees can only list published questions, public sources and their own
+  // results); empty results replace old data, and failures are shown to the user.
   useEffect(() => {
-    if (!firebaseUser) return;
-
-    const unsubQuestions = onSnapshot(
-      collection(db, 'questions'),
-      (snapshot) => {
-        if (!snapshot.empty) {
-          const loaded: Question[] = [];
-          snapshot.forEach((d) => loaded.push(d.data() as Question));
-          setQuestions(loaded);
+    if (!signedInUid) return;
+    const plan = cloudQueryPlan(accountRole, signedInUid);
+    const unsubscribes = (Object.keys(plan) as CloudCollection[]).map((name) => {
+      const filter = plan[name];
+      const ref = filter ? query(collection(db, name), where(filter.field, '==', filter.value)) : collection(db, name);
+      return onSnapshot(
+        ref,
+        (snapshot) => dispatchCloud({ type: 'snapshot', uid: signedInUid, collection: name, docs: snapshot.docs.map((d) => d.data()) }),
+        (err) => {
+          console.warn(`${name} sync error:`, err);
+          dispatchCloud({ type: 'error', uid: signedInUid, collection: name, message: describeSyncError(name, err) });
         }
-      },
-      (err) => console.warn('Questions sync warning:', err)
-    );
-
-    const unsubSources = onSnapshot(
-      collection(db, 'pdfSources'),
-      (snapshot) => {
-        if (!snapshot.empty) {
-          const loaded: PdfSource[] = [];
-          snapshot.forEach((d) => loaded.push(d.data() as PdfSource));
-          setPdfSources(loaded);
-        }
-      },
-      (err) => console.warn('PDF sources sync warning:', err)
-    );
-
-    const resultsQuery =
-      currentUser.role === 'admin'
-        ? collection(db, 'examResults')
-        : query(collection(db, 'examResults'), where('userId', '==', firebaseUser.uid));
-
-    const unsubResults = onSnapshot(
-      resultsQuery,
-      (snapshot) => {
-        if (!snapshot.empty) {
-          const loaded: ExamResult[] = [];
-          snapshot.forEach((d) => loaded.push(d.data() as ExamResult));
-          setExamResults(loaded);
-        }
-      },
-      (err) => console.warn('Exam results sync warning:', err)
-    );
-
-    return () => {
-      unsubQuestions();
-      unsubSources();
-      unsubResults();
-    };
-  }, [firebaseUser, currentUser.role]);
+      );
+    });
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+  }, [signedInUid, accountRole]);
 
   const handleLogin = async () => {
     try {
@@ -190,27 +219,27 @@ export default function App() {
     }
   };
 
+  // The auth listener clears account data and returns to the demo reviewee.
   const handleLogout = async () => {
     try {
       await logout();
-      setCurrentUser(DEMO_USERS[1]);
-      setCurrentView('reviewee-dashboard');
     } catch (err) {
       console.error('Logout failed:', err);
     }
   };
 
   const handleResetDemoData = () => {
-    setQuestions(INITIAL_QUESTIONS);
-    setPdfSources(INITIAL_PDF_SOURCES);
-    setExamResults(INITIAL_EXAM_RESULTS);
-    setAuditLogs(INITIAL_AUDIT_LOGS);
+    setDemoQuestions(INITIAL_QUESTIONS);
+    setDemoSources(INITIAL_PDF_SOURCES);
+    setDemoResults(INITIAL_EXAM_RESULTS);
+    setDemoAudit(INITIAL_AUDIT_LOGS);
     setConfirmingReset(false);
     setCurrentView(currentUser.role === 'admin' ? 'admin-dashboard' : 'reviewee-dashboard');
   };
 
-  // Role switching
+  // Demo role switching. A signed-in account keeps its own identity and permissions.
   const handleSwitchRole = (role: UserRole) => {
+    if (!canSwitchDemoRole(Boolean(firebaseUser))) return;
     if (role === 'admin') {
       const admin = DEMO_USERS.find((u) => u.role === 'admin') || DEMO_USERS[0];
       setCurrentUser(admin);
@@ -313,7 +342,7 @@ export default function App() {
     };
 
     setExamResults((prev) => [...prev, newResult]);
-    saveExamResultToFirestore(newResult).catch((err) => console.warn('Save result to Firestore:', err));
+    saveExamResultToFirestore(newResult).catch(reportSaveError('Save result to Firestore'));
     setActiveResult(newResult);
     setCurrentView('exam-result');
   };
@@ -335,8 +364,8 @@ export default function App() {
     const added = published.questions.slice(questions.length);
     const savedSource = published.sources.find((s) => added[0] && s.id === added[0].sourcePdfId) ?? sourcePdf;
     if (added.length > 0) {
-      batchSaveQuestionsToFirestore(added).catch((err) => console.warn('Batch save new questions to Firestore:', err));
-      savePdfSourceToFirestore(savedSource).catch((err) => console.warn('Save PDF to Firestore:', err));
+      batchSaveQuestionsToFirestore(added).catch(reportSaveError('Batch save new questions to Firestore'));
+      savePdfSourceToFirestore(savedSource).catch(reportSaveError('Save PDF to Firestore'));
     }
     return { added: added.length, skipped: published.skipped.length };
   };
@@ -352,10 +381,14 @@ export default function App() {
       badge,
     };
     setAuditLogs((prev) => [newLog, ...prev]);
-    saveAuditLogToFirestore(newLog).catch((err) =>
-      console.warn('Save audit log to Firestore:', err)
-    );
+    saveAuditLogToFirestore(newLog).catch(reportSaveError('Save audit log to Firestore'));
   };
+
+  // Reviewee screens only show the current person's own results.
+  const myResults = visibleResults(currentUser, examResults);
+  const plannedCollections = signedInUid ? (Object.keys(cloudQueryPlan(accountRole, signedInUid)) as CloudCollection[]) : [];
+  const cloudLoading = plannedCollections.some((name) => cloud[name] === null);
+  const syncErrors = signedInUid ? Object.entries(cloud.errors) : [];
 
   const pendingVerificationCount = questions.filter(
     (q) => q.verificationStatus === 'needs_verification' || q.verificationStatus === 'discrepancy_flagged'
@@ -371,7 +404,10 @@ export default function App() {
           onNavigate={handleNavigate}
           onSwitchRole={handleSwitchRole}
           allUsers={DEMO_USERS}
-          onSelectUser={(u) => setCurrentUser(u)}
+          onSelectUser={(u) => {
+            if (canSwitchDemoRole(Boolean(firebaseUser))) setCurrentUser(u);
+          }}
+          canSwitchRole={canSwitchDemoRole(Boolean(firebaseUser))}
           pendingVerificationCount={pendingVerificationCount}
           firebaseUser={firebaseUser}
           onLoginWithGoogle={handleLogin}
@@ -392,6 +428,20 @@ export default function App() {
               <span>Firebase connected to <strong className="text-white font-mono text-[10px]">gen-lang-client-0457110273</strong>. Click <strong className="text-white">Sign in with Google</strong> to sync examination history across devices, or continue in local demo mode.</span>
             </span>
           )}
+          {cloudLoading && syncErrors.length === 0 && <span className="text-slate-400">Loading your data…</span>}
+        </div>
+      )}
+
+      {currentView !== 'active-exam' && syncErrors.length > 0 && (
+        <div role="alert" className="px-4 py-2 bg-rose-950/70 border-b border-rose-800 text-xs text-rose-100 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center">
+          {syncErrors.map(([key, message]) => (
+            <span key={key}>{message}</span>
+          ))}
+          {cloud.errors.write && signedInUid && (
+            <button onClick={() => dispatchCloud({ type: 'dismiss', uid: signedInUid, key: 'write' })} className="underline font-semibold">
+              Dismiss
+            </button>
+          )}
         </div>
       )}
 
@@ -402,7 +452,7 @@ export default function App() {
           <RevieweeDashboard
             user={currentUser}
             subjects={SUBJECTS}
-            examResults={examResults}
+            examResults={myResults}
             pdfSources={pdfSources}
             onStartExam={(type, subjectId, pdfSourceId, topic) =>
               handleOpenLauncher(type, subjectId, pdfSourceId, topic)
@@ -440,7 +490,8 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             <h1 className="text-2xl font-bold text-white">Full Examination History</h1>
             <div className="space-y-4">
-              {examResults.map((exam) => (
+              {myResults.length === 0 && <p className="text-sm text-slate-400">No examinations taken yet.</p>}
+              {myResults.map((exam) => (
                 <div
                   key={exam.id}
                   className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between"
@@ -516,17 +567,17 @@ export default function App() {
             pdfSources={pdfSources}
             onAddQuestion={(q) => {
               setQuestions((prev) => [q, ...prev]);
-              saveQuestionToFirestore(q).catch((err) => console.warn('Save question to Firestore:', err));
+              saveQuestionToFirestore(q).catch(reportSaveError('Save question to Firestore'));
               handleAddAuditLog('Manual Question Created', `Created Question #${q.id} in ${q.subjectName}.`);
             }}
             onUpdateQuestion={(q) => {
               setQuestions((prev) => prev.map((item) => (item.id === q.id ? q : item)));
-              saveQuestionToFirestore(q).catch((err) => console.warn('Save question to Firestore:', err));
+              saveQuestionToFirestore(q).catch(reportSaveError('Save question to Firestore'));
               handleAddAuditLog('Question Updated', `Updated parameters for Question #${q.id}.`);
             }}
             onDeleteQuestion={(id) => {
               setQuestions((prev) => prev.filter((item) => item.id !== id));
-              deleteQuestionFromFirestore(id).catch((err) => console.warn('Delete question from Firestore:', err));
+              deleteQuestionFromFirestore(id).catch(reportSaveError('Delete question from Firestore'));
               handleAddAuditLog('Question Deleted', `Removed Question #${id} from repository.`);
             }}
             onTogglePublish={(id) => {
@@ -537,7 +588,7 @@ export default function App() {
                   // for imported questions, an admin's approval against the PDF.
                   if (!item.isPublished && (!isReviewedForExams(item) || !isApprovedForReviewees(item))) return item;
                   const updated = { ...item, isPublished: !item.isPublished };
-                  saveQuestionToFirestore(updated).catch((err) => console.warn('Save question to Firestore:', err));
+                  saveQuestionToFirestore(updated).catch(reportSaveError('Save question to Firestore'));
                   return updated;
                 })
               );
@@ -547,7 +598,7 @@ export default function App() {
                 prev.map((item) => {
                   if (item.id !== id) return item;
                   const updated: Question = { ...item, verificationStatus: 'manual_override' };
-                  saveQuestionToFirestore(updated).catch((err) => console.warn('Save question to Firestore:', err));
+                  saveQuestionToFirestore(updated).catch(reportSaveError('Save question to Firestore'));
                   return updated;
                 })
               );
@@ -563,20 +614,27 @@ export default function App() {
               setPdfSources((prev) =>
                 prev.map((p) => (p.id === updated.id ? updated : p))
               );
-              savePdfSourceToFirestore(updated).catch((err) => console.warn('Save PDF to Firestore:', err));
+              savePdfSourceToFirestore(updated).catch(reportSaveError('Save PDF to Firestore'));
               handleAddAuditLog('PDF Permissions Updated', `Updated permissions for "${updated.filename}".`);
             }}
             onNavigateToImporter={() => setCurrentView('pdf-importer')}
             onNavigateToQuiz={(pdfId) => {
-              setCurrentUser(DEMO_USERS[1]); // switch to reviewee
-              setCurrentView('pdf-quiz-generator'); // leave the admin-only page along with the role
+              // Demo mode switches to the sample reviewee; a signed-in admin takes it as themselves.
+              if (canSwitchDemoRole(Boolean(firebaseUser))) setCurrentUser(DEMO_USERS[1]);
+              setCurrentView('pdf-quiz-generator');
               handleOpenLauncher('pdf_quiz', undefined, pdfId);
             }}
           />
         )}
 
         {currentView === 'reviewees-roster' && (
-          <RevieweeRosterView reviewees={[DEMO_USERS[1]]} examResults={examResults} />
+          <RevieweeRosterView
+            reviewees={rosterReviewees}
+            examResults={examResults}
+            loading={isSignedInAdmin && cloud.users === null && !cloud.errors.users}
+            error={signedInUid ? cloud.errors.users : undefined}
+            isDemo={!signedInUid}
+          />
         )}
 
         {currentView === 'audit-logs' && (

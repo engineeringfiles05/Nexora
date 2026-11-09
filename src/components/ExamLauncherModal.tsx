@@ -16,7 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { ExamType, ExamConfig, Subject, PdfSource, DifficultyLevel, SubjectId } from '../types/index.ts';
-import { getSelectableSources } from '../utils/bank.ts';
+import { EXAM_MODE_DEFAULTS, getSelectableSources } from '../utils/bank.ts';
 
 interface Props {
   isOpen: boolean;
@@ -61,27 +61,10 @@ export const ExamLauncherModal: React.FC<Props> = ({
   const [randomizeChoices, setRandomizeChoices] = useState<boolean>(true);
 
   const applyModeDefaults = (type: ExamType) => {
-    if (type === 'final_mock') {
-      setQuestionCount(20);
-      setDurationMinutes(60);
-      setInstantFeedback(false);
-    } else if (type === 'pre_board') {
-      setQuestionCount(20);
-      setDurationMinutes(45);
-      setInstantFeedback(false);
-    } else if (type === 'pre_test') {
-      setQuestionCount(12);
-      setDurationMinutes(30);
-      setInstantFeedback(false);
-    } else if (type === 'quiz') {
-      setQuestionCount(10);
-      setDurationMinutes(15);
-      setInstantFeedback(true);
-    } else {
-      setQuestionCount(15);
-      setDurationMinutes(30);
-      setInstantFeedback(false);
-    }
+    const defaults = EXAM_MODE_DEFAULTS[type];
+    setQuestionCount(defaults.questionCount);
+    setDurationMinutes(defaults.durationMinutes);
+    setInstantFeedback(defaults.instantFeedback);
   };
 
   // Synchronize internal state whenever modal opens or props change

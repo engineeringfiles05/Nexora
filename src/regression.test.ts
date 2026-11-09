@@ -133,7 +133,7 @@ test('selection honours filters and question count, and shuffling keeps every qu
   assert.ok(filtered.ok);
   if (filtered.ok) assert.deepEqual(filtered.questions.map((q) => q.id), ['q0', 'q1', 'q2']);
 
-  const all = selectExamQuestions(bank, [source()], config({ randomizeQuestions: true, randomizeChoices: true }), () => 0);
+  const all = selectExamQuestions(bank, [source()], config({ questionCount: 6, randomizeQuestions: true, randomizeChoices: true }), () => 0);
   assert.ok(all.ok);
   if (all.ok) {
     assert.deepEqual(all.questions.map((q) => q.id).sort(), bank.map((q) => q.id));
@@ -230,9 +230,26 @@ test('uncertain or unpublished questions never enter a scored exam', () => {
     question({ id: 'draft', isPublished: false }),
     question({ id: 'approved', verificationStatus: 'manual_override' }),
   ];
-  const result = selectExamQuestions(bank, [source()], config());
+  const result = selectExamQuestions(bank, [source()], config({ questionCount: 1 }));
   assert.ok(result.ok);
   if (result.ok) assert.deepEqual(result.questions.map((q) => q.id), ['approved']);
+});
+
+test('asking for more questions than qualify is refused with the real numbers, never silently shortened', () => {
+  const bank = Array.from({ length: 12 }, (_, i) => question({ id: `q${i}` }));
+  const short = selectExamQuestions(bank, [source()], config({ questionCount: 15 }));
+  assert.equal(short.ok, false);
+  if (!short.ok) assert.match(short.error, /Only 12 .* but 15 were requested/);
+  const exact = selectExamQuestions(bank, [source()], config({ questionCount: 12 }));
+  assert.ok(exact.ok && exact.questions.length === 12);
+});
+
+test('the dashboard cards show the same defaults the launcher uses', async () => {
+  const dashboard = await readFile(new URL('./components/RevieweeDashboard.tsx', import.meta.url), 'utf8');
+  const launcher = await readFile(new URL('./components/ExamLauncherModal.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(dashboard, /\d+ Questions • \d+ mins/); // no hard-coded counts
+  assert.match(dashboard, /EXAM_MODE_DEFAULTS\.practice\.questionCount/);
+  assert.match(launcher, /EXAM_MODE_DEFAULTS\[type\]/);
 });
 
 // Persistence (QA item 5)

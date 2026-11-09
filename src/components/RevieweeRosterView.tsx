@@ -10,9 +10,21 @@ import { UserProfile, ExamResult } from '../types/index.ts';
 interface Props {
   reviewees: UserProfile[];
   examResults: ExamResult[];
+  /** Signed-in admin, registered accounts still loading. */
+  loading?: boolean;
+  error?: string;
+  /** Demo mode shows a sample reviewee; say so. */
+  isDemo?: boolean;
 }
 
-export const RevieweeRosterView: React.FC<Props> = ({ reviewees, examResults }) => {
+export const RevieweeRosterView: React.FC<Props> = ({ reviewees, examResults, loading = false, error, isDemo = false }) => {
+  const status = error
+    ? error
+    : loading
+      ? 'Loading registered reviewees…'
+      : reviewees.length === 0
+        ? 'No reviewee accounts yet. Reviewees appear here after they sign in with Google.'
+        : null;
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 select-none">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
@@ -31,6 +43,9 @@ export const RevieweeRosterView: React.FC<Props> = ({ reviewees, examResults }) 
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        {isDemo && (
+          <p className="text-xs text-amber-300">Demo mode: this is a sample reviewee, not a registered account. Sign in as an administrator to see real reviewees.</p>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950 text-slate-400 uppercase font-mono text-[10px]">
@@ -44,7 +59,14 @@ export const RevieweeRosterView: React.FC<Props> = ({ reviewees, examResults }) 
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800 text-slate-300">
-              {reviewees.map((rev) => {
+              {status && (
+                <tr>
+                  <td colSpan={6} className={`p-6 text-center ${error ? 'text-rose-300' : 'text-slate-400'}`} role={error ? 'alert' : 'status'}>
+                    {status}
+                  </td>
+                </tr>
+              )}
+              {!loading && !error && reviewees.map((rev) => {
                 const userExams = examResults.filter((r) => r.userId === rev.id);
                 const avg =
                   userExams.length > 0
