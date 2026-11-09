@@ -31,6 +31,14 @@ export function isUserAdmin(email?: string | null): boolean {
 }
 
 /**
+ * Writes need a signed-in user (see firestore.rules). In demo mode nobody is signed in, so
+ * writes are skipped instead of being sent only to be rejected; the app keeps the data locally.
+ */
+export function isSignedIn(): boolean {
+  return Boolean(auth.currentUser);
+}
+
+/**
  * Recursively strips undefined keys and values from objects and arrays so Firestore never rejects writes.
  */
 export function sanitizeForFirestore<T>(val: T): T {
@@ -101,6 +109,7 @@ export async function seedInitialFirestoreData(
  * Saves or updates a question in Firestore
  */
 export async function saveQuestionToFirestore(question: Question): Promise<void> {
+  if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = `questions/${question.id}`;
   try {
     await setDoc(doc(db, 'questions', question.id), sanitizeForFirestore(question));
@@ -113,6 +122,7 @@ export async function saveQuestionToFirestore(question: Question): Promise<void>
  * Deletes a question from Firestore
  */
 export async function deleteQuestionFromFirestore(questionId: string): Promise<void> {
+  if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = `questions/${questionId}`;
   try {
     await deleteDoc(doc(db, 'questions', questionId));
@@ -125,6 +135,7 @@ export async function deleteQuestionFromFirestore(questionId: string): Promise<v
  * Saves a list of questions in batch to Firestore with safety chunking (max 400 docs per batch)
  */
 export async function batchSaveQuestionsToFirestore(questions: Question[]): Promise<void> {
+  if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = 'questions';
   try {
     // Firestore allows 500 writes and 10 MiB per batch; figures can make documents large.
@@ -156,6 +167,7 @@ export async function batchSaveQuestionsToFirestore(questions: Question[]): Prom
  * Saves or updates a PDF source in Firestore
  */
 export async function savePdfSourceToFirestore(source: PdfSource): Promise<void> {
+  if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = `pdfSources/${source.id}`;
   try {
     await setDoc(doc(db, 'pdfSources', source.id), sanitizeForFirestore(source));
@@ -168,6 +180,7 @@ export async function savePdfSourceToFirestore(source: PdfSource): Promise<void>
  * Saves an exam result to Firestore
  */
 export async function saveExamResultToFirestore(result: ExamResult): Promise<void> {
+  if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = `examResults/${result.id}`;
   try {
     await setDoc(doc(db, 'examResults', result.id), sanitizeForFirestore(result));
@@ -180,6 +193,7 @@ export async function saveExamResultToFirestore(result: ExamResult): Promise<voi
  * Saves an audit log entry to Firestore
  */
 export async function saveAuditLogToFirestore(log: AuditLog): Promise<void> {
+  if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = `auditLogs/${log.id}`;
   try {
     await setDoc(doc(db, 'auditLogs', log.id), sanitizeForFirestore(log));
@@ -192,6 +206,7 @@ export async function saveAuditLogToFirestore(log: AuditLog): Promise<void> {
  * Saves a user profile to Firestore
  */
 export async function saveUserProfileToFirestore(user: UserProfile): Promise<void> {
+  if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = `users/${user.id}`;
   try {
     await setDoc(doc(db, 'users', user.id), sanitizeForFirestore(user));

@@ -58,16 +58,17 @@ async function readJson(res: Response): Promise<any> {
   return res.json();
 }
 
-export async function getServerCapabilities(): Promise<{ imageReading: boolean; defaultToken?: string }> {
+export async function getServerCapabilities(): Promise<{ imageReading: boolean; adminTokenRequired: boolean }> {
   try {
     const res = await fetch('/api/health');
     const data = await readJson(res);
     return {
       imageReading: Boolean(data.imageReading ?? data.hasApiKey),
-      defaultToken: typeof data.defaultToken === 'string' ? data.defaultToken : undefined,
+      // Older servers don't report it; assume a token may be needed.
+      adminTokenRequired: data.adminTokenRequired !== false,
     };
   } catch {
-    return { imageReading: false };
+    return { imageReading: false, adminTokenRequired: true };
   }
 }
 
