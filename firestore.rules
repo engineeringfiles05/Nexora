@@ -71,8 +71,11 @@ service cloud.firestore {
     }
 
     // Administrative Audit Logs
+    // `list` cannot check the document id: a query can't prove isValidId(logId) for every
+    // result, so including it would deny the admin's audit-log listener outright.
     match /auditLogs/{logId} {
-      allow read, write: if isAdmin() && isValidId(logId);
+      allow list: if isAdmin();
+      allow get, write: if isAdmin() && isValidId(logId);
     }
   }
 }

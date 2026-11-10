@@ -31,7 +31,10 @@ test('reviewee queries are filtered the way firestore.rules requires; admins lis
 test('users and auditLogs are admin-only in the rules too', async () => {
   const rules = await readFile(new URL('../../firestore.rules', import.meta.url), 'utf8');
   assert.match(rules, /match \/users\/\{userId\}[\s\S]*?allow list: if isAdmin\(\);/);
-  assert.match(rules, /match \/auditLogs\/\{logId\}[\s\S]*?allow read, write: if isAdmin\(\)/);
+  assert.match(rules, /match \/auditLogs\/\{logId\}[\s\S]*?allow list: if isAdmin\(\);/);
+  assert.match(rules, /match \/auditLogs\/\{logId\}[\s\S]*?allow get, write: if isAdmin\(\) && isValidId\(logId\);/);
+  // A document-id check on list would make every audit-log query fail, even for admins.
+  assert.doesNotMatch(rules, /match \/auditLogs\/\{logId\}[^}]*allow (read|list)[^;]*isValidId/);
 });
 
 test('admin audit history comes from Firestore, survives reloads, and respects empty or failed loads', () => {
