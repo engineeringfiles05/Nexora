@@ -39,3 +39,12 @@
 10. **Shadow Field Injection**: Attacker submits an exam result containing arbitrary unauthorized executable fields. -> REJECTED.
 11. **PDF Questionnaire Leak**: Non-admin queries unpublished private PDF sources `/pdfSources/draft-exam`. -> REJECTED.
 12. **Anonymous Write Access**: Unauthenticated visitor attempts to write to `/users/visitor1`. -> REJECTED.
+
+## Deploying the rules
+`firestore.rules` only protects data once it is published. `firebase.json` and `.firebaserc` point the Firebase CLI at the app's project and its named database (`ai-studio-nexoraacademy-…`, not `(default)`). With the Firebase CLI installed (`npm install -g firebase-tools`) and signed in (`firebase login`) as the project owner:
+
+```bash
+npm run deploy:rules
+```
+
+This runs `firebase deploy --only firestore:rules` and publishes nothing else.

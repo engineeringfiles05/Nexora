@@ -203,3 +203,11 @@ test('the client reads limits from the server and refuses oversized files before
     await close();
   }
 });
+
+test('firebase.json deploys firestore.rules to the database and project the web app uses', async () => {
+  const web = JSON.parse(await readFile(new URL('../firebase-applet-config.json', import.meta.url), 'utf8'));
+  const firebase = JSON.parse(await readFile(new URL('../firebase.json', import.meta.url), 'utf8'));
+  const rc = JSON.parse(await readFile(new URL('../.firebaserc', import.meta.url), 'utf8'));
+  assert.deepEqual(firebase.firestore, [{ database: web.firestoreDatabaseId, rules: 'firestore.rules' }]);
+  assert.equal(rc.projects.default, web.projectId);
+});
