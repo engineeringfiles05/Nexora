@@ -130,7 +130,7 @@ export default function App() {
   // Cloud write failures are shown, not just logged.
   const reportSaveError = (label: string) => (err: unknown) => {
     console.warn(`${label}:`, err);
-    if (signedInUid) dispatchCloud({ type: 'error', uid: signedInUid, collection: 'write', message: describeSyncError('write', err) });
+    if (signedInUid) dispatchCloud({ type: 'error', uid: signedInUid, collection: 'write', message: describeSyncError('write', err, accountRole) });
   };
 
   // Counts always come from the bank, so edits, deletes and partial publishes can't drift.
@@ -338,7 +338,7 @@ export default function App() {
         (snapshot) => dispatchCloud({ type: 'snapshot', uid: signedInUid, collection: name, docs: snapshot.docs.map((d) => d.data()) }),
         (err) => {
           console.warn(`${name} sync error:`, err);
-          dispatchCloud({ type: 'error', uid: signedInUid, collection: name, message: describeSyncError(name, err) });
+          dispatchCloud({ type: 'error', uid: signedInUid, collection: name, message: describeSyncError(name, err, accountRole) });
         }
       );
     });

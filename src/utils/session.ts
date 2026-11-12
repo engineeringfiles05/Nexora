@@ -104,7 +104,15 @@ export function cloudReducer(state: CloudState, action: CloudAction): CloudState
   }
 }
 
-export function describeSyncError(collection: CloudCollection | 'write', error: unknown): string {
+/**
+ * The administrator is allowed everything by firestore.rules, so a refusal for them means the
+ * rules published in Firebase are not the ones in this repository (an older copy was published,
+ * for example by Google AI Studio). Say that, instead of "ask an administrator".
+ */
+export const OUTDATED_RULES_HELP =
+  'The security rules published in Firebase are out of date, so Firebase refused your administrator account. Publish the current firestore.rules again (npm run deploy:rules, or paste it into Firebase Console \u2192 Firestore Database \u2192 your app\u2019s database \u2192 Rules), then refresh.';
+
+export function describeSyncError(collection: CloudCollection | 'write', error: unknown, role: UserRole = 'reviewee'): string {
   const code = (error as { code?: string })?.code ?? '';
   const what = {
     questions: 'questions',
@@ -115,6 +123,9 @@ export function describeSyncError(collection: CloudCollection | 'write', error: 
     write: 'your last change',
   }[collection];
   if (code === 'permission-denied' || /insufficient permissions/i.test(String((error as Error)?.message))) {
+    if (role === 'admin') {
+      return collection === 'write' ? `Your last change was not saved. ${OUTDATED_RULES_HELP}` : `Could not load ${what}. ${OUTDATED_RULES_HELP}`;
+    }
     return collection === 'write'
       ? 'Your account is not allowed to save that change, so it was not saved to the cloud.'
       : `Your account is not allowed to load ${what}. Ask an administrator to check your access.`;
