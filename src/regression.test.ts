@@ -14,6 +14,7 @@ import {
   selectExamQuestions,
   splitPublishableQuestions,
   ALL_QUESTIONS,
+  planPdfSourceDeletion,
 } from './utils/bank.ts';
 import { calculateExamScore } from './utils/examEngine.ts';
 import { createExamCountdown } from './utils/examTimer.ts';
@@ -259,6 +260,22 @@ test('"All questions" takes every question that matches the filters, however man
   if (all.ok) assert.equal(all.questions.length, 37);
   const none = selectExamQuestions([], [source()], config({ questionCount: ALL_QUESTIONS }));
   assert.equal(none.ok, false);
+});
+
+test('deleting a PDF deletes its questions, or keeps them as standalone questions that exams still use', () => {
+  const bank = [question({ id: 'a' }), question({ id: 'b' }), question({ id: 'other', sourcePdfId: 's2' })];
+
+  const drop = planPdfSourceDeletion('s1', bank, false);
+  assert.deepEqual(drop.deleteIds, ['a', 'b']);
+  assert.deepEqual(drop.detached, []);
+
+  const keep = planPdfSourceDeletion('s1', bank, true);
+  assert.deepEqual(keep.deleteIds, []);
+  assert.deepEqual(keep.detached.map((q) => q.id), ['a', 'b']);
+  assert.ok(keep.detached.every((q) => q.sourcePdfId === undefined && q.question === bank[0]!.question));
+  // With the PDF gone, a detached question is still eligible; one still pointing at it would not be.
+  assert.equal(isQuestionEligibleForExam(keep.detached[0]!, 'practice', []), true);
+  assert.equal(isQuestionEligibleForExam(bank[0]!, 'practice', []), false);
 });
 
 test('the dashboard cards show the same defaults the launcher uses', async () => {

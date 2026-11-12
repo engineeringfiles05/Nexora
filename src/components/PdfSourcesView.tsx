@@ -16,6 +16,7 @@ import {
   BookOpen,
   ArrowRight,
   Eye,
+  Trash2,
 } from 'lucide-react';
 import { PdfSource, SubjectId } from '../types/index.ts';
 import { isSourceAvailableForExam } from '../utils/bank.ts';
@@ -27,6 +28,10 @@ interface Props {
   onUpdateSource: (updated: PdfSource) => void;
   onNavigateToImporter: () => void;
   onNavigateToQuiz: (pdfId: string) => void;
+  /** Questions in the Question Bank that came from each PDF, by PDF id. */
+  bankQuestionCounts?: Record<string, number>;
+  /** Deletes the PDF; its questions are deleted too unless keepQuestions is set. */
+  onDeleteSource?: (source: PdfSource, keepQuestions: boolean) => void;
 }
 
 export const PdfSourcesView: React.FC<Props> = ({
@@ -34,8 +39,18 @@ export const PdfSourcesView: React.FC<Props> = ({
   onUpdateSource,
   onNavigateToImporter,
   onNavigateToQuiz,
+  bankQuestionCounts = {},
+  onDeleteSource,
 }) => {
   const [editingSource, setEditingSource] = useState<PdfSource | null>(null);
+  const [deleting, setDeleting] = useState<PdfSource | null>(null);
+  const [keepQuestions, setKeepQuestions] = useState(false);
+  const deletingCount = deleting ? bankQuestionCounts[deleting.id] ?? 0 : 0;
+
+  const startDelete = (source: PdfSource) => {
+    setKeepQuestions(false);
+    setDeleting(source);
+  };
 
   const handleTogglePublic = (source: PdfSource) => {
     onUpdateSource({
@@ -178,12 +193,24 @@ export const PdfSourcesView: React.FC<Props> = ({
 
             {/* Actions */}
             <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
-              <button
-                onClick={() => handleTogglePublic(source)}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
-              >
-                {source.isPublicToReviewees ? 'Make Restricted' : 'Make Public'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleTogglePublic(source)}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+                >
+                  {source.isPublicToReviewees ? 'Make Restricted' : 'Make Public'}
+                </button>
+                {onDeleteSource && (
+                  <button
+                    onClick={() => startDelete(source)}
+                    aria-label={`Delete ${source.filename}`}
+                    className="px-3 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/70 border border-rose-900/60 text-rose-300 text-xs font-medium flex items-center gap-1.5 transition"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                )}
+              </div>
 
               <button
                 onClick={() => onNavigateToQuiz(source.id)}
@@ -198,6 +225,58 @@ export const PdfSourcesView: React.FC<Props> = ({
           </div>
         ))}
       </div>
+
+      {deleting && onDeleteSource && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-pdf-title">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4 text-xs select-text">
+            <h3 id="delete-pdf-title" className="text-base font-bold text-white flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-400" /> Delete this uploaded PDF?
+            </h3>
+            <p className="text-slate-300 break-words">
+              <strong className="text-white">{deleting.filename}</strong> will be removed from Uploaded PDFs for everyone. This cannot be undone.
+            </p>
+            {deletingCount > 0 ? (
+              <fieldset className="space-y-2">
+                <legend className="text-slate-400 mb-1">
+                  The Question Bank has {deletingCount} question{deletingCount === 1 ? '' : 's'} from this PDF:
+                </legend>
+                <label className="flex items-start gap-2 p-2.5 rounded-lg border border-slate-800 bg-slate-950/60 cursor-pointer">
+                  <input type="radio" name="delete-pdf-questions" checked={!keepQuestions} onChange={() => setKeepQuestions(false)} className="mt-0.5" />
+                  <span>
+                    <strong className="text-white">Delete them too</strong>
+                    <span className="block text-slate-400">Their answers and solutions are deleted. Past exam results keep their own copy.</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 p-2.5 rounded-lg border border-slate-800 bg-slate-950/60 cursor-pointer">
+                  <input type="radio" name="delete-pdf-questions" checked={keepQuestions} onChange={() => setKeepQuestions(true)} className="mt-0.5" />
+                  <span>
+                    <strong className="text-white">Keep them in the Question Bank</strong>
+                    <span className="block text-slate-400">
+                      They become standalone questions. Published ones stay available in exams of their course, no longer limited by this PDF's access settings.
+                    </span>
+                  </span>
+                </label>
+              </fieldset>
+            ) : (
+              <p className="text-slate-400">No Question Bank questions come from this PDF.</p>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setDeleting(null)} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteSource(deleting, keepQuestions);
+                  setDeleting(null);
+                }}
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold"
+              >
+                {deletingCount > 0 && !keepQuestions ? `Delete PDF and ${deletingCount} question${deletingCount === 1 ? '' : 's'}` : 'Delete PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

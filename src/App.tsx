@@ -27,6 +27,7 @@ import {
   isReviewedForExams,
   publishQuestionsToBank,
   type DuplicateDecision,
+  planPdfSourceDeletion,
   reconcileSourceCounts,
   selectExamQuestions,
 } from './utils/bank.ts';
@@ -36,6 +37,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import {
   saveQuestionToFirestore,
   deleteQuestionFromFirestore,
+  deletePdfSourceFromFirestore,
   batchSaveQuestionsToFirestore,
   savePdfSourceToFirestore,
   saveExamResultToFirestore,
@@ -880,6 +882,29 @@ export default function App() {
               // The administrator takes the quiz as themselves.
               navigate('pdf-quiz-generator');
               handleOpenLauncher('pdf_quiz', undefined, pdfId);
+            }}
+            bankQuestionCounts={questions.reduce<Record<string, number>>((acc, q) => {
+              if (q.sourcePdfId) acc[q.sourcePdfId] = (acc[q.sourcePdfId] ?? 0) + 1;
+              return acc;
+            }, {})}
+            onDeleteSource={(source, keepQuestions) => {
+              const plan = planPdfSourceDeletion(source.id, questions, keepQuestions);
+              const removed = new Set(plan.deleteIds);
+              setPdfSources((prev) => prev.filter((p) => p.id !== source.id));
+              setQuestions((prev) => prev.filter((q) => !removed.has(q.id)).map((q) => plan.detached.find((d) => d.id === q.id) ?? q));
+              // Detach kept questions first, so none is ever left pointing at a deleted PDF.
+              const save = plan.detached.length ? batchSaveQuestionsToFirestore(plan.detached) : Promise.resolve();
+              save
+                .then(() => deletePdfSourceFromFirestore(source.id, plan.deleteIds))
+                .catch(reportSaveError('Delete PDF from Firestore'));
+              handleAddAuditLog(
+                'PDF Deleted',
+                `Deleted "${source.filename}"` +
+                  (plan.deleteIds.length ? ` and its ${plan.deleteIds.length} question${plan.deleteIds.length === 1 ? '' : 's'}.` : '') +
+                  (plan.detached.length ? `; kept its ${plan.detached.length} question${plan.detached.length === 1 ? '' : 's'} as standalone questions.` : '') +
+                  (!plan.deleteIds.length && !plan.detached.length ? '.' : ''),
+                'Delete'
+              );
             }}
           />
         )}

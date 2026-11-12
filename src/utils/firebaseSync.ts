@@ -230,6 +230,29 @@ export async function savePdfSourceToFirestore(source: PdfSource): Promise<void>
 }
 
 /**
+ * Deletes an uploaded PDF's record, and the given questions with their answer keys.
+ * The PDF record goes in the last batch, so a failure part-way leaves it listed and retryable.
+ */
+export async function deletePdfSourceFromFirestore(sourceId: string, questionIds: string[]): Promise<void> {
+  if (!isSignedIn()) return; // demo mode: the data stays in this browser
+  const path = `pdfSources/${sourceId}`;
+  try {
+    const PER_BATCH = 200; // two deletes per question, under Firestore's 500 writes per batch
+    for (let i = 0; i < questionIds.length; i += PER_BATCH) {
+      const batch = writeBatch(db);
+      for (const id of questionIds.slice(i, i + PER_BATCH)) {
+        batch.delete(doc(db, 'questions', id));
+        batch.delete(doc(db, 'questionKeys', id));
+      }
+      await batch.commit();
+    }
+    await deleteDoc(doc(db, 'pdfSources', sourceId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+/**
  * Saves an exam result to Firestore
  */
 export async function saveExamResultToFirestore(result: ExamResult): Promise<void> {
