@@ -17,6 +17,9 @@ import {
   planPdfSourceDeletion,
 } from './utils/bank.ts';
 import { calculateExamScore } from './utils/examEngine.ts';
+import { splitQuestion } from './utils/answerKeys.ts';
+import { approveMany } from './utils/importReview.ts';
+import { cloudQueryPlan } from './utils/session.ts';
 import { createExamCountdown } from './utils/examTimer.ts';
 import { classifyQuestionnaireFile, formatFileSize } from './utils/importFile.ts';
 import { isRecordArray, loadPersisted, savePersisted, type StorageLike } from './utils/persistence.ts';
@@ -276,6 +279,51 @@ test('deleting a PDF deletes its questions, or keeps them as standalone question
   // With the PDF gone, a detached question is still eligible; one still pointing at it would not be.
   assert.equal(isQuestionEligibleForExam(keep.detached[0]!, 'practice', []), true);
   assert.equal(isQuestionEligibleForExam(bank[0]!, 'practice', []), false);
+});
+
+test('a published question set reaches reviewees of its course in every exam mode, all of its questions', () => {
+  // Drafts as the importer stages them: pending review, answers verified, not yet published.
+  const staged = Array.from({ length: 25 }, (_, i) =>
+    question({
+      id: `imp-${i}`,
+      sourcePdfId: undefined,
+      contentFingerprint: `fp-${i}`,
+      reviewStatus: 'pending',
+      verificationStatus: 'verified',
+      isPublished: false,
+      course: 'REE',
+      subjectId: 'ee',
+    })
+  );
+  const approved = approveMany(staged, staged.map((q) => q.id)).map((q) => ({ ...q, isPublished: true }));
+  const set = source({ id: 'ee-1', filename: 'EE 1 Evaluation Exam.txt', course: 'REE', isPublicToReviewees: true, allowedModes: ['quiz', 'practice', 'preboard', 'mock'] });
+  const bank = publishQuestionsToBank([], [], approved, set);
+
+  // What a reviewee's account actually receives: the public half of each document, filtered as
+  // cloudQueryPlan queries Firestore (and as firestore.rules allows).
+  const receive = (course: 'REE' | 'RME') => {
+    const plan = cloudQueryPlan('reviewee', 'student-1', course);
+    const matches = (doc: Record<string, unknown>, filters: { field: string; value: unknown }[] | null | undefined) =>
+      Boolean(filters) && filters!.every((f) => doc[f.field] === f.value);
+    return {
+      questions: bank.questions.map((q) => splitQuestion(q).publicDoc as Question).filter((q) => matches(q as never, plan.questions)),
+      sources: bank.sources.filter((s) => matches(s as never, plan.pdfSources)),
+    };
+  };
+
+  const ree = receive('REE');
+  assert.equal(ree.questions.length, 25);
+  assert.deepEqual(getSelectableSources(ree.sources, 'pdf_quiz').map((s) => s.id), ['ee-1']);
+  for (const type of ['pre_test', 'quiz', 'practice', 'pre_board', 'final_mock', 'pdf_quiz'] as const) {
+    const exam = selectExamQuestions(ree.questions, ree.sources, config({ type, questionCount: ALL_QUESTIONS, pdfSourceId: type === 'pdf_quiz' ? 'ee-1' : undefined }));
+    assert.ok(exam.ok, `${type}: ${exam.ok ? '' : exam.error}`);
+    if (exam.ok) assert.equal(exam.questions.length, 25, type);
+  }
+
+  // Other courses never receive it.
+  const rme = receive('RME');
+  assert.equal(rme.questions.length, 0);
+  assert.equal(rme.sources.length, 0);
 });
 
 test('the dashboard cards show the same defaults the launcher uses', async () => {
