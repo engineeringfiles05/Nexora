@@ -1,0 +1,851 @@
+55th EE 3 - Evaluation Exam (OLSE/OLSA)
+Coverage: Power Systems, Power Plant Engineering, Philippine Electrical Code, Grid and Distribution Codes
+
+1. A two terminal pair of Network of a transmission line can be represented by a _____.
+A. T- Network
+B. π - Network
+C. Either A or B
+D. tree network
+Answer: C
+Solution: A transmission line is a two-port (two terminal-pair) network and can be represented either by a nominal-T or a nominal-π equivalent circuit.
+
+2. How many hours can a load be called a Continuous load?
+A. One hour
+B. 3 hours
+C. 2 hours
+D. 24 hours
+Answer: B
+Solution: PEC definition: a continuous load is one where the maximum current is expected to continue for 3 hours or more.
+
+3. A lamp give sufficient light to an object at a distance of 70 cm. By how much closer should the object be placed to double the illumination.
+A. 21.55 cm
+B. 22.45 cm
+C. 20.5 cm
+D. 21.28 cm
+Answer: C
+Solution: E ∝ 1/d² (inverse square law). For 2E: d2 = d1/√2 = 70/1.4142 = 49.5 cm
+• Move closer by 70 − 49.5 = 20.5 cm
+
+4. Determine the per unit impedance of a 3-phase, 60 MVA, 13.2 kV Generator with 20% impedance at 100 MVA and 13.2 kV bases.
+A. 0.54
+B. 0.12
+C. 0.28
+D. 0.33
+Answer: D
+Solution: Same kV base, so Z(new) = Z(old) × (MVA new/MVA old)
+• Z = 0.20 × 100/60 = 0.333 pu
+
+5. The growth rate of the energy consumption in our country is 6.9%. In how many years will the energy be quadrupled?
+A. 20
+B. 30
+C. 15
+D. 25
+Answer: A
+Solution: Continuous growth: E = E₀e^(rt), so 4 = e^(0.069t)
+• t = ln 4/0.069 = 1.3863/0.069 = 20.1 ≈ 20 years
+
+6. The most conventional source of energy is _____.
+A. Coal
+B. Solar
+C. Geothermal
+D. Wind
+Answer: A
+Solution: Coal (a fossil fuel) is the most conventional energy source; solar, geothermal and wind are non-conventional (renewable) sources.
+
+7. The grounded conductor is a/an ___________ grounded conductor.
+A. isolated
+B. guarded
+C. insulated
+D. intentionally
+Answer: D
+Solution: PEC definition: a grounded conductor is a system or circuit conductor that is intentionally grounded.
+
+8. The power plant has a maximum demand of 100 MW and connected load of 160MW. Annual Generation of 500 GWH. Calculate the demand factor.
+A. 32%
+B. 62.5%
+C. 86.75%
+D. 22%
+Answer: B
+Solution: Demand factor = maximum demand/connected load = 100/160 = 0.625 = 62.5%
+• The annual generation is not needed for this factor.
+
+9. Most advantage form of generator output from water is _____.
+A. Wind
+B. Ocean Current
+C. Wave
+D. Tidal
+Answer: D
+Solution: Among ocean energy forms, tidal power is the most advantageous because tides are regular and predictable.
+
+10. The generating station with mimimum running cost is
+A. hydro power station
+B. the voltage accross the feeder
+C. thermal power station
+D. diesel power station
+Answer: A
+Solution: A hydro station needs no fuel, so its running (operating) cost is the lowest, though its capital cost is high.
+• Note: choice B is printed this way in the PDF.
+
+11. Where the branch circuit supplied continuous loads or any combination of continuous or non-continuous load, the minimum branch circuit conductor size and overcurrent protection shall have allowable ampacity and rating shall not be less than the non-continuous load plus_____ percent of the continuous load.
+A. 115%
+B. 100%
+C. 125%
+D. 140%
+Answer: C
+Solution: PEC 2.10.2.19 / 2.10.2.20: conductors and overcurrent devices shall be rated at least the non-continuous load plus 125% of the continuous load.
+
+12. In Philippine Distribution Code, the utility requires the consumer to operate at a power factor not less than _______ or more than _____percent.
+A. 85, 85
+B. 80, 90
+C. 75, 95
+D. 85, 90
+Answer: D
+Solution: The Philippine Distribution Code requires users to keep their power factor within limits; 85% is the commonly cited minimum.
+• Review note: confirm this two-value item (85, 90) against the PDC text or your review center's key.
+
+13. Which of the following is incorrect about HVDC.
+A. Corona loss is higher in HVDC
+B. No inductance & Capacitance
+C. No skin effect in conductor
+D. Voltage drop is less
+Answer: A
+Solution: Corona loss is lower in HVDC than in HVAC for the same conductor, so statement A is incorrect. In steady-state DC, inductance and capacitance have no effect, there is no skin effect, and voltage drop is less.
+
+14. Where a ground fault Circuit Interrupter (GFCI) should be installed?
+I. Garage II. Bathroom III. Outside IV. Dining Room V. Guest Room
+A. I, II, III
+B. I, IV, V
+C. I, II, V
+D. I, III, IV
+Answer: A
+Solution: PEC 2.10.1.8 requires GFCI protection for dwelling receptacles in bathrooms, garages and outdoors (among others), not in dining or guest rooms.
+
+15. An act penalizing Pilferage of electricity, theft of transmission lines/materials and rationalizing system loss by phasing out pilferage losses.
+A. RA 7920
+B. RA 9136
+C. RA 7832
+D. RA 8495
+Answer: C
+Solution: RA 7832 is the Anti-Electricity and Electric Transmission Lines/Materials Pilferage Act of 1994. (RA 7920 is the EE law; RA 9136 is EPIRA; RA 8495 is the Mechanical Engineering law.)
+
+16. The effect of series capacitor on a transmission line is to improve the.
+A. steady state stability
+B. transient stability
+C. both A and B
+D. none of the above
+Answer: C
+Solution: Series capacitors reduce the net series reactance X. Since Pmax = VsVr/X, both steady-state and transient stability limits are improved.
+
+17. Name the effect which is resulted because of the size of conductor, frequency and the specific resistance of conducting material.
+A. Corona Effect
+B. Skin Effect
+C. Proximity Effect
+D. Thompson Effect
+Answer: B
+Solution: Skin effect depends on conductor size (diameter), frequency, and the resistivity (and permeability) of the material.
+
+18. The power transmission capacity of the transmission line is.
+A. proportional to the square of the voltage
+B. inversely proportional to the voltage
+C. directly proportional to the voltage
+D. proportional to the cube of the voltage
+Answer: A
+Solution: P = (VsVr/X) sin δ, so power transmission capacity ∝ V².
+
+19. A power plant consumes 3600 short tons of coal per day. If the coal has an average energy content of 10,000 btu/lb. Assume an overall efficiency of 15%, what is the plant’s output MW?
+A. 132
+B. 235
+C. 292
+D. 86
+Answer: A
+Solution: Coal per day = 3600 × 2000 = 7.2 × 10⁶ lb; heat = 7.2 × 10¹⁰ BTU/day
+• Heat rate = 7.2 × 10¹⁰ × 1055 J / 86,400 s = 879 MW (thermal)
+• Output = 0.15 × 879 = 132 MW
+
+20. A three-phase circuit, 60 Hz, 345 kV transposed transmission line is composed of 1272 MCM, 54/19 conductors per phase with horizontal spacing of 35 ft, 35 ft. and 70 ft respectively. If the GMR of the ACSR conductors is 14.2mm, find the inductance in mH/km per phase of the transmission line?
+A. 1.37
+B. 1.98
+C. 1.28
+D. 1.64
+Answer: A
+Solution: GMD = ∛(35 × 35 × 70) = 44.1 ft = 13.44 m; GMR = 0.0142 m
+• L = 2 × 10⁻⁷ ln(13.44/0.0142) = 2 × 10⁻⁷ × 6.853 = 1.371 × 10⁻⁶ H/m = 1.37 mH/km
+
+21. The effective resistance of conductor is increased by
+A. skin effect
+B. proximity effect
+C. corona effect
+D. both A and B
+Answer: D
+Solution: Skin effect and proximity effect both crowd the current into part of the conductor cross-section, increasing its effective AC resistance. Corona causes a power loss, not a resistance increase.
+
+22. Which of the folllowing insulator will be selected for high voltage application?
+A. strain type
+B. suspension type
+C. disc type
+D. pin type
+Answer: B
+Solution: Pin insulators are economical only up to about 33 kV; for higher voltages suspension-type insulators (strings of discs) are used.
+
+23. If the Transmission line voltage is doubled with the same load, the line loss is _________
+A. 2 times
+B. 4 times
+C. ¼ times
+D. ½ times
+Answer: C
+Solution: For the same power, I ∝ 1/V, so loss I²R ∝ 1/V². Doubling V gives (1/2)² = ¼ the loss.
+
+24. A small wind generator is to be designed to generate 75 KW of power at a wind velocity of 48 kph. What is the approximate blade diameter?
+A. 26 ft
+B. 42 ft
+C. 36 ft
+D. 34 ft
+Answer: D
+Solution: v = 48 kph = 13.33 m/s; wind power density = ½ρv³ = 0.5 × 1.225 × 13.33³ = 1452 W/m²
+• At the Betz limit (Cp = 0.593): 0.593 × 1452 = 861 W/m², so A = 75,000/861 = 87.1 m²
+• D = √(4A/π) = 10.5 m = 34.6 ft ≈ 34 ft
+• Review note: if the power coefficient is ignored (100% of wind power), D ≈ 26.7 ft (choice A). Confirm which assumption your key uses.
+
+25. What is the maximum bend of Rigid Metallic Conduit (RMC)?
+A. 2 Quarter
+B. 4 Quarter
+C. 3 Quarter
+D. 5 Quarter
+Answer: B
+Solution: PEC 3.44.2.17 (RMC): there shall be no more than the equivalent of four quarter bends (360° total) between pull points.
+
+26. Which of the following is not considered in selection of surge arrester?
+A. Class
+B. Voltage rating
+C. Insulation level
+D. Current rating
+Answer: D
+Solution: Surge arresters are selected by class, voltage rating (MCOV) and the insulation level (BIL) to be protected. They carry no continuous load current, so "current rating" is not a selection criterion.
+
+27. What is the standard device number for distance Relay?
+A. 51
+B. 55
+C. 52
+D. 21
+Answer: D
+Solution: ANSI/IEEE C37.2: 21 = distance relay, 51 = AC time overcurrent relay, 52 = AC circuit breaker, 55 = power factor relay.
+
+28. In transmission lines, the most effective protection against lightning strikes is one of the following. Which one is this?
+A. Lightning rods
+B. Petersen coils
+C. Lightning arresters
+D. Overhead wires
+Answer: D
+Solution: Overhead ground (shield) wires above the phase conductors intercept direct lightning strokes and are the most effective protection for transmission lines.
+
+29. Part of Hydro electric power station that discharges the Surplus water from storage reservoir into the river on the down stream side of the dam.
+A. Penstock
+B. Spillway
+C. Surge Tank
+D. Dam
+Answer: B
+Solution: The spillway safely discharges surplus water from the reservoir to the downstream river.
+
+30. Calculate the capacitance per phase to neutral per km of a single circuit, two bundled conductor line. The diameter of each conductor is 5 cm, spacing of conductors of the bundle is 30 cm and horizontal spacing between adjacent phases are 5 m.
+A. 0.0126 μF/km
+B. 0.0132 μF/km
+C. 0.0146 μF/km
+D. 0.0106 μF/km
+Answer: B
+Solution: r = 2.5 cm; bundle equivalent radius = √(r × d) = √(0.025 × 0.30) = 0.0866 m
+• GMD = ∛(5 × 5 × 10) = 6.30 m
+• C = 2πε₀/ln(GMD/r_eq) = 5.563 × 10⁻¹¹/ln(72.74) = 1.298 × 10⁻¹¹ F/m = 0.0130 μF/km
+• Closest choice: 0.0132 μF/km.
+• Review note: the exact value is 0.0130 μF/km. 0.0126 results from wrongly using GMR (0.7788r) in a capacitance formula. Confirm the intended key.
+
+31. Which of the following parameter can be neglected for a short line?
+A. resistance
+B. reactance
+C. inductance
+D. capacitance
+Answer: D
+Solution: In short lines (under about 80 km) the shunt capacitance (charging current) is negligible; only series R and L are considered.
+
+32. What is color of neutral wire insulation?
+A. Black
+B. Green
+C. Yellow
+D. White
+Answer: D
+Solution: PEC 2.0.1.6: the grounded (neutral) conductor shall have white or gray insulation. Green is for equipment grounding.
+
+33. The power loss is important for the design of.
+A. generator
+B. feeder
+C. motor
+D. transmission line
+Answer: D
+Solution: Line power loss (I²R), and hence efficiency, is the main consideration in designing a transmission line.
+• Review note: confirm together with item 34.
+
+34. The voltage regualtionis an imprtant factor for the design of.
+A. generator
+B. feeder
+C. motor
+D. transmission line
+Answer: B
+Solution: Voltage drop/regulation is the main design factor for the distribution side (feeders/distributors), which must hold consumer voltage within limits.
+• Review note: textbooks state this for distributors; feeder is the nearest choice. Confirm against your key.
+
+35. A room air conditioner is to be attached to an individual branch circuit. If the load is 12 A, what is the minimum size of branch circuit required?
+A. 15 A
+B. 13.8 A
+C. 8.7 A
+D. 9.6 A
+Answer: A
+Solution: PEC 4.40.7.2: a room air conditioner on an individual branch circuit shall not exceed 80% of the branch-circuit rating.
+• Rating ≥ 12/0.80 = 15 A
+
+36. The power intended to be available even under emergency condition is called.
+A. firm power
+B. hot reserve
+C. cold reseve
+D. spinning reserve
+Answer: A
+Solution: Firm power is the power intended to be always available, even under emergency conditions.
+
+37. What is the function of the surge tank in the hydro power plant?
+A. Relieve water hammer pressures in the penstock pipe
+B. Produce surge in the pipe line
+C. Relieve water pressure in the boiler
+D. Supply water at constant pressure
+Answer: A
+Solution: When the turbine gates close suddenly, the surge tank absorbs the pressure rise (water hammer) in the penstock.
+
+38. Most commonly used supports for high tension lines is
+A. wooden poles
+B. cross bars
+C. steel poles
+D. latticed steel poles
+Answer: D
+Solution: High-tension (EHV) transmission lines are carried on latticed steel towers, which are strong, light and suit long spans.
+
+39. What is the minimum size grounding electrode copper conductor?
+A. 3.5 sq.mm
+B. 8.0 sq.mm
+C. 5.5 sq.mm
+D. 14 sq.mm
+Answer: B
+Solution: PEC Table 2.50.3.66: the smallest copper grounding electrode conductor is 8.0 mm².
+
+40. One million cubic meters of water is stored in a reservoir feeding a water turbine. If the center of mass of the water is 50m above the turbine and losses are negligible, how much energy in MWH will that volume of water produce? Take density of water is 993 kg/m³.
+A. 135.3
+B. 155.3
+C. 133.5
+D. 153.5
+Answer: A
+Solution: m = 1 × 10⁶ × 993 = 9.93 × 10⁸ kg
+• E = mgh = 9.93 × 10⁸ × 9.81 × 50 = 4.871 × 10¹¹ J
+• E = 4.871 × 10¹¹ / 3.6 × 10⁹ = 135.3 MWh
+
+41. Solar collector generate 1kW/m2 of thermal energy using the sun’s energy. A collector having an area of 1 sq.m heats water. The water flows at a rate of 30 liter/min. What is most nearly the temperature rise in the water? The specific heat of water is 4200 J/kg°C.
+A. 0.1°C
+B. 5°C
+C. 0.5°C
+D. 30°C
+Answer: C
+Solution: Mass flow = 30 L/min = 0.5 kg/s; heat input = 1000 W
+• ΔT = Q/(ṁc) = 1000/(0.5 × 4200) = 0.48°C ≈ 0.5°C
+
+42. A 25 km three phase transmission line is composed of conductors 500 mils in diameter are arrange in triangular formation 6m apart. Calculate the capacitance per phase in micro-farad.
+A. 0.3095
+B. 0.6067
+C. 0.2029
+D. 0.9154
+Answer: C
+Solution: r = 250 mils = 0.25 in = 6.35 mm
+• C = 2πε₀/ln(D/r) = 5.563 × 10⁻¹¹/ln(6/0.00635) = 5.563 × 10⁻¹¹/6.851 = 8.12 × 10⁻¹² F/m
+• For 25 km: C = 8.12 × 10⁻¹² × 25,000 = 0.2030 μF
+
+43. American engineer wishes to practice Electrical Engineering in the Philippines must have _______.
+A. Foreign Reciprocity
+B. ASEAN
+C. APEC
+D. AEPC
+Answer: A
+Solution: Under RA 7920, a foreign engineer may practice in the Philippines only if their country grants reciprocity to Filipino engineers.
+
+44. What is the disadvantage of renewable energy?
+A. intermittent
+B. lack of dependability
+C. Both A & B
+D. Neither A or B
+Answer: C
+Solution: Renewable sources such as solar and wind are intermittent and therefore less dependable (they need storage or backup).
+
+45. The lighting load for an office expressed in terms of volt-ampere per square meter must be at least ________.
+A. 16 VA/sq m
+B. 28 VA/sq m
+C. 12 VA/sq m
+D. 24 VA/sq m
+Answer: B
+Solution: The PEC general lighting load table lists office buildings (and banks) at 28 VA/m²; dwelling units are 24 VA/m².
+• Review note: newer code tables list different figures; confirm against the PEC edition your exam follows.
+
+46. If the height of the transmission tower is decreased, the capacitance of the line will.
+A. increase
+B. remain same
+C. decrease
+D. decrease exponentially
+Answer: A
+Solution: Lowering the conductors brings them closer to ground, which increases the effect of the earth (image charges) and so increases line capacitance.
+
+47. In dwelling unit, floor receptacle/outlets shall not be counted as part of the required receptacle outlets unless located within ______ mm of the wall.
+A. 1800
+B. 1600
+C. 450
+D. 500
+Answer: C
+Solution: PEC 2.10.3.52(A)(3): floor receptacles count toward required outlets only if within 450 mm of the wall.
+
+48. Convergence of the transmission load flow is always assured in case of.
+A. Newton-Raphson method
+B. Gauss-Seidel method
+C. Gauss method
+D. both A and B
+Answer: A
+Solution: The Newton-Raphson method has reliable, quadratic convergence that is practically independent of system size. Gauss-Seidel convergence is slower and less reliable.
+
+49. The characteristics of impedance of a transmission line is given by
+A. (L/C)^(1/2)
+B. (LC)^(1/2)
+C. 2π(L/C)^(1/2)
+D. LC
+Answer: A
+Solution: For a lossless line, Zc = √(L/C).
+
+50. If the torque angle is continuously increases, the system will become
+A. Stable
+B. Oscillatory stable
+C. asymptotic stable
+D. Unstable
+Answer: D
+Solution: If the torque (power) angle keeps increasing without settling, the machine loses synchronism and the system is unstable.
+
+51. What is WESM?
+A. Wholesale Electricity Spot Market
+B. Wholesale Electricity Slot Machine
+C. Wholesale Electricity Spare Market
+D. World Electromechanical System Management
+Answer: A
+Solution: WESM is the Wholesale Electricity Spot Market, created under EPIRA (RA 9136).
+
+52. How many ohms will be required for a single electrode pipe.
+A. 5 ohm or less
+B. 20 ohms or less
+C. 10 ohms or less
+D. 25 or less
+Answer: D
+Solution: PEC 2.50.3.53(A)(2): a single rod, pipe or plate electrode shall have a resistance to earth of 25 Ω or less; otherwise a supplemental electrode is required.
+
+53. PEC defines as Recognizable as suitable for the specific purpose function, use, environment, application and so forth
+A. Listed
+B. Identified
+C. Labeled
+D. Isolated
+Answer: B
+Solution: PEC definition: "Identified (as applied to equipment)" means recognizable as suitable for the specific purpose, function, use, environment, application, and so forth.
+
+54. Which of the following is/are the MOST important factor/s to be considered in the selection of fuel for power plants?
+I. Cost of fuel
+II. Calorific value of fuel
+A. I only
+B. II only
+C. Either I or II
+D. Both I and II
+Answer: D
+Solution: Fuel selection weighs both cost and calorific (heating) value, which together set the fuel cost per unit of energy.
+
+55. Which of the following equipment is used to limit short-circuit current level in substation?
+A. Isolator
+B. Coupling capacitor
+C. Lightning switch
+D. Series reactor
+Answer: D
+Solution: Series (current-limiting) reactors add reactance to the fault path and limit short-circuit current.
+
+56. PRC Modernization Act of 2000 is also known as.
+A. RA 7920
+B. RA 9136
+C. RA 7832
+D. RA 8981
+Answer: D
+Solution: RA 8981 is the PRC Modernization Act of 2000.
+
+57. What can usually be assumed as the driving or source voltage for fault and voltage calculations in per unit method?
+A. 1 p.u.
+B. 10 p.u.
+C. 3 p.u.
+D. 5 p.u.
+Answer: A
+Solution: In per-unit fault studies the prefault (source) voltage is usually taken as 1.0 pu.
+
+58. A notice issued by the system operator when peace and order problem exist which may affect grid operation.
+A. Security alert
+B. Blue alert
+C. Red alert
+D. Yellow alert
+Answer: A
+Solution: Philippine Grid Code: a Security Alert is issued when a peace and order problem exists that may affect grid operation.
+
+59. Disconnecting means should be located insight belongs to what Rule?
+A. Construction Rule
+B. Installation Rule
+C. Design Rule
+D. Manufacturer’s Rule
+Answer: B
+Solution: Requiring a disconnecting means to be within sight of the equipment is a rule on how equipment is installed, i.e. an installation rule.
+• Review note: confirm against your review center's key.
+
+60. Which is variable Renewable Energy?
+A. Solar Farm
+B. Diesel
+C. Coal
+D. all of the above
+Answer: A
+Solution: Solar is a variable renewable energy (VRE) source whose output depends on sunlight. Diesel and coal are non-renewable.
+
+61. In what circumstance does an overcurrent protection operate?
+A. Voltage surge
+B. Over voltage
+C. Impedance
+D. Current flow
+Answer: D
+Solution: Overcurrent protection operates on current flow: it trips when the current exceeds its setting (overload or fault).
+
+62. If a tropical storm is going to the Philippine area of responsibility within 24 hours, what kind of alert to be raised in accordance to Philippine Distribution Code?
+A. Blue Alert
+B. Yellow alert
+C. Weather Disturbance alert
+D. Red alert
+Answer: A
+Solution: A Blue Alert is issued when a tropical disturbance is expected to enter the Philippine area of responsibility within 24 hours.
+
+63. A certain amount of fuel can be converted into 3 × 10⁻³ quads of energy in a power station. If the average load on the station over 24-hour period is 60 MW, determine the number of days the fuel last. Assume 30% overall efficiency of the power station.
+A. 146.5
+B. 164.5
+C. 144.6
+D. 183
+Answer: D
+Solution: 1 quad = 10¹⁵ BTU = 1.055 × 10¹⁸ J, so the fuel energy = 3.165 × 10¹⁵ J
+• Electrical output = 0.30 × 3.165 × 10¹⁵ = 9.495 × 10¹⁴ J
+• Time = 9.495 × 10¹⁴ / 60 × 10⁶ = 1.5825 × 10⁷ s = 183 days
+
+64. A single circuit, three phase 60 Hz transmission line consist of three conductors each of 250 mils in diameter arranged in triangular formation 5m, 5m and 8 m apart. Find the inductive reactance per km.
+A. 0.5858
+B. 0.6868
+C. 0.8686
+D. 0.8585
+Answer: A
+Solution: r = 125 mils = 3.175 mm; GMR = 0.7788r = 2.473 mm
+• GMD = ∛(5 × 5 × 8) = 5.848 m
+• L = 2 × 10⁻⁷ ln(5.848/0.002473) = 1.554 × 10⁻⁶ H/m
+• XL = 2π(60)(1.554 × 10⁻³) = 0.5858 Ω/km
+
+65. What is the primary reason for pulverizing Coal in Steam stations?
+A. Better burning
+B. Calorific
+C. Decrease Radiation
+D. Medium size
+Answer: A
+Solution: Pulverizing increases the coal's surface area, giving faster, more complete and more efficient combustion.
+
+66. Which of the following is included in the calculation of reliability indices of Distribution Code?
+A. Outages in the Generation
+B. 500 kV line outages
+C. 34.5 kV line outages
+D. 230 kV line outages
+Answer: C
+Solution: Distribution reliability indices count outages on the distribution system (e.g. 34.5 kV and below). Generation and transmission (230/500 kV) outages are excluded.
+
+67. In each dwelling unit, small appliance and laundry loads shall be computed at ______ VA for each 2-wire small appliance branch circuit.
+A. 800
+B. 1200
+C. 1500
+D. 1000
+Answer: C
+Solution: PEC 2.20.4.52: small-appliance and laundry loads are computed at 1500 VA for each 2-wire branch circuit.
+
+68. What is the maximum bend of Rigid Metallic Conduit (RMC)?
+A. 2 Quarter
+B. 4 quarter
+C. 3 quarter
+D. 5 quarter
+Answer: B
+Solution: No more than the equivalent of four quarter bends (360° total) between pull points.
+• Note: this item repeats item 25.
+
+69. A two terminal pair of network of a transmission line can be represented by a.
+A. π − network
+B. T − network
+C. either A or B
+D. tree network
+Answer: C
+Solution: A transmission line two-port can be represented by either a nominal-π or a nominal-T network.
+• Note: this item repeats item 1 with the choices reordered.
+
+70. The skin effect in conductors is due to non distribution of current in it and major portion of the current is near the ______ of conductor.
+A. Surface
+B. Axis
+C. center
+D. radial lines
+Answer: A
+Solution: With AC, the inner part of the conductor has more flux linkage (higher inductance), so current crowds toward the surface.
+
+71. The term which allows any person or entity in the purchasing the energy from transmission, distribution whichever have low charge rate.
+A. Open Access
+B. Transmission and Distribution charge
+C. Electricity Distribution charge
+D. Generation charge
+Answer: A
+Solution: Open access (EPIRA) lets qualified end-users choose their supplier and use the transmission and distribution systems on a non-discriminatory basis.
+
+72. Which of the following distribution system gives the greater reliability?
+A. Radial system
+B. DC 3-wire system
+C. Ring system
+D. open loop system
+Answer: C
+Solution: A ring (closed-loop) system can feed each consumer from two directions, so a fault on one section does not interrupt supply.
+
+73. A single phase 10 km transmission line has 16.65 mH total inductance. If the distance between the conductor is 1.0 m, what is the GMR of conductor?
+A. 1.662 cm
+B. 1.558 cm
+C. 1.864 cm
+D. 1.238 cm
+Answer: B
+Solution: Loop inductance per metre = 16.65 × 10⁻³ / 10,000 = 1.665 × 10⁻⁶ H/m
+• L = 4 × 10⁻⁷ ln(D/GMR), so ln(1/GMR) = 4.1625
+• GMR = e^(−4.1625) = 0.01557 m = 1.558 cm
+
+74. In Philippine Grid Code, which alert issued by system operator when the contingency reserve is zero, a generation deficiency exists, or there is critical loading or imminent overloading of transmission lines and equipment.
+A. Blue alert
+B. Red alert
+C. Yellow alert
+D. Security alert
+Answer: B
+Solution: PGC: a Red Alert is issued when the contingency reserve is zero, a generation deficiency exists, or there is critical loading or imminent overloading of lines and equipment.
+
+75. The illumination of a certain object 2.5m from the light source is 6,648 lux. Using the same light source, what is the illumination on the object at 5.0m?
+A. 4700 Lux
+B. 3324 Lux
+C. 1226 Lux
+D. 1662 lux
+Answer: D
+Solution: E ∝ 1/d²: E2 = 6648 × (2.5/5.0)² = 6648/4 = 1662 lux
+
+76. Where multiple rod, pipes or plate electrodes are installed to meet maximum of 25 ohms resistance to ground, they shall not be less than ____mm apart.
+A. 1000mm
+B. 1500mm
+C. 1200mm
+D. 1800mm
+Answer: D
+Solution: PEC 2.50.3.53(A)(2): where multiple electrodes are installed, they shall be not less than 1.8 m (1800 mm) apart.
+
+77. What is the minimum size grounding rod?
+A. 10mm
+B. 12mm
+C. 13mm
+D. 16mm
+Answer: D
+Solution: PEC: rod-type grounding electrodes of iron or steel shall be at least 15.87 mm (5/8 in) in diameter, about 16 mm.
+
+78. The strain type insulators used when.
+A. the transmission line is dead ended
+B. the direction of transmission line changes
+C. The transmission line is short
+D. A or B
+Answer: D
+Solution: Strain insulators take the mechanical tension at dead ends and at sharp corners or curves where the line changes direction.
+
+79. Calculation of reliability standards of grid owner set by Philippine Grid Code shall exclude outages that occur on the
+A. Generation deficit
+B. Transmission lines
+C. Secondary side of distribution
+D. Primary side of distribution
+Answer: A
+Solution: The grid owner (transmission) is answerable only for transmission outages, so interruptions caused by generation deficiency are excluded from its reliability indices.
+• Review note: confirm against the PGC text or your review center's key.
+
+80. Which of the following type of fault that used only the equivalent positive impedance of the circuit in the short-circuit calculation?
+A. Line-to-line fault
+B. Double-line-to-ground fault
+C. Three-phase fault
+D. Single-line-to-ground fault
+Answer: C
+Solution: A balanced three-phase fault involves only the positive-sequence network: If = Vf/Z1.
+
+81. What is the IEEE standard device number for under-voltage relay?
+A. 27
+B. 52
+C. 67
+D. 51
+Answer: A
+Solution: ANSI/IEEE C37.2: 27 = undervoltage relay, 52 = AC circuit breaker, 67 = directional overcurrent relay, 51 = AC time overcurrent relay.
+
+82. In single phase, 3-wire system, the middle conductor must be which of the following
+A. hot wire
+B. ungrounded wire
+C. grounded wire
+D. out of phase wire
+Answer: C
+Solution: In a 1-phase, 3-wire (120/240 V) system the middle (neutral) conductor is the grounded conductor.
+
+83. Which of the following forms part of Service entrance
+A. Ungrounded conductor
+B. Ground electrode
+C. Equipment grounding conductor
+D. All of these
+Answer: A
+Solution: Service-entrance conductors are the service conductors from the service point to the service equipment, i.e. the ungrounded (and grounded) conductors. The ground electrode and equipment grounding conductor belong to the grounding system.
+• Review note: confirm against your review center's key.
+
+84. If the transmission voltage is increased, the percentage resistance drop will.
+A. increase
+B. decrease
+C. remain unchanged
+D. none of the above
+Answer: B
+Solution: For the same power, I ∝ 1/V, so the % resistance drop = IR/V × 100 ∝ 1/V², which decreases.
+
+85. What is the type of relay that detect excessive current?
+A. Differential
+B. Reverse current
+C. Overcurrent
+D. Overvoltage
+Answer: C
+Solution: An overcurrent relay operates when current exceeds its pickup setting.
+
+86. What is the permitted lighting fixture in clothes closet?
+A. Pendant
+B. Open lights
+C. recessed mounted
+D. partially enclosed lamp
+Answer: C
+Solution: PEC 4.10.2.16: luminaires permitted in clothes closets are surface-mounted or recessed types (incandescent with completely enclosed lamps, fluorescent, LED). Pendants, open lamps and partially enclosed lamps are not permitted.
+
+87. If |Vs| = |Vr| = 33 kV (three phase) and x =13 ohm per phase, what will be the maximum power transmission per phase?
+A. 30 MW
+B. 28 MW
+C. 29 MW
+D. 60 MW
+Answer: B
+Solution: Total Pmax = VsVr/X = (33 kV)²/13 = 83.8 MW (at δ = 90°)
+• Per phase = 83.8/3 = 27.9 MW ≈ 28 MW
+
+88. In EPIRA Law, what is PDC?
+A. Philippine Distribution Corporation
+B. Philippine Distribution Company
+C. Philippine Distribution Code
+D. Philippine Distribution Commission
+Answer: C
+Solution: Under EPIRA, PDC is the Philippine Distribution Code (and PGC is the Philippine Grid Code).
+
+89. AC system has the following disadvantages over DC sytem.
+A. skin effect exists
+B. line regulation is more
+C. charging current exists
+D. proximity effect exists
+Answer: A
+Solution: AC transmission has skin effect, proximity effect, line capacitance (charging current) and reactance (poorer regulation), none of which exist in steady DC.
+• Review note: all four choices are true disadvantages of AC and the item has no "all of the above" choice. Please choose the intended answer or edit the choices before publishing.
+
+90. For constant transmission efficiency, voltage is increased n times, the size of the conductor would be.
+A. reduced to (1/n²) times of the original
+B. reduced to (1/n) times of the original
+C. increased to (n²) times of the original
+D. increased to n times of the original
+Answer: A
+Solution: Constant efficiency means constant loss: I²R constant with I ∝ 1/n, so R must rise n² times.
+• R ∝ 1/A, so the conductor area is reduced to 1/n² of the original.
+
+91. A synchronous generator and motor are rated 30,000 kVA and 13.2 kV and both have a sub-transient reactance of 20%. The line connecting them has a reactance of 0.1 pu referred to the machine ratings. The motor is drawing 20,000 kW at 0.8 p.f. and terminal voltage of 12.8 kV when a symmetrical three phase fault occurs at the motor terminals. Calculate the per unit fault current.
+A. 9.6
+B. 7.6
+C. 10.9
+D. 8.08
+Answer: D
+Solution: Prefault voltage at the fault = 12.8/13.2 = 0.9697 pu
+• Thevenin reactance at the motor terminals = (0.2 + 0.1) ∥ 0.2 = 0.3 × 0.2/0.5 = 0.12 pu
+• If = 0.9697/0.12 = 8.08 pu (the prefault load current does not change the fault current itself)
+
+92. Which method is used for fast load flow calculation?
+A. Newtons-Rhapson
+B. Decoupled
+C. Gauss Seidel
+D. Gauss
+Answer: B
+Solution: The (fast) decoupled load flow method decouples P-δ and Q-V and uses constant Jacobian submatrices, making it the fastest method.
+
+93. Receptacle shall be installed so that no point along the floor line in any wall space is more than ______ mm, measured horizontally, from an outlet in that space.
+A. 1800
+B. 1200
+C. 1500
+D. 1000
+Answer: A
+Solution: PEC 2.10.3.52(A)(1): no point along the floor line in any wall space shall be more than 1.8 m (1800 mm) from a receptacle outlet.
+
+94. ________ is also known as “Cold Standby Reserve”
+A. back-up reserve
+B. spinning reserve
+C. contingency reserve
+D. Power reserve
+Answer: A
+Solution: Philippine Grid Code: Back-up Reserve, which can be brought online within a set time to replace contingency reserve, is also called the Cold Standby Reserve.
+
+95. What is the function of protective relays in the protection scheme?
+A. switching devices
+B. breaking device
+C. time delay device
+D. sensing device
+Answer: D
+Solution: A protective relay senses (detects) abnormal conditions and signals the circuit breaker, which is the breaking device, to trip.
+
+96. In grounding, which is permitted as grounding electrode?
+I. Building Metal Frame
+II. Metal Water pipe
+A. I only
+B. II only
+C. both I & II
+D. neither I nor II
+Answer: C
+Solution: PEC 2.50.3.52: metal underground water pipe and the metal frame of a building are both permitted grounding electrodes.
+
+97. Electric Power Industry Reform Act of 2001 is also known as
+A. RA 7920
+B. RA 9136
+C. RA 7832
+D. RA 8495
+Answer: B
+Solution: The Electric Power Industry Reform Act (EPIRA) of 2001 is RA 9136.
+
+98. A Hermetic motor-compressor has 20 A full load current. What is the rating of disconnecting means?
+A. 35 A
+B. 31.5A
+C. 23 A
+D. 25 A
+Answer: C
+Solution: PEC 4.40.2.12(A): the disconnecting means for a hermetic motor-compressor shall be rated at least 115% of its rated-load current.
+• I = 1.15 × 20 = 23 A
+
+99. The negative sequence component of a voltage is equal to.
+A. Positive sequence component in reverse direction
+B. Complex conjugate of positive sequence component
+C. Multiple of B with positive sequence component
+D. None of these
+Answer: A
+Solution: Negative-sequence components are a balanced set like the positive-sequence set but with the reverse (opposite) phase sequence: Va2 = (Va + a²Vb + aVc)/3.
+• Review note: in magnitude, negative sequence is not generally equal to positive sequence; if your key reads the item literally, the answer would be D. Please confirm.
+
+100. Base load plants are designed to supply power at
+A. low capital cost and low operating cost
+B. high capital cost and low operating cost
+C. low capital cost and high operating cost
+D. high capital cost and high operating cost
+Answer: B
+Solution: Base-load plants (hydro, nuclear, large coal) run continuously, so they justify a high capital cost in exchange for low operating cost.
