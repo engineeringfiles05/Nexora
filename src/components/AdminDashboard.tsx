@@ -18,14 +18,13 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import { UserProfile, Question, PdfSource, ExamResult, AuditLog } from '../types/index.ts';
+import { UserProfile, Question, PdfSource, ExamResult } from '../types/index.ts';
 
 interface Props {
   adminUser: UserProfile;
   questions: Question[];
   pdfSources: PdfSource[];
   examResults: ExamResult[];
-  auditLogs: AuditLog[];
   onNavigate: (view: string) => void;
 }
 
@@ -34,7 +33,6 @@ export const AdminDashboard: React.FC<Props> = ({
   questions,
   pdfSources,
   examResults,
-  auditLogs,
   onNavigate,
 }) => {
   const totalQuestions = questions.length;
@@ -133,8 +131,8 @@ export const AdminDashboard: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Two Column Layout: PDF Pipeline & Audit Trail */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* PDF Pipeline */}
+      <div className="grid grid-cols-1 gap-6">
         {/* Uploaded PDF Status */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-5">
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -188,46 +186,6 @@ export const AdminDashboard: React.FC<Props> = ({
               <FileUp className="w-4 h-4 text-indigo-400" />
               Upload New PDF Questionnaire
             </button>
-          </div>
-        </div>
-
-        {/* Audit Trail Log */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                Administrative & AI Audit Trail
-              </h2>
-              <p className="text-xs text-slate-400">Verifiable log of AI extractions, publications, and edits.</p>
-            </div>
-            <button
-              onClick={() => onNavigate('audit-logs')}
-              className="text-xs text-indigo-400 hover:text-white flex items-center gap-1"
-            >
-              Full Log
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {auditLogs.slice(0, 4).map((log) => (
-              <div
-                key={log.id}
-                className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-white">{log.action}</span>
-                  <span className="text-[10px] text-slate-500 font-mono">{log.timestamp}</span>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-normal">
-                  {log.details}
-                </p>
-                <div className="text-[10px] text-indigo-400 font-mono">
-                  By: {log.adminName}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
