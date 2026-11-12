@@ -32,7 +32,9 @@ export const PdfQuizGeneratorView: React.FC<Props> = ({
   onStartPdfQuiz,
 }) => {
   const publicPdfs = getSelectableSources(pdfSources, 'pdf_quiz');
-  const [selectedPdfId, setSelectedPdfId] = useState<string>(publicPdfs[0]?.id || '');
+  const [pickedPdfId, setSelectedPdfId] = useState<string>('');
+  // The sets can arrive after the first render, so fall back to the first one until a set is picked.
+  const selectedPdfId = publicPdfs.some((p) => p.id === pickedPdfId) ? pickedPdfId : publicPdfs[0]?.id || '';
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [difficulty, setDifficulty] = useState<string>('mixed');
   const [durationMinutes, setDurationMinutes] = useState<number>(20);
@@ -82,6 +84,11 @@ export const PdfQuizGeneratorView: React.FC<Props> = ({
               1. Select Uploaded PDF Questionnaire:
             </label>
             <div className="space-y-3">
+              {publicPdfs.length === 0 && (
+                <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/50 text-xs text-slate-400">
+                  No question sets are available for your course yet. Published sets appear here as soon as the review center releases them.
+                </div>
+              )}
               {publicPdfs.map((pdf) => {
                 const isSelected = pdf.id === selectedPdfId;
                 const count = questions.filter(
