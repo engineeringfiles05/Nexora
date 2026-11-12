@@ -13,7 +13,7 @@ import { EXAM_PROGRAMS, programById } from '../data/programs.ts';
 import type { Question } from '../types/index.ts';
 import { findDuplicates, publishQuestionsToBank } from './bank.ts';
 import { formatStructuredSolution, parseSolutionSections } from './solutionFormat.ts';
-import { applySolutionOnly } from './importReview.ts';
+import { applySolutionOnly, approveMany, planBulkApproval } from './importReview.ts';
 import { computeCounts, needsAnswer, prepareDrafts, storableResult, totals, wasInterrupted, EMPTY_COUNTS, type ImportSession } from './importSessions.ts';
 import { normalizeSolution } from '../../server/extraction/solver.ts';
 import { ImportDashboard } from '../components/importer/ImportDashboard.tsx';
@@ -128,6 +128,30 @@ test('"Regenerate solution" keeps the answer and flags a disagreement instead of
   assert.equal(next.correctAnswer, 'B');
   assert.equal(next.stepByStepSolution, 'Find:\nR');
   assert.ok(next.extractionIssues?.some((i) => i.code === 'AI_DISAGREES'));
+});
+
+// ---- Bulk approval ----
+
+test('bulk approval: clean questions are ready, open findings need confirmation, unreadable text is blocked', () => {
+  const warning = { code: 'X', severity: 'warning' as const, message: 'Check choice B.' };
+  const info = { code: 'I', severity: 'info' as const, message: 'No answer in the PDF.' };
+  const list = [
+    q({ id: 'clean', question: stem, options, reviewStatus: 'pending', extractionIssues: [info] }),
+    q({ id: 'finding', question: stem, options, reviewStatus: 'pending', extractionIssues: [warning] }),
+    q({ id: 'unreadable', question: 'What is ⟦x⟧?', options, reviewStatus: 'pending', extractionIssues: [] }),
+    q({ id: 'done', question: stem, options, reviewStatus: 'approved', extractionIssues: [] }),
+    q({ id: 'rejected', question: stem, options, reviewStatus: 'rejected', extractionIssues: [] }),
+    q({ id: 'unlisted', question: stem, options, reviewStatus: 'pending', extractionIssues: [] }),
+  ];
+  const ids = ['clean', 'finding', 'unreadable', 'done', 'rejected'];
+
+  assert.deepEqual(planBulkApproval(list, ids), { ready: ['clean'], needConfirm: ['finding'], blocked: ['unreadable'] });
+
+  const after = approveMany(list, ['clean', 'finding', 'unreadable', 'rejected']);
+  const status = Object.fromEntries(after.map((x) => [x.id, x.reviewStatus]));
+  assert.deepEqual(status, { clean: 'approved', finding: 'approved', unreadable: 'pending', done: 'approved', rejected: 'rejected', unlisted: 'pending' });
+  // The confirmed finding is acknowledged, not deleted.
+  assert.deepEqual(after.find((x) => x.id === 'finding')!.extractionIssues, [{ ...warning, acknowledged: true }]);
 });
 
 // ---- Import sessions ----

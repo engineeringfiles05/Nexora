@@ -38,6 +38,34 @@ export function approveQuestion(q: Question, now = new Date().toISOString()): Qu
   });
 }
 
+/** How a bulk approval of the given questions would go. */
+export interface BulkApprovalPlan {
+  /** Pending questions with no open findings: approved straight away. */
+  ready: string[];
+  /** Pending questions with open findings: approved only after the admin confirms. */
+  needConfirm: string[];
+  /** Pending questions that cannot be approved until they are edited (see approvalBlocker). */
+  blocked: string[];
+}
+
+export function planBulkApproval(questions: Question[], ids: Iterable<string>): BulkApprovalPlan {
+  const wanted = new Set(ids);
+  const plan: BulkApprovalPlan = { ready: [], needConfirm: [], blocked: [] };
+  for (const q of questions) {
+    if (!wanted.has(q.id) || q.reviewStatus !== 'pending') continue;
+    if (approvalBlocker(q)) plan.blocked.push(q.id);
+    else if (issuesToConfirm(q).length) plan.needConfirm.push(q.id);
+    else plan.ready.push(q.id);
+  }
+  return plan;
+}
+
+/** Approves the given pending questions, skipping any that approvalBlocker refuses. */
+export function approveMany(questions: Question[], ids: Iterable<string>, now = new Date().toISOString()): Question[] {
+  const wanted = new Set(ids);
+  return questions.map((q) => (wanted.has(q.id) && q.reviewStatus === 'pending' && !approvalBlocker(q) ? approveQuestion(q, now) : q));
+}
+
 export function rejectQuestion(q: Question, now = new Date().toISOString()): Question {
   return refreshQuestionAssessment({ ...q, reviewStatus: 'rejected', reviewedAt: now });
 }
