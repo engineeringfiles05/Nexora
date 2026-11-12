@@ -205,6 +205,7 @@ export const QuestionBankView: React.FC<Props> = ({
       createdAt: new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString().split('T')[0],
       sourcePdfName: 'Manual Question Creator',
+      course: newQuestion.course === 'RME' ? 'RME' : 'REE',
     };
 
     onAddQuestion(created);
@@ -560,7 +561,7 @@ export const QuestionBankView: React.FC<Props> = ({
               </div>
 
               {/* Correct Answer & Subject */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-slate-400 mb-1">Correct Answer Choice:</label>
                   <select
@@ -585,6 +586,18 @@ export const QuestionBankView: React.FC<Props> = ({
                     <option value="ee">Electrical Engineering</option>
                     <option value="esas">Engineering Sciences</option>
                     <option value="math">Mathematics</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1">Course:</label>
+                  <select
+                    value={newQuestion.course === 'RME' ? 'RME' : 'REE'}
+                    onChange={(e) => setNewQuestion({ ...newQuestion, course: e.target.value as 'REE' | 'RME' })}
+                    className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  >
+                    <option value="REE">REE</option>
+                    <option value="RME">RME</option>
                   </select>
                 </div>
 
@@ -697,7 +710,7 @@ export const QuestionBankView: React.FC<Props> = ({
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-slate-400 mb-1">Correct Answer Choice:</label>
                   <select
@@ -723,6 +736,18 @@ export const QuestionBankView: React.FC<Props> = ({
                     <option value="ee">Electrical Engineering</option>
                     <option value="esas">Engineering Sciences</option>
                     <option value="math">Mathematics</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1">Course:</label>
+                  <select
+                    value={editingQuestion.course === 'RME' ? 'RME' : 'REE'}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, course: e.target.value as 'REE' | 'RME' })}
+                    className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  >
+                    <option value="REE">REE</option>
+                    <option value="RME">RME</option>
                   </select>
                 </div>
 

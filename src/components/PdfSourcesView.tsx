@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { PdfSource, SubjectId } from '../types/index.ts';
 import { isSourceAvailableForExam } from '../utils/bank.ts';
+import { contentCourse } from '../auth/accountStatus.ts';
+import { COURSES } from '../auth/validation.ts';
 
 interface Props {
   pdfSources: PdfSource[];
@@ -142,6 +144,27 @@ export const PdfSourcesView: React.FC<Props> = ({
                   >
                     {source.isPublicToReviewees ? '✓ Public to Reviewees' : 'Restricted (Admin Only)'}
                   </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-slate-400" id={`course-${source.id}`}>Course:</span>
+                  <div role="radiogroup" aria-labelledby={`course-${source.id}`} className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-700">
+                    {COURSES.map((c) => {
+                      const selected = contentCourse(source) === c.id;
+                      return (
+                        <button
+                          key={c.id}
+                          role="radio"
+                          aria-checked={selected}
+                          title={`${c.description} reviewees can use this set`}
+                          onClick={() => !selected && onUpdateSource({ ...source, course: c.id })}
+                          className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition ${selected ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="text-[11px] text-slate-400">

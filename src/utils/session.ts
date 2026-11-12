@@ -10,7 +10,7 @@
  * empty query result means "no records", not "keep what was there before".
  */
 
-import type { AuditLog, ExamResult, PdfSource, Question, UserProfile, UserRole } from '../types/index.ts';
+import type { AuditLog, Course, ExamResult, PdfSource, Question, UserProfile, UserRole } from '../types/index.ts';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -18,19 +18,29 @@ import type { AuditLog, ExamResult, PdfSource, Question, UserProfile, UserRole }
 
 export type CloudCollection = 'questions' | 'pdfSources' | 'examResults' | 'auditLogs' | 'users';
 export type QueryFilter = { field: string; value: string | boolean };
+export type QueryFilters = QueryFilter[];
 
 /**
  * What each role may list, mirroring firestore.rules. A list query is only allowed when its
- * filters guarantee every returned document passes the rule, so reviewees must filter.
- * A collection missing from the plan is not queried at all (reviewees: users, auditLogs).
+ * filters guarantee every returned document passes the rule, so reviewees must filter: by
+ * publication and by their own course. A collection missing from the plan is not queried at
+ * all (reviewees: users, auditLogs; reviewees without a course: questions, pdfSources).
  * `null` means the whole collection.
  */
-export function cloudQueryPlan(role: UserRole, uid: string): Partial<Record<CloudCollection, QueryFilter | null>> {
+export function cloudQueryPlan(role: UserRole, uid: string, course?: Course | null): Partial<Record<CloudCollection, QueryFilters | null>> {
   if (role === 'admin') return { questions: null, pdfSources: null, examResults: null, auditLogs: null, users: null };
+  const own = { examResults: [{ field: 'userId', value: uid }] };
+  if (course !== 'REE' && course !== 'RME') return own;
   return {
-    questions: { field: 'isPublished', value: true },
-    pdfSources: { field: 'isPublicToReviewees', value: true },
-    examResults: { field: 'userId', value: uid },
+    questions: [
+      { field: 'isPublished', value: true },
+      { field: 'course', value: course },
+    ],
+    pdfSources: [
+      { field: 'isPublicToReviewees', value: true },
+      { field: 'course', value: course },
+    ],
+    ...own,
   };
 }
 

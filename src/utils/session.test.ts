@@ -19,12 +19,22 @@ import type { AuditLog, ExamResult, Question } from '../types/index.ts';
 // ---- Finding 1: queries must match firestore.rules for the role ----
 
 test('reviewee queries are filtered the way firestore.rules requires; admins list everything', () => {
-  // Reviewees never query the admin-only users and auditLogs collections.
-  assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1'), {
-    questions: { field: 'isPublished', value: true },
-    pdfSources: { field: 'isPublicToReviewees', value: true },
-    examResults: { field: 'userId', value: 'uid-1' },
+  // Reviewees never query the admin-only users and auditLogs collections, and only see
+  // material of their own course.
+  assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1', 'RME'), {
+    questions: [
+      { field: 'isPublished', value: true },
+      { field: 'course', value: 'RME' },
+    ],
+    pdfSources: [
+      { field: 'isPublicToReviewees', value: true },
+      { field: 'course', value: 'RME' },
+    ],
+    examResults: [{ field: 'userId', value: 'uid-1' }],
   });
+  // Without a course (not chosen yet, or removed by the administrator) only their own history.
+  assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1', null), { examResults: [{ field: 'userId', value: 'uid-1' }] });
+  assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1'), { examResults: [{ field: 'userId', value: 'uid-1' }] });
   assert.deepEqual(cloudQueryPlan('admin', 'uid-1'), { questions: null, pdfSources: null, examResults: null, auditLogs: null, users: null });
 });
 
@@ -73,14 +83,15 @@ test('the roster shows honest loading, empty and error states', () => {
 
 test('the filters match the rules file, so a rules change cannot drift silently', async () => {
   const rules = await readFile(new URL('../../firestore.rules', import.meta.url), 'utf8');
-  assert.match(rules, /match \/questions\/\{questionId\}[\s\S]*?allow list: if isSignedIn\(\) && \(isAdmin\(\) \|\| resource\.data\.isPublished == true\)/);
-  assert.match(rules, /match \/pdfSources\/\{pdfSourceId\}[\s\S]*?allow list: if isSignedIn\(\) && \(isAdmin\(\) \|\| resource\.data\.isPublicToReviewees == true\)/);
+  assert.match(rules, /match \/questions\/\{questionId\}[\s\S]*?allow list: if isAdmin\(\) \|\|\s*\(isActiveReviewee\(\) && resource\.data\.isPublished == true && resource\.data\.course == myCourse\(\)\)/);
+  assert.match(rules, /match \/pdfSources\/\{pdfSourceId\}[\s\S]*?allow list: if isAdmin\(\) \|\|\s*\(isActiveReviewee\(\) && resource\.data\.isPublicToReviewees == true && resource\.data\.course == myCourse\(\)\)/);
   assert.match(rules, /match \/examResults\/\{resultId\}[\s\S]*?allow list: if isSignedIn\(\) && \(resource\.data\.userId == request\.auth\.uid \|\| isAdmin\(\)\)/);
 });
 
 test('App builds its listeners from the role plan and never queries whole collections for reviewees', async () => {
   const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /cloudQueryPlan\(accountRole, signedInUid\)/);
+  assert.match(app, /cloudQueryPlan\(accountRole, signedInUid, accountCourse\)/);
+  assert.match(app, /filters\.map\(\(f\) => where\(f\.field, '==', f\.value\)\)/);
   assert.doesNotMatch(app, /onSnapshot\(\s*collection\(db, '(questions|pdfSources)'\)/);
   // Listener failures reach the UI, not only the console.
   assert.match(app, /type: 'error', uid: signedInUid, collection: name/);

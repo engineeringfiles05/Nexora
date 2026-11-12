@@ -20,7 +20,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import type { AuthView } from '../../auth/routes.ts';
-import type { Course } from '../../types/index.ts';
+import type { Course, UserStatus } from '../../types/index.ts';
 import {
   COURSES,
   createLoginThrottle,
@@ -56,7 +56,7 @@ interface Props {
   /** Shown above the form, e.g. after signing out or when a session expired. */
   notice?: AuthNotice | null;
   onDismissNotice?: () => void;
-  onRegistered?: (name: string) => void;
+  onRegistered?: (name: string, status?: UserStatus) => void;
 }
 
 // One per page load: repeated wrong passwords slow down further attempts in this browser.
@@ -395,7 +395,7 @@ const RegisterForm: React.FC<{
   setEmail: (v: string) => void;
   onLogin: () => void;
   onOpenLegal: (doc: LegalDocument) => void;
-  onRegistered?: (name: string) => void;
+  onRegistered?: (name: string, status?: UserStatus) => void;
 }> = ({ email, setEmail, onLogin, onOpenLegal, onRegistered }) => {
   const [form, setForm] = useState<Omit<RegistrationForm, 'email'>>({
     name: '',
@@ -427,11 +427,11 @@ const RegisterForm: React.FC<{
     }
     setBusy(true);
     try {
-      await registerAccount(
+      const profile = await registerAccount(
         { name: form.name, email, password: form.password, course: form.course as Course, contactNumber: form.contactNumber || undefined },
         readRememberPreference()
       );
-      onRegistered?.(form.name);
+      onRegistered?.(form.name, profile.status);
     } catch (error) {
       const code = (error as { code?: string })?.code;
       setFormError({ text: describeAuthError(error), existing: code === 'auth/email-already-in-use' });

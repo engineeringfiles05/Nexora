@@ -19,6 +19,9 @@ import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import { createRateLimiter, rateLimitAi, requireAiAccess } from './aiGuards.ts';
 import { adminIdentityGate, googleCertificates, type CertificateSource } from './firebaseAuth.ts';
+import { adminUserRoutes } from './adminUsers.ts';
+import { createAuthAdmin, readServiceAccount, type AuthAdmin } from './googleAdmin.ts';
+import { FIREBASE_PROJECT_ID } from '../src/auth/roles.ts';
 import { createGeminiReader } from './extraction/imageReader.ts';
 import { createJobStore } from './extraction/jobs.ts';
 import { ExtractionError, runExtraction, type ExtractionProgress, type PipelineResult } from './extraction/pipeline.ts';
@@ -32,7 +35,7 @@ export interface AppEnv {
 export const SERVERLESS_MAX_UPLOAD_BYTES = 3_200_000;
 const SELF_HOSTED_MAX_UPLOAD_BYTES = 60 * 1024 * 1024;
 
-export function createApp(env: AppEnv = process.env, options: { certificates?: CertificateSource } = {}) {
+export function createApp(env: AppEnv = process.env, options: { certificates?: CertificateSource; authAdmin?: AuthAdmin | null } = {}) {
   const app = express();
   const serverless = Boolean(env.VERCEL) || env.NEXORA_SERVERLESS === 'true';
   const isProduction = env.NODE_ENV === 'production';
@@ -238,6 +241,27 @@ export function createApp(env: AppEnv = process.env, options: { certificates?: C
       return res.status(500).json({ error: 'The document could not be processed.' });
     }
   });
+
+  // -------------------------------------------------------------------------
+  // Account administration (verified administrator only)
+  // -------------------------------------------------------------------------
+
+  const serviceAccount = readServiceAccount(env.FIREBASE_SERVICE_ACCOUNT);
+  if (env.FIREBASE_SERVICE_ACCOUNT && !serviceAccount) console.warn('[Nexora Backend] FIREBASE_SERVICE_ACCOUNT is set but is not a valid service account key.');
+  const authAdmin =
+    options.authAdmin !== undefined
+      ? options.authAdmin
+      : serviceAccount
+        ? createAuthAdmin({ account: serviceAccount, projectId: env.FIREBASE_PROJECT_ID || serviceAccount.projectId || FIREBASE_PROJECT_ID })
+        : null;
+  app.use(
+    '/api/admin',
+    adminUserRoutes({
+      identityGate,
+      authAdmin,
+      limiter: createRateLimiter({ limit: envLimit('ADMIN_ACCOUNT_HOURLY_LIMIT', 300), windowMs: HOUR_MS }),
+    })
+  );
 
   // Explicit catch-all for /api/* so API requests never fall through to the SPA.
   app.all('/api/*', (_req, res) => {
