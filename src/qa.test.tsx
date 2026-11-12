@@ -13,6 +13,9 @@ import { ExamResultView } from './components/ExamResultView.tsx';
 import { FormulaReferenceDrawer } from './components/FormulaReferenceDrawer.tsx';
 import { Navbar } from './components/Navbar.tsx';
 import { AuthPage } from './components/auth/AuthPage.tsx';
+import { UserManagementView } from './components/users/UserManagementView.tsx';
+import { UserDetailsPanel } from './components/users/UserDetailsPanel.tsx';
+import { AddUserModal, DeleteUserModal, EditUserModal, StatusModal } from './components/users/UserModals.tsx';
 import { PdfImporterView } from './components/PdfImporterView.tsx';
 import { PdfQuizGeneratorView } from './components/PdfQuizGeneratorView.tsx';
 import { PdfSourcesView } from './components/PdfSourcesView.tsx';
@@ -43,6 +46,13 @@ const screens: [string, React.ReactElement][] = [
   ['ActiveExamView', <ActiveExamView config={config} questions={questions} onFinishExam={noop} onExitExam={noop} />],
   ['AdminDashboard', <AdminDashboard adminUser={data.DEMO_USERS[0]} {...{ questions, pdfSources, examResults, auditLogs }} onNavigate={noop} />],
   ['AuditLogsView', <AuditLogsView auditLogs={auditLogs} />],
+  ['UserManagementView', <UserManagementView users={[data.DEMO_USERS[1], { ...data.DEMO_USERS[1], id: 'u2', status: 'suspended' }]} loading={false} examResults={examResults} subjects={subjects} admin={data.DEMO_USERS[0]} onLog={noop} />],
+  ['UserManagementView (loading)', <UserManagementView users={[]} loading examResults={[]} subjects={subjects} admin={data.DEMO_USERS[0]} onLog={noop} />],
+  ['UserDetailsPanel', <UserDetailsPanel user={{ ...data.DEMO_USERS[1], id: examResults[0]!.userId, course: 'REE' }} examResults={examResults} subjects={subjects} onBack={noop} onEdit={noop} onChangeStatus={noop} onResendSetup={noop} />],
+  ['AddUserModal', <AddUserModal onClose={noop} onCreate={async () => null} />],
+  ['EditUserModal', <EditUserModal user={data.DEMO_USERS[1]} canChangeEmail={false} onClose={noop} onSave={async () => null} />],
+  ['StatusModal', <StatusModal user={data.DEMO_USERS[1]} status="suspended" onClose={noop} onConfirm={async () => null} />],
+  ['DeleteUserModal', <DeleteUserModal user={data.DEMO_USERS[1]} resultCount={3} canDelete={false} onClose={noop} onConfirm={async () => null} onDeactivateInstead={noop} />],
   ['ExamLauncherModal', <ExamLauncherModal isOpen initialType="practice" {...{subjects, pdfSources}} onClose={noop} onLaunch={noop} />],
   ['ExamResultView', <ExamResultView result={examResults[0]} questions={questions} onRetake={noop} onBackToDashboard={noop} />],
   ['FormulaReferenceDrawer', <FormulaReferenceDrawer isOpen onClose={noop} />],

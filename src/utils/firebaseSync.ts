@@ -81,13 +81,13 @@ export async function seedInitialFirestoreData(
     // Seed questions
     for (const q of initialQuestions) {
       const ref = doc(db, 'questions', q.id);
-      batch.set(ref, sanitizeForFirestore(q));
+      batch.set(ref, sanitizeForFirestore({ course: 'REE', ...q }));
     }
 
     // Seed PDF sources
     for (const pdf of initialPdfSources) {
       const ref = doc(db, 'pdfSources', pdf.id);
-      batch.set(ref, sanitizeForFirestore(pdf));
+      batch.set(ref, sanitizeForFirestore({ course: 'REE', ...pdf }));
     }
 
     // Seed Audit logs
@@ -102,6 +102,26 @@ export async function seedInitialFirestoreData(
     console.warn('Initial Firestore seed skipped or unpermitted:', error);
     return false;
   }
+}
+
+/**
+ * Gives material created before courses existed the course "REE" (all of it was REE). Reviewees
+ * only see material of their own course (firestore.rules), so this runs when the administrator
+ * signs in. Only documents without a course are written; it does nothing once they all have one.
+ */
+export async function backfillContentCourse(): Promise<number> {
+  let updated = 0;
+  for (const name of ['questions', 'pdfSources'] as const) {
+    const snapshot = await getDocs(collection(db, name));
+    const missing = snapshot.docs.filter((d) => d.data().course !== 'REE' && d.data().course !== 'RME');
+    for (let i = 0; i < missing.length; i += 400) {
+      const batch = writeBatch(db);
+      missing.slice(i, i + 400).forEach((d) => batch.update(d.ref, { course: 'REE' }));
+      await batch.commit();
+    }
+    updated += missing.length;
+  }
+  return updated;
 }
 
 /**

@@ -28,10 +28,11 @@ import {
   type ActionCodeSettings,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase.ts';
 import { sanitizeForFirestore } from '../utils/firebaseSync.ts';
-import type { Course, UserProfile, UserRole } from '../types/index.ts';
+import type { Course, UserProfile, UserRole, UserStatus } from '../types/index.ts';
+import { SETTINGS_REGISTRATION_DOC, canAccessPlatform, statusOf } from './accountStatus.ts';
 import { roleForIdentity } from './roles.ts';
 import { normalizeEmail, sanitizeContact, sanitizeName } from './validation.ts';
 import { writeRememberPreference } from './sessionPolicy.ts';
@@ -41,7 +42,7 @@ const COURSE_DETAILS: Record<Course, { title: string; targetExam: string }> = {
   RME: { title: 'RME Licensure Candidate', targetExam: 'Registered Master Electrician (RME) Licensure Examination' },
 };
 
-export function courseDetails(course: Course | undefined) {
+export function courseDetails(course: Course | null | undefined) {
   return course ? COURSE_DETAILS[course] : { title: 'Board Exam Reviewee', targetExam: undefined };
 }
 
@@ -76,11 +77,18 @@ export function buildProfile(user: Pick<User, 'uid' | 'email' | 'emailVerified' 
     role,
     avatar: user.photoURL || stored?.avatar || '',
     title: role === 'admin' ? 'Board Review Director' : details.title,
-    targetExam: role === 'admin' ? undefined : stored?.targetExam || details.targetExam,
+    targetExam: role === 'admin' ? undefined : course === null ? undefined : stored?.targetExam || details.targetExam,
     enrolledAt: stored?.enrolledAt || new Date().toISOString(),
-    ...(course ? { course } : {}),
+    ...(course ? { course } : course === null ? { course: null } : {}),
     ...(stored?.contactNumber ? { contactNumber: stored.contactNumber } : {}),
     authProvider: stored?.authProvider || provider,
+    // The owner's account is always active; everyone else carries the stored status.
+    status: role === 'admin' ? 'active' : statusOf(stored),
+    ...(stored?.statusReason ? { statusReason: stored.statusReason } : {}),
+    ...(stored?.statusChangedAt ? { statusChangedAt: stored.statusChangedAt } : {}),
+    ...(stored?.lastLoginAt ? { lastLoginAt: stored.lastLoginAt } : {}),
+    ...(stored?.createdBy ? { createdBy: stored.createdBy } : {}),
+    ...(stored?.updatedAt ? { updatedAt: stored.updatedAt } : {}),
   };
 }
 
@@ -100,30 +108,71 @@ export function ensureProfile(user: User): Promise<UserProfile> {
   return request;
 }
 
+/** Whether the administrator requires approval of new registrations (settings/registration). */
+export async function readRegistrationSettings(): Promise<{ requireApproval: boolean }> {
+  try {
+    const snapshot = await getDoc(doc(db, 'settings', SETTINGS_REGISTRATION_DOC));
+    return { requireApproval: snapshot.exists() && snapshot.data()?.requireApproval === true };
+  } catch {
+    return { requireApproval: false };
+  }
+}
+
+const LOGIN_STAMP_INTERVAL_MS = 10 * 60 * 1000;
+
 async function loadOrCreateProfile(user: User): Promise<UserProfile> {
   const ref = doc(db, 'users', user.uid);
   const snapshot = await getDoc(ref);
-  if (snapshot.exists()) return buildProfile(user, snapshot.data() as Partial<UserProfile>, providerOf(user));
+  const now = new Date().toISOString();
+  if (snapshot.exists()) {
+    const profile = buildProfile(user, snapshot.data() as Partial<UserProfile>, providerOf(user));
+    // Record the sign-in for the administrator's "last login" column (active accounts only).
+    const last = Date.parse(profile.lastLoginAt ?? '');
+    if (canAccessPlatform(profile) && !(Date.now() - last < LOGIN_STAMP_INTERVAL_MS)) {
+      await updateDoc(ref, { lastLoginAt: now }).catch((err) => console.warn('Could not record sign-in time:', err));
+      return { ...profile, lastLoginAt: now };
+    }
+    return profile;
+  }
 
   const pending = pendingRegistration && user.email && normalizeEmail(user.email) === pendingRegistration.email ? pendingRegistration : null;
   const details = courseDetails(pending?.course);
-  const profile = buildProfile(
+  const base = buildProfile(
     user,
     pending
       ? { name: pending.name, course: pending.course, contactNumber: pending.contactNumber, targetExam: details.targetExam }
       : null,
     providerOf(user)
   );
-  const now = new Date().toISOString();
-  // firestore.rules only accepts role "reviewee" here, except for the verified site owner.
-  await setDoc(ref, sanitizeForFirestore({ ...profile, enrolledAt: now, updatedAt: now }));
-  return { ...profile, enrolledAt: now, updatedAt: now };
+  // firestore.rules only accepts role "reviewee" here (except for the verified site owner),
+  // and status "pending" while the administrator requires approval of new accounts.
+  const { requireApproval } = base.role === 'admin' ? { requireApproval: false } : await readRegistrationSettings();
+  const status: UserStatus = requireApproval ? 'pending' : 'active';
+  const profile: UserProfile = { ...base, status, enrolledAt: now, updatedAt: now, ...(status === 'active' ? { lastLoginAt: now } : {}) };
+  await setDoc(ref, sanitizeForFirestore(profile));
+  return profile;
 }
 
-export async function updateAccountDetails(user: User, changes: { name: string; course?: Course; contactNumber: string }): Promise<UserProfile> {
+/** Live updates of the signed-in account's own profile (status and course changes apply at once). */
+export function watchOwnProfile(user: User, onChange: (profile: UserProfile | null) => void, onError: (err: unknown) => void) {
+  return onSnapshot(
+    doc(db, 'users', user.uid),
+    (snapshot) => onChange(snapshot.exists() ? buildProfile(user, snapshot.data() as Partial<UserProfile>, providerOf(user)) : null),
+    onError
+  );
+}
+
+/**
+ * A reviewee's own edits. The course can be chosen once (for example after Google sign-up);
+ * after that only the administrator changes it, which firestore.rules enforces.
+ */
+export async function updateAccountDetails(
+  user: User,
+  current: UserProfile,
+  changes: { name: string; course?: Course; contactNumber: string }
+): Promise<UserProfile> {
   const name = sanitizeName(changes.name);
   const contactNumber = sanitizeContact(changes.contactNumber);
-  const details = courseDetails(changes.course);
   const role = roleForIdentity(user);
   const update: Record<string, unknown> = {
     name,
@@ -131,7 +180,9 @@ export async function updateAccountDetails(user: User, changes: { name: string; 
     contactNumber,
     updatedAt: new Date().toISOString(),
   };
-  if (changes.course) {
+  const mayChooseCourse = role === 'admin' || current.course === undefined;
+  if (changes.course && mayChooseCourse && changes.course !== current.course) {
+    const details = courseDetails(changes.course);
     update.course = changes.course;
     update.targetExam = details.targetExam;
     update.title = details.title;
@@ -212,7 +263,7 @@ export async function signOutEverywhere(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /** After using an email link, people come back to the sign-in page. */
-function continueSettings(): ActionCodeSettings | undefined {
+export function continueSettings(): ActionCodeSettings | undefined {
   if (typeof window === 'undefined') return undefined;
   return { url: `${window.location.origin}/login`, handleCodeInApp: false };
 }

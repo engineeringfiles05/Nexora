@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { contentCourse } from '../auth/accountStatus.ts';
 import type { ExamConfig, ExamResult, ExamType, PdfSource, Question, SubjectId } from '../types/index.ts';
 
 type SourceMode = PdfSource['allowedModes'][number];
@@ -189,7 +190,7 @@ export function publishQuestionsToBank(
   );
   const source: PdfSource = existing
     ? { ...existing, status: 'published', ...(incomingSource.fileHash ? { fileHash: incomingSource.fileHash } : {}) }
-    : incomingSource;
+    : { ...incomingSource, course: contentCourse(incomingSource) };
   const duplicates = findBankDuplicates(questions, incoming);
   const seen = new Set<string>();
   const skipped: Question[] = [];
@@ -207,6 +208,8 @@ export function publishQuestionsToBank(
     isPublished: true,
     sourcePdfId: source.id,
     sourcePdfName: source.filename,
+    // Questions follow their question set's course (firestore.rules restricts reviewees to it).
+    course: contentCourse(source),
   }));
   const nextQuestions = [...questions, ...published];
   const reconciled = reconcileSourceCounts(source, nextQuestions);

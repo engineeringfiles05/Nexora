@@ -40,12 +40,18 @@ service cloud.firestore {
     // Profile documents: known fields only, with the same limits as the registration form.
     function isValidProfile(data, userId) {
       return data.keys().hasOnly(['id', 'name', 'email', 'role', 'avatar', 'title', 'targetExam', 'examDate',
-                                  'enrolledAt', 'course', 'contactNumber', 'authProvider', 'updatedAt']) &&
+                                  'enrolledAt', 'course', 'contactNumber', 'authProvider', 'updatedAt',
+                                  'status', 'statusReason', 'statusChangedAt', 'lastLoginAt', 'createdBy']) &&
         data.id == userId &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
         data.email is string && data.email.size() <= 254 &&
         data.role in ['reviewee', 'admin'] &&
-        (!('course' in data) || data.course in ['REE', 'RME']) &&
+        (!('course' in data) || data.course in ['REE', 'RME'] || data.course == null) &&
+        data.get('status', 'active') in ['active', 'inactive', 'suspended', 'pending'] &&
+        optionalString(data, 'statusReason', 300) &&
+        optionalString(data, 'statusChangedAt', 40) &&
+        optionalString(data, 'lastLoginAt', 40) &&
+        optionalString(data, 'createdBy', 128) &&
         optionalString(data, 'contactNumber', 20) &&
         optionalString(data, 'avatar', 2048) &&
         optionalString(data, 'title', 120) &&
@@ -61,44 +67,110 @@ service cloud.firestore {
       return data.role == 'reviewee' || (data.role == 'admin' && isAdmin() && request.auth.uid == userId);
     }
 
+    function profilePath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    // Reviewees use review materials only with an active profile (see src/auth/accountStatus.ts).
+    // Inactive, suspended and pending accounts, and accounts without a profile, are refused.
+    function isActiveReviewee() {
+      return isSignedIn() && exists(profilePath()) && get(profilePath()).data.get('status', 'active') == 'active';
+    }
+
+    // The course whose materials this reviewee may use (null: none).
+    function myCourse() {
+      return get(profilePath()).data.get('course', null);
+    }
+
+    function requiresApproval() {
+      return exists(/databases/$(database)/documents/settings/registration) &&
+        get(/databases/$(database)/documents/settings/registration).data.get('requireApproval', false) == true;
+    }
+
+    // A self-created profile starts active, or pending while the administrator approves new accounts.
+    function isAllowedNewStatus(data) {
+      return isAdmin() || data.get('status', 'active') == 'pending' ||
+        (data.get('status', 'active') == 'active' && !requiresApproval());
+    }
+
+    function unchanged(field) {
+      return incoming().get(field, null) == existing().get(field, null);
+    }
+
     // Users Collection
     match /users/{userId} {
+      // People can always read their own profile (to learn their status); only the admin lists.
       allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      // An account creates only its own profile, under its own sign-in email.
+
+      // An account creates only its own profile, under its own sign-in email...
       allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId &&
         isValidProfile(incoming(), userId) &&
         incoming().email == request.auth.token.email &&
-        isAllowedRole(incoming(), userId);
-      // Owners and the administrator may edit details, never the id, email, enrolment date or role.
-      allow update: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin()) &&
+        isAllowedRole(incoming(), userId) &&
+        isAllowedNewStatus(incoming()) &&
+        !('createdBy' in incoming());
+      // ...and the administrator creates reviewee accounts for others.
+      allow create: if isAdmin() && isValidId(userId) && request.auth.uid != userId &&
+        isValidProfile(incoming(), userId) &&
+        incoming().role == 'reviewee';
+
+      // Reviewees edit their own details, never their id, email, enrolment date, role, status or
+      // creator. They may pick a course once; after that only the administrator assigns,
+      // changes or removes it.
+      allow update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && !isAdmin() &&
         isValidProfile(incoming(), userId) &&
         incoming().email == existing().email &&
-        incoming().get('enrolledAt', null) == existing().get('enrolledAt', null) &&
-        isAllowedRole(incoming(), userId);
-      allow delete: if isAdmin() && isValidId(userId);
+        unchanged('enrolledAt') && unchanged('status') && unchanged('statusReason') &&
+        unchanged('statusChangedAt') && unchanged('createdBy') &&
+        (unchanged('course') || !('course' in existing())) &&
+        incoming().role == 'reviewee';
+      // The administrator manages every reviewee, but never blocks or demotes their own account.
+      allow update: if isAdmin() && isValidId(userId) &&
+        isValidProfile(incoming(), userId) &&
+        unchanged('enrolledAt') &&
+        isAllowedRole(incoming(), userId) &&
+        (request.auth.uid != userId || (incoming().get('status', 'active') == 'active' && incoming().role == 'admin'));
+      // Deleting an account: the administrator only, and never their own profile.
+      allow delete: if isAdmin() && isValidId(userId) && request.auth.uid != userId;
+    }
+
+    // Registration settings (approval of new accounts).
+    match /settings/{settingId} {
+      allow get: if isSignedIn() && isValidId(settingId);
+      allow write: if isAdmin() && settingId == 'registration' &&
+        incoming().keys().hasOnly(['requireApproval', 'updatedAt']) &&
+        incoming().requireApproval is bool;
     }
 
     // Question Bank Collection
+    // Reviewees see published questions of their own course only. Material from before courses
+    // existed gets course "REE" when the administrator signs in (src/utils/firebaseSync.ts).
     match /questions/{questionId} {
-      allow get: if isSignedIn() && isValidId(questionId) && (isAdmin() || resource.data.isPublished == true);
-      allow list: if isSignedIn() && (isAdmin() || resource.data.isPublished == true);
+      allow get: if isValidId(questionId) &&
+        (isAdmin() || (isActiveReviewee() && resource.data.isPublished == true && resource.data.course == myCourse()));
+      allow list: if isAdmin() ||
+        (isActiveReviewee() && resource.data.isPublished == true && resource.data.course == myCourse());
       allow create, update, delete: if isAdmin() && isValidId(questionId);
     }
 
     // PDF Questionnaires Collection
     match /pdfSources/{pdfSourceId} {
-      allow get: if isSignedIn() && isValidId(pdfSourceId) && (isAdmin() || resource.data.isPublicToReviewees == true);
-      allow list: if isSignedIn() && (isAdmin() || resource.data.isPublicToReviewees == true);
+      allow get: if isValidId(pdfSourceId) &&
+        (isAdmin() || (isActiveReviewee() && resource.data.isPublicToReviewees == true && resource.data.course == myCourse()));
+      allow list: if isAdmin() ||
+        (isActiveReviewee() && resource.data.isPublicToReviewees == true && resource.data.course == myCourse());
       allow create, update, delete: if isAdmin() && isValidId(pdfSourceId);
     }
 
     // Exam Results Collection
+    // History stays readable by its owner; only active accounts can add results.
     match /examResults/{resultId} {
       allow get: if isSignedIn() && isValidId(resultId) && (resource.data.userId == request.auth.uid || isAdmin());
       allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSignedIn() && isValidId(resultId) && incoming().userId == request.auth.uid;
-      allow update: if isSignedIn() && isValidId(resultId) && (existing().userId == request.auth.uid || isAdmin());
+      allow create: if isValidId(resultId) && incoming().userId == request.auth.uid && (isActiveReviewee() || isAdmin());
+      allow update: if isValidId(resultId) &&
+        ((existing().userId == request.auth.uid && incoming().userId == request.auth.uid && isActiveReviewee()) || isAdmin());
       allow delete: if isAdmin() && isValidId(resultId);
     }
 

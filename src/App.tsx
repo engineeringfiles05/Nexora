@@ -40,6 +40,7 @@ import {
   saveExamResultToFirestore,
   saveAuditLogToFirestore,
   seedInitialFirestoreData,
+  backfillContentCourse,
 } from './utils/firebaseSync.ts';
 import {
   cloudQueryPlan,
@@ -51,7 +52,8 @@ import {
   type CloudCollection,
 } from './utils/session.ts';
 import { setIdTokenProvider } from './utils/importerClient.ts';
-import { buildProfile, ensureProfile, sessionStartedAt, signOutEverywhere } from './auth/authService.ts';
+import { buildProfile, ensureProfile, sessionStartedAt, signOutEverywhere, watchOwnProfile } from './auth/authService.ts';
+import { blockedMessage, canAccessPlatform, contentCourse } from './auth/accountStatus.ts';
 import { isAuthView, isView, pathForView, resolveRoute, viewForPath, type SessionState, type View } from './auth/routes.ts';
 import { IDLE_TIMEOUT_MS, isIdleExpired, isSessionExpired, readRememberPreference } from './auth/sessionPolicy.ts';
 
@@ -69,6 +71,7 @@ import { ExamLauncherModal } from './components/ExamLauncherModal.tsx';
 import { RevieweeRosterView } from './components/RevieweeRosterView.tsx';
 import { AuditLogsView } from './components/AuditLogsView.tsx';
 import { AccountSettingsView } from './components/AccountSettingsView.tsx';
+import { UserManagementView, type UserLogEntry } from './components/users/UserManagementView.tsx';
 import { AuthLoadingScreen, AuthPage, type AuthNotice } from './components/auth/AuthPage.tsx';
 
 // Admin API calls carry the signed-in account's ID token; the server verifies it.
@@ -235,12 +238,22 @@ export default function App() {
         setProfileWarning('Your profile could not be loaded from the cloud, so some details may be missing. Try refreshing the page.');
       }
       if (auth.currentUser?.uid !== user.uid) return; // the account changed meanwhile
+      // Inactive, suspended and pending accounts can't use the platform (firestore.rules
+      // enforces the same): explain why and end the session.
+      if (!canAccessPlatform(account)) {
+        setAuthNotice({ tone: 'error', text: blockedMessage(account) });
+        await signOutEverywhere().catch(() => {});
+        return;
+      }
       setProfile(account);
       setAuthNotice(null);
       setAuthStatus('signed-in');
 
       if (account.role === 'admin') {
-        seedInitialFirestoreData(INITIAL_QUESTIONS, INITIAL_PDF_SOURCES, INITIAL_AUDIT_LOGS);
+        // Seed an empty bank, then tag material from before courses existed as REE.
+        seedInitialFirestoreData(INITIAL_QUESTIONS, INITIAL_PDF_SOURCES, INITIAL_AUDIT_LOGS)
+          .then(() => backfillContentCourse())
+          .catch((err) => console.warn('Course backfill skipped:', err));
       }
     });
     return () => unsubscribe();
@@ -276,15 +289,50 @@ export default function App() {
     };
   }, [authStatus]);
 
+  // The account's own profile, live: when the administrator deactivates, suspends or deletes
+  // the account it signs out at once, and course or detail changes apply immediately.
+  useEffect(() => {
+    if (!signedInUid || !firebaseUser) return;
+    const user = firebaseUser;
+    return watchOwnProfile(
+      user,
+      (next) => {
+        if (auth.currentUser?.uid !== user.uid) return;
+        if (!next) {
+          // The profile was deleted by the administrator.
+          if (user.uid && accountRoleRef.current !== 'admin') {
+            setAuthNotice({ tone: 'error', text: 'This account has been removed. Contact NEXORA Academy for help.' });
+            signOutEverywhere().catch(() => {});
+          }
+          return;
+        }
+        if (!canAccessPlatform(next)) {
+          setAuthNotice({ tone: 'error', text: blockedMessage(next) });
+          signOutEverywhere().catch(() => {});
+          return;
+        }
+        setProfile((prev) => (prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+      },
+      (err) => console.warn('Profile listener error:', err)
+    );
+  }, [signedInUid, firebaseUser]);
+  const accountRoleRef = useRef<UserRole>('reviewee');
+  accountRoleRef.current = accountRole;
+  const accountCourse = profile?.course ?? null;
+
   // Real-time Firestore data for the signed-in account. Queries follow firestore.rules for the
-  // account's role (reviewees can only list published questions, public sources and their own
-  // results); empty results replace old data, and failures are shown to the user.
+  // account's role (reviewees can only list published questions and public sources of their
+  // own course, and their own results); empty results replace old data, and failures are shown.
   useEffect(() => {
     if (!signedInUid) return;
-    const plan = cloudQueryPlan(accountRole, signedInUid);
+    const plan = cloudQueryPlan(accountRole, signedInUid, accountCourse);
+    // Without a course there is nothing to list: clear whatever a previous course showed.
+    for (const name of ['questions', 'pdfSources'] as const) {
+      if (!(name in plan)) dispatchCloud({ type: 'snapshot', uid: signedInUid, collection: name, docs: [] });
+    }
     const unsubscribes = (Object.keys(plan) as CloudCollection[]).map((name) => {
-      const filter = plan[name];
-      const ref = filter ? query(collection(db, name), where(filter.field, '==', filter.value)) : collection(db, name);
+      const filters = plan[name];
+      const ref = filters ? query(collection(db, name), ...filters.map((f) => where(f.field, '==', f.value))) : collection(db, name);
       return onSnapshot(
         ref,
         (snapshot) => dispatchCloud({ type: 'snapshot', uid: signedInUid, collection: name, docs: snapshot.docs.map((d) => d.data()) }),
@@ -295,7 +343,7 @@ export default function App() {
       );
     });
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
-  }, [signedInUid, accountRole]);
+  }, [signedInUid, accountRole, accountCourse]);
 
   // Signing out ends the Firebase session and returns to the sign-in page.
   const handleLogout = async () => {
@@ -420,14 +468,18 @@ export default function App() {
   };
 
   // Admin audit log adder
-  const handleAddAuditLog = (action: string, details: string, badge?: string) => {
+  const handleAddAuditLog = (action: string, details: string, badge?: string, target?: UserLogEntry['target']) => {
+    const now = new Date();
     const newLog: AuditLog = {
-      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, // unique within a bulk action
+      id: `log-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`, // unique within a bulk action
       adminName: currentUser.name,
       action,
       details,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      badge,
+      timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdAt: now.toISOString(),
+      category: target || badge === 'Users' || badge === 'Settings' ? 'users' : 'content',
+      ...(badge ? { badge } : {}),
+      ...(target ? { targetUserId: target.id, targetUserName: target.name, targetUserEmail: target.email } : {}),
     };
     setAuditLogs((prev) => [newLog, ...prev]);
     saveAuditLogToFirestore(newLog).catch(reportSaveError('Save audit log to Firestore'));
@@ -445,7 +497,9 @@ export default function App() {
         onNavigate={(view) => navigate(view)}
         notice={authNotice}
         onDismissNotice={() => setAuthNotice(null)}
-        onRegistered={(name) =>
+        onRegistered={(name, status) =>
+          // A pending account is signed out with an explanation on the sign-in page instead.
+          status !== 'pending' &&
           setToast({
             tone: 'success',
             text: `Welcome to NEXORA Academy, ${name.trim().split(/\s+/)[0]}! Your reviewee account has been created. We also sent a link to verify your email address.`,
@@ -457,7 +511,7 @@ export default function App() {
 
   // Reviewee screens only show the current person's own results.
   const myResults = visibleResults(currentUser, examResults);
-  const plannedCollections = signedInUid ? (Object.keys(cloudQueryPlan(accountRole, signedInUid)) as CloudCollection[]) : [];
+  const plannedCollections = signedInUid ? (Object.keys(cloudQueryPlan(accountRole, signedInUid, accountCourse)) as CloudCollection[]) : [];
   const cloudLoading = plannedCollections.some((name) => cloud[name] === null);
   const syncErrors = signedInUid ? Object.entries(cloud.errors) : [];
 
@@ -682,11 +736,20 @@ export default function App() {
           <PdfSourcesView
             pdfSources={pdfSources}
             onUpdateSource={(updated) => {
+              const before = pdfSources.find((p) => p.id === updated.id);
               setPdfSources((prev) =>
                 prev.map((p) => (p.id === updated.id ? updated : p))
               );
               savePdfSourceToFirestore(updated).catch(reportSaveError('Save PDF to Firestore'));
-              handleAddAuditLog('PDF Permissions Updated', `Updated permissions for "${updated.filename}".`);
+              if (before && contentCourse(before) !== contentCourse(updated)) {
+                // The set's questions follow it, so reviewees of the new course get all of them.
+                const moved = questions.filter((q) => q.sourcePdfId === updated.id).map((q) => ({ ...q, course: contentCourse(updated) }));
+                setQuestions((prev) => prev.map((q) => moved.find((m) => m.id === q.id) ?? q));
+                if (moved.length) batchSaveQuestionsToFirestore(moved).catch(reportSaveError('Save question courses to Firestore'));
+                handleAddAuditLog('Question Set Course Changed', `"${updated.filename}" and its ${moved.length} question${moved.length === 1 ? '' : 's'}: ${contentCourse(before)} → ${contentCourse(updated)}.`, 'Course');
+              } else {
+                handleAddAuditLog('PDF Permissions Updated', `Updated permissions for "${updated.filename}".`);
+              }
             }}
             onNavigateToImporter={() => navigate('pdf-importer')}
             onNavigateToQuiz={(pdfId) => {
@@ -708,6 +771,18 @@ export default function App() {
 
         {currentView === 'audit-logs' && (
           <AuditLogsView auditLogs={auditLogs} />
+        )}
+
+        {currentView === 'user-management' && (
+          <UserManagementView
+            users={cloud.users ?? []}
+            loading={isSignedInAdmin && cloud.users === null && !cloud.errors.users}
+            error={cloud.errors.users}
+            examResults={examResults}
+            subjects={SUBJECTS}
+            admin={currentUser}
+            onLog={(entry) => handleAddAuditLog(entry.action, entry.details, entry.badge, entry.target)}
+          />
         )}
 
         {currentView === 'account' && (

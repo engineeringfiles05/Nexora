@@ -27,6 +27,7 @@ export const ROUTES = {
   'exam-result': { path: '/results', access: 'signed-in' },
 
   'admin-dashboard': { path: '/admin', access: 'admin' },
+  'user-management': { path: '/admin/users', access: 'admin' },
   'pdf-importer': { path: '/admin/importer', access: 'admin' },
   'question-bank': { path: '/admin/question-bank', access: 'admin' },
   'pdf-sources': { path: '/admin/pdfs', access: 'admin' },

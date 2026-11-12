@@ -110,19 +110,21 @@ const DetailsCard: React.FC<{ profile: UserProfile; user: User; onSaved: (p: Use
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const isAdmin = profile.role === 'admin';
+  // Reviewees choose a course once; after that the administrator manages course access.
+  const courseEditable = profile.course === undefined;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResult(null);
     const found: typeof errors = {};
     if (sanitizeName(name).length < 2) found.name = 'Enter your complete name.';
-    if (!isAdmin && course !== 'REE' && course !== 'RME') found.course = 'Choose your course.';
+    if (!isAdmin && courseEditable && course !== 'REE' && course !== 'RME') found.course = 'Choose your course.';
     if (contact.trim() && !isValidContact(sanitizeContact(contact))) found.contact = 'Enter a valid contact number.';
     setErrors(found);
     if (Object.keys(found).length) return;
     setBusy(true);
     try {
-      const updated = await updateAccountDetails(user, { name, course: course || undefined, contactNumber: contact });
+      const updated = await updateAccountDetails(user, profile, { name, course: course || undefined, contactNumber: contact });
       onSaved(updated);
       setResult({ tone: 'success', text: 'Your details have been saved.' });
     } catch (error) {
@@ -143,7 +145,22 @@ const DetailsCard: React.FC<{ profile: UserProfile; user: User; onSaved: (p: Use
         )}
         <TextField label="Complete name" icon={UserIcon} value={name} onChange={(e) => setName(e.target.value)} error={errors.name} maxLength={120} autoComplete="name" />
         <TextField label="Email address" icon={Mail} value={profile.email} readOnly disabled hint="Your sign-in email can't be changed here." />
-        {!isAdmin && (
+        {!isAdmin && !courseEditable && (
+          <div>
+            <span className="block text-xs font-semibold text-slate-300 mb-1.5">Course</span>
+            <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-3.5 py-3 text-sm">
+              {profile.course ? (
+                <span className="font-bold text-white">{profile.course}</span>
+              ) : (
+                <span className="text-rose-200">No course access</span>
+              )}
+              <span className="block text-[11px] text-slate-400 mt-0.5">
+                {profile.course ? 'Contact NEXORA Academy to change your course.' : 'Your course access was removed by the administrator. Contact NEXORA Academy.'}
+              </span>
+            </div>
+          </div>
+        )}
+        {!isAdmin && courseEditable && (
           <fieldset>
             <legend className="text-xs font-semibold text-slate-300 mb-1.5">Course</legend>
             <div className="grid grid-cols-2 gap-2">

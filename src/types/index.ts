@@ -8,6 +8,12 @@ export type UserRole = 'admin' | 'reviewee';
 /** The board exam a reviewee is preparing for. */
 export type Course = 'REE' | 'RME';
 
+/**
+ * Whether an account may use NEXORA Academy. Only "active" accounts can open protected
+ * pages; firestore.rules enforces the same. Profiles without a status are active.
+ */
+export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -19,11 +25,19 @@ export interface UserProfile {
   targetExam?: string;
   examDate?: string;
   enrolledAt: string;
-  course?: Course;
+  /** null: the administrator removed course access. Absent: not chosen yet. */
+  course?: Course | null;
   contactNumber?: string;
   /** How the account signs in: 'password' (email and password) or 'google.com'. */
   authProvider?: string;
   updatedAt?: string;
+  status?: UserStatus;
+  /** Shown to the person when their account is not active. */
+  statusReason?: string;
+  statusChangedAt?: string;
+  lastLoginAt?: string;
+  /** uid of the administrator who created the account, for accounts not self-registered. */
+  createdBy?: string;
 }
 
 export type SubjectId = 'math' | 'esas' | 'ee';
@@ -87,6 +101,8 @@ export interface Question {
   createdAt: string;
   updatedAt: string;
   flaggedReason?: string;
+  /** Which course's reviewees may use it (enforced by firestore.rules). Missing means REE. */
+  course?: Course;
   version?: number;
   originalQuestionText?: string; // Exact unedited text extracted from PDF
   originalOptions?: QuestionChoice[]; // Exact unedited choices from PDF
@@ -239,6 +255,8 @@ export interface PdfSource {
   extractionReport?: ExtractionReport;
   /** SHA-256 of the uploaded file, so the same PDF is recognised under any filename. */
   fileHash?: string;
+  /** Which course's reviewees may use it (enforced by firestore.rules). Missing means REE. */
+  course?: Course;
 }
 
 export type ExamType =
@@ -305,4 +323,11 @@ export interface AuditLog {
   details: string;
   timestamp: string;
   badge?: string;
+  /** 'users' for account management; absent for content actions. */
+  category?: 'users' | 'content';
+  targetUserId?: string;
+  targetUserName?: string;
+  targetUserEmail?: string;
+  /** Full ISO date and time (older entries only have `timestamp`, a time of day). */
+  createdAt?: string;
 }

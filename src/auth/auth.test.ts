@@ -194,7 +194,10 @@ test('firestore.rules: only the verified owner is admin, and nobody can give the
   assert.match(rules, /data\.role == 'reviewee' \|\| \(data\.role == 'admin' && isAdmin\(\) && request\.auth\.uid == userId\)/);
   const users = /match \/users\/\{userId\} \{([\s\S]*?)\n    \}/.exec(rules)?.[1] ?? '';
   assert.match(users, /allow create:[^;]*request\.auth\.uid == userId[^;]*incoming\(\)\.email == request\.auth\.token\.email[^;]*isAllowedRole/);
-  assert.match(users, /allow update:[^;]*incoming\(\)\.email == existing\(\)\.email[^;]*isAllowedRole/);
+  // Reviewees can't change their email, status or (once chosen) course; nobody demotes the owner.
+  assert.match(users, /allow update: if isSignedIn\(\)[^;]*request\.auth\.uid == userId && !isAdmin\(\)[^;]*incoming\(\)\.email == existing\(\)\.email[^;]*unchanged\('status'\)[^;]*\(unchanged\('course'\) \|\| !\('course' in existing\(\)\)\)[^;]*incoming\(\)\.role == 'reviewee'/);
+  assert.match(users, /allow update: if isAdmin\(\)[^;]*isAllowedRole[^;]*request\.auth\.uid != userId \|\| \(incoming\(\)\.get\('status', 'active'\) == 'active' && incoming\(\)\.role == 'admin'\)/);
+  assert.match(users, /allow delete: if isAdmin\(\) && isValidId\(userId\) && request\.auth\.uid != userId;/);
   assert.match(rules, /data\.course in \['REE', 'RME'\]/);
   assert.doesNotMatch(rules, /match \/admins\//);
 });

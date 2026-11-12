@@ -7,6 +7,13 @@
   - Every account created through public registration is a reviewee. Nobody chooses a role: `/users/{userId}` accepts `role: 'reviewee'`, and `role: 'admin'` only on the verified owner's own profile.
   - Non-admins can only read and write their own `/users/{userId}` profile, where `{userId} == request.auth.uid`; the profile's email must be the sign-in email, and the id, email and enrolment date can't be changed. Only known fields are accepted, with size limits (name 120, contact number 20 characters; course `REE` or `RME`).
   - Admin API routes (AI extraction and solving) verify the Firebase ID token sent as `Authorization: Bearer`: a reviewee's token gets 403, a forged or expired one 401.
+- **Account status and course access** (User Management):
+  - Each profile has a `status`: `active`, `inactive`, `suspended` or `pending` (missing = active). Only the administrator changes it; reviewees can't edit their own status, creator, email, enrolment date or (once chosen) course.
+  - `isActiveReviewee()` (an existing profile with status `active`) is required to read questions and question sets and to add exam results. Blocked accounts are also signed out by the app as soon as their status changes, and, with `FIREBASE_SERVICE_ACCOUNT` configured, disabled in Firebase Authentication with their sessions revoked.
+  - Reviewees read only material whose `course` equals their profile's course (`myCourse()`); material created before courses existed is tagged `REE` when the administrator signs in.
+  - While `settings/registration.requireApproval` is true, self-registered profiles must start `pending`.
+  - The administrator creates reviewee profiles for others (never admins), and can't block, demote or delete their own account (rules and `/api/admin` both refuse).
+  - `/api/admin/*` (email change, sign-in block, Auth account deletion) requires the verified administrator's ID token; the shared AI token is not accepted there.
 - **Question Bank**:
   - Only administrators can create, update, or delete `/questions/{questionId}`.
   - Reviewees can read questions only if `resource.data.isPublished == true`.

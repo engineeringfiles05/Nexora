@@ -18,6 +18,7 @@ import {
   History,
   Cloud,
   LogOut,
+  Users,
 } from 'lucide-react';
 import { UserProfile } from '../types/index.ts';
 import { Avatar } from './Avatar.tsx';
@@ -211,6 +212,18 @@ export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, 
                 </button>
 
                 <button
+                  onClick={() => onNavigate('user-management')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${
+                    currentView === 'user-management'
+                      ? 'bg-slate-800 text-indigo-400 border border-slate-700'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  Users
+                </button>
+
+                <button
                   onClick={() => onNavigate('pdf-importer')}
                   className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow-sm ${
                     currentView === 'pdf-importer'
@@ -377,6 +390,12 @@ export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, 
               className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'admin-dashboard' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}
             >
               Overview
+            </button>
+            <button
+              onClick={() => onNavigate('user-management')}
+              className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'user-management' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}
+            >
+              Users
             </button>
             <button
               onClick={() => onNavigate('pdf-importer')}
