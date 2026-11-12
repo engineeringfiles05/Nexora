@@ -161,8 +161,8 @@ export const Backdrop: React.FC = () => (
 
 export const Logo: React.FC<{ size?: 'sm' | 'lg' }> = ({ size = 'lg' }) => (
   <div className="flex items-center gap-3 select-none">
-    <div className={`${size === 'lg' ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-lg shadow-indigo-500/25`}>
-      <img src="/logo.png" alt="" className="w-full h-full object-contain p-1" />
+    <div className={`${size === 'lg' ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl flex items-center justify-center overflow-hidden`}>
+      <img src="/logo.png" alt="" className="w-full h-full object-contain p-1 brightness-0 invert" />
     </div>
     <div>
       <div className="flex items-center gap-2">
@@ -834,8 +834,8 @@ const ResetPasswordForm: React.FC<{ onDone: () => void; onRequestNew: () => void
 export const AuthLoadingScreen: React.FC<{ label?: string }> = ({ label = 'Loading NEXORA Academy…' }) => (
   <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-5 text-slate-300">
     <div className="relative">
-      <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-lg shadow-indigo-500/30">
-        <img src="/logo.png" alt="" className="w-full h-full object-contain p-1.5" />
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden">
+        <img src="/logo.png" alt="" className="w-full h-full object-contain p-1.5 brightness-0 invert" />
       </div>
       <span className="absolute -inset-2 rounded-3xl border-2 border-indigo-400/40 border-t-indigo-300 animate-spin" />
     </div>
