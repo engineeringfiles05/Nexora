@@ -46,7 +46,7 @@ const screens: [string, React.ReactElement][] = [
   ['AuthPage (forgot password)', <AuthPage view="forgot-password" onNavigate={noop} />],
   ['AuthPage (reset password)', <AuthPage view="reset-password" onNavigate={noop} />],
   ['ActiveExamView', <ActiveExamView config={config} questions={questions} onFinishExam={noop} onExitExam={noop} />],
-  ['AdminDashboard', <AdminDashboard adminUser={data.DEMO_USERS[0]} {...{ questions, pdfSources, examResults, auditLogs }} onNavigate={noop} />],
+  ['AdminDashboard', <AdminDashboard adminUser={data.DEMO_USERS[0]} {...{ questions, pdfSources, examResults }} onNavigate={noop} />],
   ['AuditLogsView', <AuditLogsView auditLogs={auditLogs} />],
   ['UserManagementView', <UserManagementView users={[data.DEMO_USERS[1], { ...data.DEMO_USERS[1], id: 'u2', status: 'suspended' }]} loading={false} examResults={examResults} subjects={subjects} admin={data.DEMO_USERS[0]} onLog={noop} />],
   ['UserManagementView (loading)', <UserManagementView users={[]} loading examResults={[]} subjects={subjects} admin={data.DEMO_USERS[0]} onLog={noop} />],

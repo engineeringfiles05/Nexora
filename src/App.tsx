@@ -736,7 +736,6 @@ export default function App() {
             questions={questions}
             pdfSources={pdfSources}
             examResults={examResults}
-            auditLogs={auditLogs}
             onNavigate={handleNavigate}
           />
         )}
