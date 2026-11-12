@@ -22,6 +22,7 @@ import { formatTimeRemaining } from '../utils/examEngine.ts';
 import { createExamCountdown, type ExamCountdown } from '../utils/examTimer.ts';
 import { ScientificCalculatorModal } from './ScientificCalculatorModal.tsx';
 import { FormulaReferenceDrawer } from './FormulaReferenceDrawer.tsx';
+import { SolutionPanel } from './SolutionPanel.tsx';
 
 interface Props {
   config: ExamConfig;
@@ -340,28 +341,27 @@ export const ActiveExamView: React.FC<Props> = ({
               {/* Instant feedback: shown once the answer is recorded, from the revealed key */}
               {config.instantFeedback && (showInstantExplanation || revealedIds.includes(currentQuestion.id)) && currentSelected && revealedIds.includes(currentQuestion.id) && (
                 <div
-                  className={`p-4 rounded-xl border text-xs space-y-2 animate-in fade-in duration-200 ${
+                  className={`p-4 sm:p-5 rounded-2xl border space-y-4 animate-in fade-in duration-200 ${
                     currentSelected === currentQuestion.correctAnswer
-                      ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200'
-                      : 'bg-rose-950/30 border-rose-800/60 text-rose-200'
+                      ? 'bg-emerald-950/20 border-emerald-800/60'
+                      : 'bg-rose-950/20 border-rose-800/60'
                   }`}
+                  role="status"
                 >
-                  <div className="flex items-center gap-2 font-bold text-sm">
+                  <div className={`flex items-center gap-2 font-bold text-base ${currentSelected === currentQuestion.correctAnswer ? 'text-emerald-300' : 'text-rose-300'}`}>
                     {currentSelected === currentQuestion.correctAnswer ? (
                       <>
                         <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        <span>Correct! The official board answer is {currentQuestion.correctAnswer}.</span>
+                        <span>Correct! Well done.</span>
                       </>
                     ) : (
                       <>
                         <AlertTriangle className="w-5 h-5 text-rose-400" />
-                        <span>Incorrect. The correct board answer is {currentQuestion.correctAnswer}.</span>
+                        <span>Not quite. Here is the correct answer and how to get it.</span>
                       </>
                     )}
                   </div>
-                  <p className="text-slate-300 leading-relaxed font-mono whitespace-pre-line text-[11px]">
-                    {currentQuestion.stepByStepSolution || currentQuestion.explanation}
-                  </p>
+                  <SolutionPanel question={currentQuestion} userAnswer={currentSelected} />
                 </div>
               )}
             </div>

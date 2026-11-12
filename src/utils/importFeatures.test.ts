@@ -12,7 +12,8 @@ import { INITIAL_PDF_SOURCES, INITIAL_QUESTIONS } from '../data/seedData.ts';
 import { EXAM_PROGRAMS, programById } from '../data/programs.ts';
 import type { Question } from '../types/index.ts';
 import { findDuplicates, publishQuestionsToBank } from './bank.ts';
-import { formatStructuredSolution, parseSolutionSections } from './solutionFormat.ts';
+import { formatStructuredSolution, parseSolutionSections, readSolution } from './solutionFormat.ts';
+import { SolutionPanel } from '../components/SolutionPanel.tsx';
 import { applySolutionOnly, approveMany, planBulkApproval } from './importReview.ts';
 import { computeCounts, needsAnswer, prepareDrafts, storableResult, totals, wasInterrupted, EMPTY_COUNTS, type ImportSession } from './importSessions.ts';
 import { normalizeSolution } from '../../server/extraction/solver.ts';
@@ -128,6 +129,48 @@ test('"Regenerate solution" keeps the answer and flags a disagreement instead of
   assert.equal(next.correctAnswer, 'B');
   assert.equal(next.stepByStepSolution, 'Find:\nR');
   assert.ok(next.extractionIssues?.some((i) => i.code === 'AI_DISAGREES'));
+});
+
+// ---- Solutions as examinees read them ----
+
+test('solutions are read as an opening line plus steps, with notes and admin-only review notes set apart', () => {
+  const imported = readSolution(
+    'Hot resistance R = 110/0.5 = 220 Ω\n• 220 = 20[1 + 0.005(T − 20)]\n• T = 2020°C\n• Note: the PDF prints II twice.\n• Review note: confirm against your key.'
+  );
+  assert.deepEqual(imported.steps, ['Hot resistance R = 110/0.5 = 220 Ω', '220 = 20[1 + 0.005(T − 20)]', 'T = 2020°C']);
+  assert.deepEqual(imported.notes, ['the PDF prints II twice.']);
+  assert.deepEqual(imported.reviewNotes, ['confirm against your key.']);
+  assert.deepEqual(imported.paragraphs, []);
+
+  // Numbered steps keep their indented continuation lines.
+  const seed = readSolution('1. Required kVAR:\n   Qc = P[tan θ1 − tan θ2]\n2. Qc = 12.6 kVAR');
+  assert.deepEqual(seed.steps, ['Required kVAR:\nQc = P[tan θ1 − tan θ2]', 'Qc = 12.6 kVAR']);
+
+  // A conceptual answer with no steps stays a paragraph; a hyphenated value is not a step.
+  assert.deepEqual(readSolution('Coal is the most conventional source.').paragraphs, ['Coal is the most conventional source.']);
+  assert.deepEqual(readSolution('-0.698 - j0.089 is the value').steps, []);
+});
+
+test('the solution panel shows both answers in full and never shows review notes to examinees', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(SolutionPanel, {
+      question: {
+        options,
+        correctAnswer: 'B',
+        explanation: 'R = V/I = 20/2 = 10 Ω\n• Choice B lists 20 ohms.\n• Note: the PDF has a typo.\n• Review note: SECRET admin text.',
+      },
+      userAnswer: 'A',
+    })
+  );
+  assert.match(html, /Correct answer/);
+  assert.match(html, /20 ohms/);
+  assert.match(html, /Your answer/);
+  assert.match(html, /10 ohms/);
+  assert.match(html, /the PDF has a typo/);
+  assert.doesNotMatch(html, /SECRET|Review note/);
+
+  const right = renderToStaticMarkup(React.createElement(SolutionPanel, { question: { options, correctAnswer: 'B', explanation: 'x' }, userAnswer: 'B' }));
+  assert.doesNotMatch(right, /Your answer/);
 });
 
 // ---- Bulk approval ----

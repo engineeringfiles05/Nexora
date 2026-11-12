@@ -20,10 +20,10 @@ import {
   ChevronUp,
   Download,
   Share2,
-  Sparkles,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ExamResult, Question } from '../types/index.ts';
+import { SolutionPanel } from './SolutionPanel.tsx';
 
 interface Props {
   result: ExamResult;
@@ -440,70 +440,8 @@ export const ExamResultView: React.FC<Props> = ({
 
                 {/* Expandable Step-by-Step Mathematical Proof */}
                 {isExpanded && (
-                  <div className="mt-4 pt-4 border-t border-slate-800/80 space-y-3">
-                    {/* Given parameters & formulas */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {q.givenValues && q.givenValues.length > 0 && (
-                        <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs">
-                          <span className="font-semibold text-slate-400 block mb-1">
-                            Given Values:
-                          </span>
-                          <div className="space-y-0.5">
-                            {q.givenValues.map((g, gi) => (
-                              <div key={gi} className="text-slate-300 font-mono text-[11px]">
-                                • {g.label}: <strong className="text-white">{g.value}</strong>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {q.formulasUsed && q.formulasUsed.length > 0 && (
-                        <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs">
-                          <span className="font-semibold text-slate-400 block mb-1">
-                            Governing Formulas:
-                          </span>
-                          <div className="space-y-1">
-                            {q.formulasUsed.map((f, fi) => (
-                              <div
-                                key={fi}
-                                className="font-mono text-emerald-400 text-[11px] bg-slate-950 p-1 rounded"
-                              >
-                                {f}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Step-by-Step Calculation */}
-                    <div className="p-4 bg-slate-950 rounded-xl border border-emerald-900/40 text-xs space-y-1.5">
-                      <div className="flex items-center justify-between text-emerald-400 font-bold text-xs">
-                        <span className="flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5" />
-                          Step-by-Step Solution:
-                        </span>
-                        {q.finalAnswerWithUnit && (
-                          <span className="font-mono bg-emerald-950 px-2 py-0.5 rounded text-emerald-300 border border-emerald-800/40">
-                            Final: {q.finalAnswerWithUnit}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-slate-300 font-mono text-xs whitespace-pre-line leading-relaxed">
-                        {q.stepByStepSolution}
-                      </p>
-                    </div>
-
-                    {/* Conceptual Reasoning */}
-                    <div className="p-3.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs">
-                      <div className="font-semibold text-indigo-400 text-xs mb-1">
-                        Conceptual Explanation:
-                      </div>
-                      <p className="text-slate-300 leading-relaxed text-xs">
-                        {q.explanation}
-                      </p>
-                    </div>
+                  <div className="mt-4 pt-4 border-t border-slate-800/80">
+                    <SolutionPanel question={q} userAnswer={userAnswer} showAnswer={false} />
                   </div>
                 )}
               </div>
