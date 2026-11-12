@@ -10,13 +10,13 @@
  * empty query result means "no records", not "keep what was there before".
  */
 
-import type { AuditLog, Course, ExamResult, PdfSource, Question, UserProfile, UserRole } from '../types/index.ts';
+import type { Course, ExamResult, PdfSource, Question, UserProfile, UserRole } from '../types/index.ts';
 
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
 
-export type CloudCollection = 'questions' | 'pdfSources' | 'examResults' | 'auditLogs' | 'users';
+export type CloudCollection = 'questions' | 'pdfSources' | 'examResults' | 'users';
 export type QueryFilter = { field: string; value: string | boolean };
 export type QueryFilters = QueryFilter[];
 
@@ -24,11 +24,12 @@ export type QueryFilters = QueryFilter[];
  * What each role may list, mirroring firestore.rules. A list query is only allowed when its
  * filters guarantee every returned document passes the rule, so reviewees must filter: by
  * publication and by their own course. A collection missing from the plan is not queried at
- * all (reviewees: users, auditLogs; reviewees without a course: questions, pdfSources).
+ * all (reviewees: users; reviewees without a course: questions, pdfSources). The activity
+ * log (auditLogs) is only written, never listed: it has no page in the app.
  * `null` means the whole collection.
  */
 export function cloudQueryPlan(role: UserRole, uid: string, course?: Course | null): Partial<Record<CloudCollection, QueryFilters | null>> {
-  if (role === 'admin') return { questions: null, pdfSources: null, examResults: null, auditLogs: null, users: null };
+  if (role === 'admin') return { questions: null, pdfSources: null, examResults: null, users: null };
   const own = { examResults: [{ field: 'userId', value: uid }] };
   if (course !== 'REE' && course !== 'RME') return own;
   return {
@@ -44,12 +45,6 @@ export function cloudQueryPlan(role: UserRole, uid: string, course?: Course | nu
   };
 }
 
-/** Newest first. Log ids are "log-<epoch ms>-<random>"; the stored time has no date. */
-export function sortAuditLogs(logs: AuditLog[]): AuditLog[] {
-  const stamp = (id: string) => Number(/^log-(\d+)/.exec(id)?.[1] ?? 0);
-  return [...logs].sort((a, b) => stamp(b.id) - stamp(a.id));
-}
-
 // ---------------------------------------------------------------------------
 // Cloud state
 // ---------------------------------------------------------------------------
@@ -60,8 +55,6 @@ export interface CloudState {
   questions: Question[] | null; // null while the first snapshot is loading
   pdfSources: PdfSource[] | null;
   examResults: ExamResult[] | null;
-  /** Admins only; stays null (never queried) for reviewees. */
-  auditLogs: AuditLog[] | null;
   /** Registered accounts, admins only; stays null (never queried) for reviewees. */
   users: UserProfile[] | null;
   errors: Partial<Record<CloudCollection | 'write', string>>;
@@ -79,7 +72,6 @@ export const emptyCloudState = (uid: string | null = null): CloudState => ({
   questions: null,
   pdfSources: null,
   examResults: null,
-  auditLogs: null,
   users: null,
   errors: {},
 });
@@ -118,7 +110,6 @@ export function describeSyncError(collection: CloudCollection | 'write', error: 
     questions: 'questions',
     pdfSources: 'question sets',
     examResults: 'exam history',
-    auditLogs: 'the audit log',
     users: 'registered reviewees',
     write: 'your last change',
   }[collection];

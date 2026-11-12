@@ -7,7 +7,6 @@ import * as data from './data/seedData.ts';
 import { calculateExamScore } from './utils/examEngine.ts';
 import { ActiveExamView } from './components/ActiveExamView.tsx';
 import { AdminDashboard } from './components/AdminDashboard.tsx';
-import { AuditLogsView } from './components/AuditLogsView.tsx';
 import { ExamLauncherModal } from './components/ExamLauncherModal.tsx';
 import { ExamResultView } from './components/ExamResultView.tsx';
 import { FormulaReferenceDrawer } from './components/FormulaReferenceDrawer.tsx';
@@ -32,7 +31,6 @@ const questions = data.INITIAL_QUESTIONS;
 const pdfSources = data.INITIAL_PDF_SOURCES;
 const examResults = data.INITIAL_EXAM_RESULTS;
 const subjects = data.SUBJECTS;
-const auditLogs = data.INITIAL_AUDIT_LOGS;
 const config: ExamConfig = { type: 'practice', title: 'QA', description: '', questionCount: 12,
   durationMinutes: 20, passingPercentage: 70, randomizeQuestions: false,
   randomizeChoices: false, instantFeedback: false };
@@ -47,7 +45,6 @@ const screens: [string, React.ReactElement][] = [
   ['AuthPage (reset password)', <AuthPage view="reset-password" onNavigate={noop} />],
   ['ActiveExamView', <ActiveExamView config={config} questions={questions} onFinishExam={noop} onExitExam={noop} />],
   ['AdminDashboard', <AdminDashboard adminUser={data.DEMO_USERS[0]} {...{ questions, pdfSources, examResults }} onNavigate={noop} />],
-  ['AuditLogsView', <AuditLogsView auditLogs={auditLogs} />],
   ['UserManagementView', <UserManagementView users={[data.DEMO_USERS[1], { ...data.DEMO_USERS[1], id: 'u2', status: 'suspended' }]} loading={false} examResults={examResults} subjects={subjects} admin={data.DEMO_USERS[0]} onLog={noop} />],
   ['UserManagementView (loading)', <UserManagementView users={[]} loading examResults={[]} subjects={subjects} admin={data.DEMO_USERS[0]} onLog={noop} />],
   ['UserDetailsPanel', <UserDetailsPanel user={{ ...data.DEMO_USERS[1], id: examResults[0]!.userId, course: 'REE' }} examResults={examResults} subjects={subjects} onBack={noop} onEdit={noop} onChangeStatus={noop} onResendSetup={noop} />],

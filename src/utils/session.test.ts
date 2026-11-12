@@ -8,18 +8,18 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { cloudQueryPlan, cloudReducer, describeSyncError, emptyCloudState, sortAuditLogs, visibleResults } from './session.ts';
+import { cloudQueryPlan, cloudReducer, describeSyncError, emptyCloudState, visibleResults } from './session.ts';
 import { RevieweeRosterView } from '../components/RevieweeRosterView.tsx';
 import { countdownLabel, getExamCountdown, parseExamDate } from './examDate.ts';
 import { DEMO_STORAGE_PREFIX, LEGACY_STORAGE_PREFIX, isRecordArray, loadPersisted, savePersisted } from './persistence.ts';
 import { Navbar } from '../components/Navbar.tsx';
 import { DEMO_USERS } from '../data/seedData.ts';
-import type { AuditLog, ExamResult, Question } from '../types/index.ts';
+import type { ExamResult, Question } from '../types/index.ts';
 
 // ---- Finding 1: queries must match firestore.rules for the role ----
 
 test('reviewee queries are filtered the way firestore.rules requires; admins list everything', () => {
-  // Reviewees never query the admin-only users and auditLogs collections, and only see
+  // Reviewees never query the admin-only users collection, and only see
   // material of their own course.
   assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1', 'RME'), {
     questions: [
@@ -35,7 +35,8 @@ test('reviewee queries are filtered the way firestore.rules requires; admins lis
   // Without a course (not chosen yet, or removed by the administrator) only their own history.
   assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1', null), { examResults: [{ field: 'userId', value: 'uid-1' }] });
   assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1'), { examResults: [{ field: 'userId', value: 'uid-1' }] });
-  assert.deepEqual(cloudQueryPlan('admin', 'uid-1'), { questions: null, pdfSources: null, examResults: null, auditLogs: null, users: null });
+  // Nobody lists the activity log: it is written for the record and has no page.
+  assert.deepEqual(cloudQueryPlan('admin', 'uid-1'), { questions: null, pdfSources: null, examResults: null, users: null });
 });
 
 test('users and auditLogs are admin-only in the rules too', async () => {
@@ -47,25 +48,16 @@ test('users and auditLogs are admin-only in the rules too', async () => {
   assert.doesNotMatch(rules, /match \/auditLogs\/\{logId\}[^}]*allow (read|list)[^;]*isValidId/);
 });
 
-test('admin audit history comes from Firestore, survives reloads, and respects empty or failed loads', () => {
-  let s = cloudReducer(emptyCloudState('admin'), {
-    type: 'snapshot',
-    uid: 'admin',
-    collection: 'auditLogs',
-    docs: [{ id: 'log-1000-a' }, { id: 'log-3000-c' }, { id: 'log-2000-b' }],
-  });
-  assert.deepEqual(sortAuditLogs(s.auditLogs as AuditLog[]).map((l) => l.id), ['log-3000-c', 'log-2000-b', 'log-1000-a']);
-  s = cloudReducer(s, { type: 'snapshot', uid: 'admin', collection: 'auditLogs', docs: [] });
-  assert.deepEqual(s.auditLogs, []);
-  s = cloudReducer(s, { type: 'error', uid: 'admin', collection: 'auditLogs', message: describeSyncError('auditLogs', { code: 'permission-denied' }) });
-  assert.match(s.errors.auditLogs ?? '', /not allowed to load the audit log/);
-  // A fresh account starts with nothing loaded, not another account's history.
-  assert.equal(cloudReducer(s, { type: 'reset', uid: 'other' }).auditLogs, null);
+test('the Audit Logs page is gone, but administrative actions are still recorded', async () => {
+  const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
+  const routes = await readFile(new URL('../auth/routes.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(app, /AuditLogsView|cloud\.auditLogs/);
+  assert.doesNotMatch(routes, /audit-logs/);
+  assert.match(app, /saveAuditLogToFirestore\(newLog\)/);
 });
 
 test('App subscribes from the role plan, and the roster lists registered reviewee accounts', async () => {
   const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /const auditLogs = sortAuditLogs\(cloud\.auditLogs \?\? \[\]\)/);
   assert.match(app, /const rosterReviewees: UserProfile\[\] = \(cloud\.users \?\? \[\]\)\.filter\(\(u\) => u\.role === 'reviewee'\)/);
   assert.match(app, /reviewees=\{rosterReviewees\}/);
   assert.doesNotMatch(app, /DEMO_USERS/);
@@ -98,13 +90,13 @@ test('App builds its listeners from the role plan and never queries whole collec
 });
 
 test('a refusal for the administrator points at outdated published rules, not at "ask an administrator"', () => {
-  const message = describeSyncError('auditLogs', { code: 'permission-denied' }, 'admin');
-  assert.match(message, /^Could not load the audit log\. The security rules published in Firebase are out of date/);
+  const message = describeSyncError('users', { code: 'permission-denied' }, 'admin');
+  assert.match(message, /^Could not load registered reviewees\. The security rules published in Firebase are out of date/);
   assert.match(message, /npm run deploy:rules/);
   assert.doesNotMatch(message, /Ask an administrator/);
   assert.match(describeSyncError('write', { code: 'permission-denied' }, 'admin'), /not saved\. The security rules published/);
   // Reviewees keep the old advice, and other failures are unchanged for both.
-  assert.match(describeSyncError('auditLogs', { code: 'permission-denied' }), /Ask an administrator/);
+  assert.match(describeSyncError('users', { code: 'permission-denied' }), /Ask an administrator/);
   assert.match(describeSyncError('users', new Error('offline'), 'admin'), /Check your connection/);
 });
 
