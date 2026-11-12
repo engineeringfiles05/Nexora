@@ -195,6 +195,7 @@ test('the navbar shows the account role and offers no role switcher', () => {
   const admin = renderToStaticMarkup(React.createElement(Navbar, { ...props, currentUser: DEMO_USERS[0] }));
   assert.match(admin, /Administrator/);
   assert.match(admin, /Question Bank/);
+  assert.doesNotMatch(admin, /Audit Logs/); // reached from the Admin Dashboard's Full Log link
 });
 
 test('App has no demo role switching and routes every page through resolveRoute', async () => {

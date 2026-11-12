@@ -304,18 +304,6 @@ export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, 
                   <UserCheck className="w-4 h-4" />
                   Reviewee Analytics
                 </button>
-
-                <button
-                  onClick={() => onNavigate('audit-logs')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${
-                    currentView === 'audit-logs'
-                      ? 'bg-slate-800 text-indigo-400 border border-slate-700'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  Audit Logs
-                </button>
               </>
             )}
           </nav>
@@ -453,12 +441,6 @@ export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, 
               className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'reviewees-roster' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}
             >
               Reviewees
-            </button>
-            <button
-              onClick={() => onNavigate('audit-logs')}
-              className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'audit-logs' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}
-            >
-              Audit Logs
             </button>
             <button
               onClick={() => onNavigate('account')}
