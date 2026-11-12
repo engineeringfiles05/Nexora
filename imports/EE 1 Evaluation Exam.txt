@@ -1,0 +1,884 @@
+EE 1 Evaluation Exam
+Coverage: DC Circuits, AC Circuits, Circuit Transients and Polyphase
+
+1. The specific resistance ρ depend upon
+A. The area of cross section and the length of the conductor.
+B. The material of the conductor, its area of the cross section and length.
+C. The nature of the material of the conductor only.
+D. The area of the cross-section of the conductor.
+Answer: C
+Solution: Resistivity (specific resistance) is a property of the material itself (and its temperature). R = ρL/A depends on length and area, but ρ does not.
+
+2. The condition in Ohm’s law is that.
+A. Ratio of V/I should be constant.
+B. The temperature should remain constants
+C. current should be proportional to voltage
+D. the temperature should vary
+Answer: B
+Solution: Ohm's law (V ∝ I) holds only when physical conditions, chiefly temperature, remain constant.
+
+3. Resistance of the conductor increases when
+A. Its length increases
+B. Both area and length increases
+C. The area decreases
+D. Specific resistance is kept constant
+Answer: A
+Solution: R = ρL/A, so R increases directly with length.
+• Review note: choice C (area decreases) also increases R; the intended single answer is A.
+
+4. The resistance of a conductor, when it temperature is increased.
+A. Remain Constant
+B. Increases
+C. Varies
+D. Decreases
+Answer: B
+Solution: Metallic conductors have a positive temperature coefficient: R₂ = R₁[1 + α(T₂ − T₁)], so R increases with temperature.
+
+5. The resistance of the carbon when its filament temperature is decreased.
+A. Increases
+B. Decreases
+C. Remains same
+D. Increases enormously
+Answer: A
+Solution: Carbon has a negative temperature coefficient of resistance, so its resistance increases when its temperature is decreased.
+
+6. Resistance of a rod does NOT depend on
+A. The shape of its cross-sectional area
+B. Its material
+C. Its length
+D. Its temperature
+Answer: A
+Solution: R = ρL/A depends on material (ρ), temperature, length and the size of the area, but not the shape of the cross-section.
+
+7. Resistor R1 has twice the resistance of resistor R2. They are connected in parallel to a battery. Find the ratio of the thermal energy generation rate in resistor R1 to that of resistor R2.
+A. 2:1
+B. 1:4
+C. 4:1
+D. 1:2
+Answer: D
+Solution: In parallel both have the same voltage, so P = V²/R.
+• P1/P2 = R2/R1 = R2/(2R2) = 1/2, i.e. 1:2
+
+8. A resistor with resistance R1 and a resistor with resistance R2 are connected in parallel to an ideal battery with emf V. what is the rate of thermal energy generation in the resistor R1?
+A. V²R1/(R1+R2)
+B. V²/(R1 + R2)
+C. V²/R2
+D. V²/R1
+Answer: D
+Solution: In parallel, the full emf V appears across R1, so P1 = V²/R1.
+
+9. A resistor with resistance R1 and a resistor with resistance R2 are connected in SERIES to an ideal battery with emf V. what is the rate of thermal energy generation in the resistor R1?
+A. Twice that in resistor 2
+B. Half that in resistor 2
+C. Four times that in resistor 2
+D. The same as that in resistor 2
+Answer: A
+Solution: In series the current is the same, so P = I²R and P1/P2 = R1/R2.
+• With R1 = 2R2 (as in the preceding item), P1 = 2P2, twice that in resistor 2.
+• Review note: the stem does not restate R1 = 2R2; the answer assumes it.
+
+10. Two wires of the same material have the same length but different diameters. They are connected in series to a battery. Which of the following quantity is the same for the two wires?
+A. Current
+B. Current density
+C. Voltage
+D. End-to-end potential difference
+Answer: A
+Solution: Elements in series carry the same current. Current density (I/A) and voltage drop differ because the areas differ.
+
+11. The current is zero in a conductor when NO potential difference is applied because ____.
+A. The electrons are not moving fast enough.
+B. Equal numbers of electrons and protons are moving together.
+C. The electrons are not moving.
+D. For every electron with a given velocity there is another with a velocity of equal magnitude and opposite direction.
+Answer: D
+Solution: Free electrons move randomly; with no applied field their velocities cancel on average, so there is no net drift and no current.
+
+12. The direction of induced emf can be found by ____.
+A. Len’z law
+B. Fleming’s left hand rule
+C. Fleming’s right hand rule
+D. Kirchhoff’s law
+Answer: C
+Solution: Fleming's right-hand rule (generator rule) gives the direction of the emf induced in a conductor moving in a magnetic field.
+• Review note: Lenz's law (A) also determines the direction of induced emf; C is the standard answer for this item.
+
+13. Magnetic lines of force are Called
+A. Hysteresis
+B. Current Flux
+C. Magnet
+D. Motive Force
+Answer: B
+Solution: Magnetic lines of force collectively are called magnetic flux; choice B is the only one naming flux.
+
+14. The law that induces emf and current always opposes the cause producing them was discovered by
+A. Lenz
+B. Faraday
+C. Maxwell
+D. Ohm
+Answer: A
+Solution: Lenz's law: the induced emf and current always oppose the change (cause) producing them.
+
+15. Externally, magnetic line of force travel.
+A. South to north
+B. North to south
+C. Negative to positive
+D. Positive to negative
+Answer: B
+Solution: Outside a magnet, flux lines leave the north pole and enter the south pole; inside they return from south to north.
+
+16. Three identical resistors are connected in delta across balance, 3-phase source. If one of the resistor is open,
+A. Power will be double
+B. Power is reducing by 33%
+C. Power will become three times
+D. Power will increase by 67%
+Answer: B
+Solution: Each delta resistor still has the full line voltage across it, so each takes P = V²/R.
+• Before: 3P. After one opens: 2P.
+• Reduction = (3P − 2P)/3P = 1/3 ≈ 33%
+
+17. The magnetic potential in magnetic circuit can be measured in terms of.
+A. Farads
+B. coulombs
+C. mmf
+D. none of these
+Answer: C
+Solution: Magnetic potential (magnetic "voltage") is magnetomotive force, mmf = NI, in ampere-turns.
+
+18. Permeance is analogous to.
+A. Conductance
+B. Resistance
+C. Reluctance
+D. none of these
+Answer: A
+Solution: Permeance is the reciprocal of reluctance, just as conductance is the reciprocal of resistance.
+
+19. If the magnetic flux through a certain region is changing with time.
+A. An emf exists around the boundary.
+B. A current must flow around the boundary.
+C. An electric field must exist at the boundary.
+D. A magnetic field must exist at the boundary.
+Answer: A
+Solution: By Faraday's law, a changing flux induces an emf around any closed path bounding the region. A current flows only if a conducting path exists.
+
+20. The tesla is a unit of _______.
+A. Inductance
+B. Capacitance
+C. Magnetic Flux Density
+D. Permittivity
+Answer: C
+Solution: 1 tesla = 1 Wb/m², the SI unit of magnetic flux density B.
+
+21. Which statement about a charge placed on a dielectric material is true?
+A. The charge diffuses across the material surface.
+B. The charge diffuses through the interior of material.
+C. The charge is confirmed to the region in which the charge was placed.
+D. The charge increases the conductivity of material.
+Answer: C
+Solution: A dielectric (insulator) has no free charges to carry it away, so a charge placed on it stays (is confined) where it was placed.
+
+22. The magnetic torque exerted on a flat current-carrying loop of wire by a uniform magnetic field B is _______.
+A. Maximum when the plane of the loop is perpendicular to B.
+B. Independent of the orientation of the loop.
+C. Maximum when the plane of the loop is parallel to b
+D. Dependent on the shape of the loop for a mixed loop area.
+Answer: C
+Solution: τ = NIAB sin θ, where θ is the angle between the loop's normal and B. Torque is maximum (θ = 90°) when the plane of the loop is parallel to B.
+
+23. Whenever a conductor cuts magnetic flux, an emf is induced in that conductor. Above statement is due to
+A. Joule’s Law
+B. Faraday’s Law
+C. Coulomb’s Law
+D. Weber and Ewing’s Theory
+Answer: B
+Solution: This is Faraday's (first) law of electromagnetic induction.
+
+24. On farad is …
+A. coulomb –joule
+B. 1 coulomb per volt
+C. joule per volt
+D. 1 volt per coulomb
+Answer: B
+Solution: C = Q/V, so 1 F = 1 C/V.
+
+25. Which of the following will the effect of electric shock in the human body depends on?
+A. Voltage flowing in the body
+B. Line power
+C. Current flowing in the body
+D. Resistance in the line
+Answer: C
+Solution: The physiological effect of a shock depends on the current through the body (its magnitude, path and duration).
+
+26. The coulombs force F, acts on two charges a distance r, apart. What is F proportional to?
+A. r
+B. r²
+C. 1/r²
+D. 1/r³
+Answer: C
+Solution: Coulomb's law: F = kq₁q₂/r², so F ∝ 1/r².
+
+27. Current has a unit of
+A. coulomb
+B. ohm
+C. coulomb per second
+D. volt
+Answer: C
+Solution: I = Q/t, so 1 ampere = 1 coulomb per second.
+
+28. Capacitors are said to.
+A. Block AC and pass DC
+B. Pass AC and DC
+C. Block DC and pass AC
+D. Block AC and DC
+Answer: C
+Solution: Xc = 1/(2πfC). For DC (f = 0) Xc is infinite (blocked); for AC Xc is finite (passed).
+
+29. In a capacitor the electric charge is stored in.
+A. metal plates
+B. dielectric as well as metal plates
+C. dielectric
+D. casing
+Answer: A
+Solution: The charges +Q and −Q reside on the metal plates. (The energy is stored in the electric field in the dielectric.)
+
+30. The ohm meter reading for a shorted capacitor is.
+A. Infinity
+B. Few Kilo Ohm
+C. Few Mega Ohm
+D. Zero
+Answer: D
+Solution: A shorted capacitor is a direct connection between its terminals, so the ohmmeter reads (about) zero.
+
+31. For a parallel circuit consisting of resistance and reactance the value of power factor is the ratio of.
+A. Impedance to reactance
+B. Resistance to impedance
+C. Reactance to impedance
+D. Impedance to resistance
+Answer: D
+Solution: For parallel R and X: pf = G/Y = (1/R)/(1/Z) = Z/R, the ratio of impedance to resistance. (For a series circuit it is R/Z.)
+
+32. In a series circuit the current is.
+A. Constant
+B. Proportional to the resistance
+C. Zero always
+D. Different in different resistors
+Answer: A
+Solution: There is only one path in a series circuit, so the same (constant) current flows through every element.
+
+33. In parallel circuit the potential difference across the resistance.
+A. Varies
+B. is sometimes constant.
+C. is deferent from the applied voltage.
+D. is always constants.
+Answer: D
+Solution: Parallel branches are connected across the same two nodes, so each has the same (applied) voltage.
+
+34. The current flowing in L and C at parallel resonant are.
+A. Zero
+B. Infinite
+C. Equal
+D. Different
+Answer: C
+Solution: At parallel resonance XL = XC, so the inductor and capacitor branch currents are equal in magnitude (and 180° apart).
+
+35. Heating effect of current has undesirable side effect.
+A. Electrical oven
+B. Electric iron
+C. Immersion heater
+D. Vacuum cleaner
+Answer: D
+Solution: Ovens, irons and immersion heaters use the heating effect on purpose. In a vacuum cleaner (motor) the I²R heat is an unwanted loss.
+
+36. In a balanced three phase star connected system, the line voltage is.
+A. 0.707 times phase voltage.
+B. the phasor sum of two phases voltages.
+C. 1.414 times phase voltage.
+D. the phasor differences of two phases voltages.
+Answer: D
+Solution: V_AB = V_AN − V_BN, the phasor difference of two phase voltages, with magnitude √3·V_phase.
+
+37. In a star connected system, the line current is.
+A. 0.707 time the phase current
+B. equal to the phase current
+C. 1.732 times of the phase current
+D. 1.414 times the phase current
+Answer: B
+Solution: In a star (wye) connection each line is in series with one phase, so I_line = I_phase.
+
+38. Two-wattmeter can be used to measure 3-phase power for a _____.
+A. Balanced and unbalanced load only.
+B. Balanced load only.
+C. Unbalanced load only.
+D. Unity power factor only.
+Answer: A
+Solution: By Blondel's theorem, two wattmeters measure total power of any 3-phase, 3-wire load, balanced or unbalanced.
+
+39. In 2-wattmeter method, the reading in one of the wattmeter is zero when.
+A. Power factor is unity.
+B. Load in one of the phase is zero.
+C. Pf is 0.5.
+D. A neutral wire is not provided.
+Answer: C
+Solution: W1 = VL·IL·cos(30° − θ), W2 = VL·IL·cos(30° + θ). W2 = 0 when θ = 60°, i.e. pf = cos 60° = 0.5.
+
+40. What characteristics of plates of the battery where ampere hour is rated?
+A. Strength
+B. Area
+C. Distance
+D. Thickness
+Answer: B
+Solution: The ampere-hour capacity of a battery depends on the amount of active material, i.e. the plate area.
+
+41. The time constant is the time it takes the current in an inductive circuit to rise to
+A. 66% of its final steady state value.
+B. 70% of its final steady state value.
+C. 63% of its final steady state value.
+D. 50% of its final steady state value.
+Answer: C
+Solution: i = I(1 − e^(−t/τ)). At t = τ, i = (1 − e⁻¹)I = 0.632I ≈ 63%.
+
+42. A capacitive C is charged through resistance R. the time constant of the charging circuit is given by
+A. RC
+B. 1/RC
+C. C/R
+D. R/C
+Answer: A
+Solution: For an RC circuit τ = RC (seconds).
+
+43. At a dc steady state, capacitor looks like a/an ____ circuit and an inductor looks like a/an _____ circuit.
+I. Grounded II. Short III. Open
+A. I and II
+B. III and II
+C. II and III
+D. III and III
+Answer: B
+Solution: At DC steady state a capacitor carries no current (open circuit, III) and an inductor has no voltage across it (short circuit, II).
+• Note: the PDF prints the third item as "II. Open"; it is item III.
+
+44. The time constant of an inductive circuit is defined as the ratio of
+A. R/L
+B. Lf/R
+C. Rf/L
+D. L/R
+Answer: D
+Solution: For an RL circuit τ = L/R (seconds).
+
+45. A certain capacitor, in series with a resistor, is being charged. At the end of 10 ms its charge is half the final value. What is the time constant on this process in ms?
+A. 2.3
+B. 6.9
+C. 10
+D. 14
+Answer: D
+Solution: q = Q(1 − e^(−t/τ)) = 0.5Q, so e^(−t/τ) = 0.5
+• t/τ = ln 2 = 0.693
+• τ = 10 ms / 0.693 = 14.4 ms ≈ 14 ms
+
+46. The greatest value attained during one half of the cycle is called the.
+A. peak value
+B. average value
+C. rms value
+D. effective value
+Answer: A
+Solution: The peak (maximum) value is the greatest instantaneous value reached in a half cycle.
+
+47. For an RL circuit, the power factor cannot be less than ____ or greater than ____.
+A. 0, 1
+B. 0, -1
+C. 1, 0
+D. -1, 0
+Answer: A
+Solution: pf = cos θ with 0° ≤ θ ≤ 90° for an RL circuit, so 0 ≤ pf ≤ 1 (0 for pure L, 1 for pure R).
+
+48. In an RLC circuits, the impedance at resonance is.
+A. Maximum
+B. Infinity
+C. Minimum
+D. Zero
+Answer: C
+Solution: At series resonance XL = XC, so Z = R, its minimum value.
+• Note: this answer is for a series RLC circuit; a parallel RLC circuit has maximum impedance at resonance.
+
+49. Which of the following AC device is used to measure the angle between the voltage and its current?
+A. Reactive Meter
+B. Power Factor Meter
+C. Demand Meter
+D. Phase Angle Meter
+Answer: D
+Solution: A phase angle meter reads the angle θ between voltage and current directly. A power factor meter reads cos θ.
+
+50. A common utility’s tariff practice to penalize industrial consumer whose power factor fall below ____.
+A. 80%, 90%
+B. 75%, 90%
+C. 75%, 75%
+D. 75%, 85%
+Answer: A
+Solution: Utilities commonly penalize industrial consumers with low power factor (typically below 80–85%) and may give credit at high power factor (about 90% and above).
+• Review note: the source item is ambiguous and has no printed key; please confirm the answer your review center uses.
+
+51. The reading of the wattmeter will be the same in the two wattmeter method when
+A. load on one phase is zero
+B. power factor is 0.5
+C. power factor is unity
+D. neutral is grounded
+Answer: C
+Solution: W1 = VL·IL·cos(30° − θ) and W2 = VL·IL·cos(30° + θ) are equal only when θ = 0°, i.e. unity power factor.
+
+52. Find the resistivity of a conductor having 4 ohms resistance, 30 m length and 0.7 mm diameter.
+A. 6.4 × 10⁻⁸ Ω-m
+B. 7.73 × 10⁻⁸ Ω-m
+C. 5.77 × 10⁻⁸ Ω-m
+D. 5.13 × 10⁻⁸ Ω-m
+Answer: D
+Solution: A = πd²/4 = π(0.7 × 10⁻³)²/4 = 3.848 × 10⁻⁷ m²
+• ρ = RA/L = 4 × 3.848 × 10⁻⁷ / 30 = 5.13 × 10⁻⁸ Ω-m
+
+53. A 300 m copper conductor has a resistance of 250 ohms. What is the size of conductor?
+A. 0.0162 mm
+B. 1.62 mm
+C. 0.162 mm
+D. 16.2 mm
+Answer: C
+Solution: Using ρ(copper) = 1.72 × 10⁻⁸ Ω-m:
+• A = ρL/R = 1.72 × 10⁻⁸ × 300 / 250 = 2.064 × 10⁻⁸ m²
+• d = √(4A/π) = √(2.628 × 10⁻⁸) = 1.62 × 10⁻⁴ m = 0.162 mm
+
+54. Three resistance of 8, 6 and 12 are connected in series and then in parallel. Find the effective resistance in series connection.
+A. 15
+B. 26
+C. 20
+D. 13
+Answer: B
+Solution: R_series = 8 + 6 + 12 = 26 Ω
+
+55. A 3 ohms and 6 ohm resistor are connected in parallel and the combination in series with an 18 ohms resistor. Calculate the total resistance.
+A. 10 ohms
+B. 20 ohms
+C. 5 ohms
+D. 15 ohms
+Answer: B
+Solution: 3 ∥ 6 = (3 × 6)/(3 + 6) = 2 Ω
+• R_T = 2 + 18 = 20 Ω
+
+56. Two 30 ohms resistance are connected in series. Find the value of resistor R in ohms to be connected across one of the 30 ohms resistors so that the total resistance is 40 ohms.
+A. 15
+B. 30
+C. 10
+D. 25
+Answer: A
+Solution: 30 + (30R)/(30 + R) = 40, so (30R)/(30 + R) = 10
+• 30R = 300 + 10R, R = 15 Ω
+
+57. The resistance of a length of copper wire is 3.60 ohms at 20°C. What is the resistance in ohms at 80°C?
+A. 4.45
+B. 4.86
+C. 4.34
+D. 4.65
+Answer: A
+Solution: α(copper, 20°C) = 0.00393 /°C
+• R80 = 3.60[1 + 0.00393(80 − 20)] = 3.60 × 1.2358 = 4.45 Ω
+
+58. Five resistances of 10, 15, 20, 25, and 30 ohms are connected in parallel. Calculate the joint resistance.
+A. 1.0
+B. 3.64
+C. 3.46
+D. 100
+Answer: C
+Solution: 1/R = 1/10 + 1/15 + 1/20 + 1/25 + 1/30 = 0.1 + 0.0667 + 0.05 + 0.04 + 0.0333 = 0.29
+• R = 1/0.29 = 3.45 Ω ≈ 3.46 Ω
+
+59. A light bulb having a tungsten filament draws 0.5 Amp at 110 volts. The cold resistance of the filament is 20 ohms at 20°C with temperature coefficient of resistance for tungsten at this temperature of 0.005 per °C. Determine the operating temperature of the bulb.
+A. 1220°C
+B. 2520°C
+C. 520°C
+D. 2020°C
+Answer: D
+Solution: Hot resistance R = 110/0.5 = 220 Ω
+• 220 = 20[1 + 0.005(T − 20)], so 0.005(T − 20) = 10
+• T − 20 = 2000, T = 2020°C
+
+60. A 5 kW load at 120 volts is to be supplied by a line 100 m long. What is the diameter of copper wire if the allowable voltage drop is 5%?
+A. 3.57 mm
+B. 5.38 mm
+C. 4.87 mm
+D. 6.82 mm
+Answer: B
+Solution: I = 5000/120 = 41.67 A; allowable drop = 0.05 × 120 = 6 V
+• Line (go and return, 200 m) resistance R = 6/41.67 = 0.144 Ω
+• A = ρL/R = 1.72 × 10⁻⁸ × 200 / 0.144 = 2.39 × 10⁻⁵ m², d = √(4A/π) ≈ 5.5 mm
+• Closest choice: 5.38 mm (the exact figure depends on the resistivity value used).
+
+61. What is the value of a resistor with color code red, red, orange, silver?
+A. 22 kΩ
+B. 24 kΩ
+C. 28 kΩ
+D. 25 kΩ
+Answer: A
+Solution: Red = 2, red = 2, orange = ×10³, silver = ±10%
+• R = 22 × 10³ = 22 kΩ ±10%
+
+62. What is the value of the resistor with color coded green-blue-red-gold?
+A. 56,000 ohm +10%
+B. 56,000 ohm +5%
+C. 5,600 ohm + 10%
+D. 5,600 ohm +5%
+Answer: D
+Solution: Green = 5, blue = 6, red = ×10², gold = ±5%
+• R = 56 × 100 = 5,600 Ω ±5%
+
+63. A resistance of 4 ohms is connected across 100 V supply. When another “R” ohm is connected in parallel with 4 ohm, the total current from the supply was found to be 50 A. the value of the resistance “R” is.
+A. 2 ohms
+B. 5 ohms
+C. 3 ohms
+D. 4 ohms
+Answer: D
+Solution: Current in the 4 Ω resistor = 100/4 = 25 A
+• Current in R = 50 − 25 = 25 A, so R = 100/25 = 4 Ω
+
+64. The voltage applied across an electric press was reduced by 50%. The power consumed by the press will be reduced to
+A. 25%
+B. 60%
+C. 75%
+D. 50%
+Answer: A
+Solution: P = V²/R. With V' = 0.5V, P' = (0.5)²P = 0.25P, i.e. reduced to 25%.
+
+65. Three resistances R1, R2 and R3 are connected in series across 120 V dc source. If R1 is 60 ohms, R2 has 40 volts with ½ amp current. Find R2.
+A. 8 ohms
+B. 800 ohms
+C. 0.8 ohms
+D. 80 ohms
+Answer: D
+Solution: R2 = V2/I = 40/0.5 = 80 Ω
+
+66. Three 10-ohms resistance are connected in series across 120 Volt dc source. Find the value of resistor R in ohms to be connected across the two 10 ohms resistors so that the total current is 6 amperes.
+A. 15
+B. 20
+C. 50
+D. 60
+Answer: B
+Solution: Required total resistance = 120/6 = 20 Ω
+• 10 + (20 ∥ R) = 20, so 20R/(20 + R) = 10
+• 20R = 200 + 10R, R = 20 Ω
+
+67. Three resistances R1, R2 and R3 are connected in series across 120 V dc source. If R1 is 60 ohms, R2 has 40 volts with 0.5A current. Find R3 .
+A. 100 ohms
+B. 80 ohms
+C. 120 ohms
+D. 240 ohms
+Answer: A
+Solution: V1 = 0.5 × 60 = 30 V; V3 = 120 − 30 − 40 = 50 V
+• R3 = 50/0.5 = 100 Ω
+
+68. A wire 100 cm long and carrying current of 40 A is in perpendicular whose magnetic flux density is 1.5 Wb/m². Calculate the mechanical power which has velocity of 5 m/s.
+A. 300 watts
+B. 100 watts
+C. 150 watts
+D. 600 watts
+Answer: A
+Solution: F = BIL = 1.5 × 40 × 1.0 = 60 N
+• P = Fv = 60 × 5 = 300 W
+
+69. A flux of 13.6 mWb penetrates a coil of wire 240 mm in diameter. Find the magnitude of the magnetic flux density in Tesla if the plane of the coil is perpendicular to the field.
+A. 0.3
+B. 0.8
+C. 0.4
+D. 0.5
+Answer: A
+Solution: A = π(0.12)² = 0.04524 m²
+• B = Φ/A = 0.0136/0.04524 = 0.30 T
+
+70. Find the average emf induced in a 500 turns coil if there is a current change of 0.25 ampere in time of 0.1 second.
+A. 1250 V
+B. 12.5mV
+C. 125mV
+D. 125V
+Answer: A
+Solution: e = N(ΔΦ/Δt) = 500 × 0.25/0.1 = 1250 V
+• Review note: the stem says "current change of 0.25 ampere" but gives no inductance; the intended data is a flux change of 0.25 Wb.
+
+71. Two identical coupled cols have an equivalent inductance of 80mH when connected series aiding, and 35 mH in series opposing. What is the value of the coefficient of coupling k?
+A. 0.319
+B. 0.391
+C. 0.913
+D. 0.139
+Answer: B
+Solution: L_aid − L_opp = 4M, so M = (80 − 35)/4 = 11.25 mH
+• L_aid + L_opp = 4L (identical coils), so L = 115/4 = 28.75 mH
+• k = M/√(L1L2) = 11.25/28.75 = 0.391
+
+72. A loop of wire carrying a current of 2A is in shape of right triangle with two equal sides, each 15 cm long. A 0.7 T uniform field is in parallel to the hypotenuse. What is the resultant magnetic force on the two equal sides?
+A. Zero
+B. 0.41 N
+C. 0.21 N
+D. 0.31N
+Answer: A
+Solution: The net force on any closed loop in a uniform field is zero.
+• The hypotenuse is parallel to B, so its force is zero.
+• Therefore the resultant force on the two equal sides must also be zero (each is 2 × 0.15 × 0.7 × sin 45° = 0.148 N, in opposite directions).
+
+73. When one coil of magnetically coupled pair has a current of 5 amperes, the resulting flux Φ11 = 0.2 mWb and flux Φ12 = 0.4 mWb respectively. If the turns are N1 =500 and N2=1500, find the mutual inductance, M.
+A. 60 mH
+B. 120mH
+C. 80mH
+D. 100Mh
+Answer: B
+Solution: M = N2Φ12/I1 = 1500 × 0.4 × 10⁻³ / 5 = 0.12 H = 120 mH
+
+74. Find the force induced to a coil with 1000 turns, 20 cm side and 20 cm axial length moving perpendicular with the field of 0.5 tesla flux density and 2 ampere current flows.
+A. 100 N
+B. 200N
+C. 400N
+D. 500N
+Answer: B
+Solution: Force on one coil side: F = NBIL = 1000 × 0.5 × 2 × 0.20 = 200 N
+
+75. A rectangular flat coil of 20 turns lies with its plane parallel to the magnetic field, the flux density in the field being 3000 gauss. The axial length of the coil is 8 inches. The current is 30 amps. Determine the force which acts on each side of the coil in Newton.
+A. 17.15
+B. 36.58
+C. 18.3
+D. 46.88
+Answer: B
+Solution: B = 3000 gauss = 0.3 T; L = 8 in = 0.2032 m
+• F = NBIL = 20 × 0.3 × 30 × 0.2032 = 36.58 N
+
+76. Find the distance of two identical charges of 4 μCoul when they experienced force of 250N.
+A. 12 mm
+B. 5 mm
+C. 20 mm
+D. 24 mm
+Answer: D
+Solution: F = kq²/r², so r = √(kq²/F) = √(9 × 10⁹ × (4 × 10⁻⁶)² / 250)
+• r = √(5.76 × 10⁻⁴) = 0.024 m = 24 mm
+
+77. Approximately how far away must an isolated positive point charge of 1 × 10⁻⁸ C be in order for it to produce an electric potential of 100 V? The charge is in free space with ε = 8.85 × 10⁻¹² C²/N-m².
+A. 8.6 m
+B. 1.2 m
+C. 0.90 m
+D. 5.3 m
+Answer: C
+Solution: V = q/(4πε₀r), so r = q/(4πε₀V)
+• r = 1 × 10⁻⁸ / (4π × 8.85 × 10⁻¹² × 100) = 0.90 m
+
+78. The capacitors C1, C2, C3 and C4 are connected in series. The values are 50,100,150, and 200 micro-farads respectively. What is the total capacitance in micro-farad?
+A. 60
+B. 50
+C. 17
+D. 24
+Answer: D
+Solution: 1/C = 1/50 + 1/100 + 1/150 + 1/200 = 0.02 + 0.01 + 0.00667 + 0.005 = 0.04167
+• C = 24 μF
+
+79. A parallel plate capacitor having an area of 0.1 sq. m uses air as the dielectric material. Calculate the energy stored in the capacitor if plates are 2 cm apart at a potential difference of 150 volts is across them.
+A. 1.11 × 10⁻⁶ J
+B. 7.44 × 10⁻⁸ J
+C. 4.9 × 10⁻⁷ J
+D. 2.48 × 10⁻⁸ J
+Answer: C
+Solution: C = ε₀A/d = 8.854 × 10⁻¹² × 0.1 / 0.02 = 4.427 × 10⁻¹¹ F
+• W = ½CV² = 0.5 × 4.427 × 10⁻¹¹ × 150² = 4.98 × 10⁻⁷ J ≈ 4.9 × 10⁻⁷ J
+
+80. A capacitor C is connected in parallel with a series combination of capacitors of 8 and 4 micro-F. The voltage drop across capacitor C is 12 V. the 3 capacitors have been connected for some time and have reached their present value. Find the voltage across the capacitor with 8 μF.
+A. 4
+B. 9
+C. 3
+D. 8
+Answer: A
+Solution: The 8 μF and 4 μF series pair is across the same 12 V as C.
+• In series, voltage divides inversely with capacitance: V8 = 12 × 4/(8 + 4) = 4 V
+
+81. A resistor of 40 ohms and inductive reactor of 30 ohms are joined in parallel across 12 volts supply. What is the power factor of the circuit?
+A. 0.6
+B. 10.725
+C. 0.8
+D. zero
+Answer: A
+Solution: Z = RX/√(R² + X²) = (40 × 30)/50 = 24 Ω
+• For a parallel circuit pf = Z/R = 24/40 = 0.6 lagging
+
+82. A current of 10 amperes at a power factor of 0.8 lagging is taken from 250V ac supply. The reactive power of the system is
+A. 2000 watts
+B. 1500 watts
+C. 2000VA
+D. 1500Var
+Answer: D
+Solution: sin θ = √(1 − 0.8²) = 0.6
+• Q = VI sin θ = 250 × 10 × 0.6 = 1500 var
+
+83. To a series RLC circuit, a voltage of 10V is applied. If Q of the coil at resonant frequency is 20, the voltage across the inductor at resonant frequency will be.
+A. 200 V
+B. 75 V
+C. 100 V
+D. 50 V
+Answer: A
+Solution: At series resonance VL = Q × V = 20 × 10 = 200 V
+
+84. A single-phase inductive load draws 10 MW at 60% lagging power factor. Determine the reactive power of a capacitor in MVAR to be connected in parallel with the load to raise the power factor to 85%?
+A. 48
+B. 51
+C. 56
+D. 43
+Answer: D
+Solution: Qc = P(tan θ1 − tan θ2) with tan θ1 = 1.3333 (pf 0.6) and tan θ2 = 0.6197 (pf 0.85).
+• With P = 60 MW (i.e. a 100 MVA load at 0.6 pf): Qc = 60 × (1.3333 − 0.6197) = 42.8 ≈ 43 MVAR
+• Review note: with P = 10 MW exactly as printed, Qc = 7.14 MVAR, which is not among the choices. The choices fit a 100 MVA (60 MW) load.
+
+85. A series circuit consist of a 20-ohm resistor, a 0.2 H inductor and a 50 micro-farad capacitor. If a variable frequency 120V source is connected across its terminal, what is the resonant frequency in Hertz?
+A. 45
+B. 55
+C. 40
+D. 50
+Answer: D
+Solution: f = 1/(2π√(LC)) = 1/(2π√(0.2 × 50 × 10⁻⁶))
+• f = 1/(2π × 3.162 × 10⁻³) = 50.3 Hz ≈ 50 Hz
+
+86. A coil of wire having a value of 10 + j16 ohms is connected in series with a capacitive reactance Xc and the series connection is connected in parallel with a resistor R. if the equivalent impedance of the circuit is 8 + j0 ohms, what is the value of Xc in ohms?
+A. 14
+B. 18
+C. 10
+D. 16
+Answer: D
+Solution: For the parallel combination with R to be purely resistive, the branch 10 + j(16 − Xc) must itself be resistive.
+• 16 − Xc = 0, Xc = 16 Ω
+• Check: 10 ∥ R = 8 gives R = 40 Ω
+
+87. If the washing machine takes 311 watts and 4.5 amp from a 155-V source when operating normally. Find it’s the power factor?
+A. 75%
+B. 65%
+C. 70%
+D. 60%
+Answer: D
+Solution: pf = P/(VI) = 311/(115 × 4.5) = 311/517.5 = 0.60 = 60%
+• Review note: with 155 V as printed, pf = 311/697.5 = 44.6% (not a choice). The choices fit a 115 V source.
+
+88. A series RC circuit is connected a capacitor and resistor having a voltage of 60 V and 80 V. What is the total voltage of the circuit?
+A. 140 Volts
+B. 100 Volts
+C. 20 Volts
+D. 120 Volts
+Answer: B
+Solution: VR and VC are 90° apart: V = √(80² + 60²) = 100 V
+
+89. A resistance R and inductive reactance X are connected in parallel across 2.4 kV rms absorbs 288 kW at 0.8 power factor. Find the value of R ohms.
+A. 20
+B. 30
+C. 26.7
+D. 45
+Answer: A
+Solution: Only R absorbs real power and it has the full 2.4 kV across it.
+• R = V²/P = 2400²/288,000 = 20 Ω
+
+90. Two loads are connected in parallel. First load takes 200 kVA at 80% lagging power factor and the second load a pure capacitive load. What is the kVARS of capacitive load if the total load is 16 kW, unity power factor?
+A. 160
+B. 120
+C. 100
+D. 90
+Answer: B
+Solution: Load 1: P = 200 × 0.8 = 160 kW, Q = 200 × 0.6 = 120 kvar (lagging).
+• For unity pf the capacitor must supply 120 kvar.
+• Note: the total load is 160 kW (the stem prints 16 kW).
+
+91. What is the rms value of complex current having fundamental, 3rd harmonic and fifth harmonic rms component of 25 A, 0.8A and 0.5A respectively.
+A. 2.58 A
+B. 2.67 A
+C. 3.8 A
+D. 3.3 A
+Answer: B
+Solution: I = √(I1² + I3² + I5²) = √(2.5² + 0.8² + 0.5²) = √7.14 = 2.67 A
+• Review note: the choices fit a fundamental of 2.5 A. With 25 A as printed, I = 25.02 A (not a choice).
+
+92. In RLC resonance circuit has a resistance of 100 ohms, lower half-power frequency of 800 rad/sec and bandwidth of 80 rad/sec. what is the inductance L of the circuit?
+A. 1.25 H
+B. 1H
+C. 2.5H
+D. 15H
+Answer: A
+Solution: For a series RLC circuit, bandwidth BW = R/L (rad/s).
+• L = R/BW = 100/80 = 1.25 H
+
+93. The energy that is stored in a 25 μF is W=12sin (3377t) joules. Determine the current in A in the capacitor.
+A. 6cos 337t
+B. 6sin 337t
+C. 9.23sin 337t
+D. 9.23cos 337t
+Answer: D
+Solution: Taking W = 12 sin²(377t) J (the intended form):
+• W = ½Cv², so v = √(2W/C) = √(24/25 × 10⁻⁶) sin 377t = 979.8 sin 377t V
+• i = C dv/dt = 25 × 10⁻⁶ × 979.8 × 377 cos 377t = 9.23 cos 377t A
+• Review note: the PDF prints "12sin (3377t)" and "337t" in the choices; the problem is the standard one with 12 sin²(377t).
+
+94. A symmetrical three phase 240 volts supplies a delta connected load of 6-j8 ohms per phase. What is the line current?
+A. 32 + j25 A
+B. 32 - j25 A
+C. 25 - j32 A
+D. 25 + j32 A
+Answer: D
+Solution: Phase current magnitude = 240/|6 − j8| = 240/10 = 24 A; line current magnitude = √3 × 24 = 41.6 A.
+• The load angle is −53.13° (capacitive), so the current leads.
+• Taking phase voltage Van as the 0° reference: Ia = 41.6∠53.13° = 24.9 + j33.3 A ≈ 25 + j32 A
+
+95. Given the following phase currents:
+Ia = 3.5 + j3.5
+Ib = -j3
+Ic = -2.6 + j1.5
+Determined the negative sequence current for phase A.
+A. 0.313 + j0.678
+B. -0.313 + j0.678
+C. -0.313 - j0.678
+D. 0.313 - j0.678
+Answer: A
+Solution: Ia2 = (Ia + a²Ib + aIc)/3, with a = 1∠120°
+• a²Ib = (−0.5 − j0.866)(−j3) = −2.598 + j1.5
+• aIc = (−0.5 + j0.866)(−2.6 + j1.5) = 0.001 − j3.002
+• Sum = 0.903 + j1.998, so Ia2 = 0.301 + j0.666 ≈ 0.313 + j0.678 (choice A, within rounding)
+
+96. In the balanced three-phase circuit, load 1 draws 80 kW and 60 leading kVar; load 2 draws 120 kW and 160 lagging kVar. The line voltage of the system is 1000 volts. Find the line current at the generator terminals by adding the line currents of the two loads.
+A. 129 A
+B. 139 A
+C. 192 A
+D. 182 A
+Answer: A
+Solution: P = 80 + 120 = 200 kW; Q = −60 + 160 = 100 kvar
+• S = √(200² + 100²) = 223.6 kVA
+• I = S/(√3 VL) = 223,600/(√3 × 1000) = 129 A
+
+97. Given the following phase currents:
+Ia = 3.5 + j3.5
+Ib = -j3
+Ic = -2.6 + j16
+Determined the negative sequence current for phase B.
+A. 0.2726 + j0.649
+B. -0.426 + j0.56
+C. 0.698 - j0.0888
+D. -0.333 + j0.678
+Answer: C
+Solution: The choices fit Ic = −2.6 + j1.6 (the "j16" is a misprint).
+• Ia2 = (Ia + a²Ib + aIc)/3 = (0.8164 + j1.9484)/3 = 0.2721 + j0.6495 (this is choice A, phase A's value)
+• Ib2 = a·Ia2 = (−0.5 + j0.866)(0.2721 + j0.6495) = −0.698 − j0.089
+• Review note: the correct value is −0.698 − j0.089; choice C matches it except for the sign of the real part.
+
+98. In a three phase balanced delta connected load with one-line open, line A has 20 A. Assume line A is the reference and the line C is open. What should be the zero sequence of line A?
+A. 0
+B. 10 - j5.77 A
+C. 30 + j17.32 A
+D. 10 + j5.77 A
+Answer: A
+Solution: Ia0 = (Ia + Ib + Ic)/3. In a 3-wire delta system with no neutral or ground return, Ia + Ib + Ic = 0 (here Ia = 20, Ib = −20, Ic = 0).
+• Ia0 = 0
+
+99. A three phase wye connected load of 30 mVA, 0.7 pf lagging is supplied at 13.8kV, 60Hz. It is desired to raise the pf to 0.85 lagging using capacitor. What is the capacitance of the capacitor in micro-farad?
+A. 117
+B. 138
+C. 128
+D. 159
+Answer: A
+Solution: P = 30 × 0.7 = 21 MW; Q1 = 30 × 0.714 = 21.42 MVAR
+• Q2 = 21 × tan(cos⁻¹ 0.85) = 21 × 0.6197 = 13.01 MVAR; Qc = 8.41 MVAR
+• C (per phase, wye) = Qc/(ωVL²) = 8.41 × 10⁶/(377 × 13,800²) = 117 μF
+
+100. Two-wattmeter are connected to measure three phase power, read 60 kW and 40Kw respectively. Determine the power factor of the balance three phase load
+A. 0.945
+B. 0.875
+C. 0.245
+D. 0.765
+Answer: A
+Solution: tan θ = √3(W1 − W2)/(W1 + W2) = √3(60 − 40)/100 = 0.3464
+• θ = 19.1°, pf = cos 19.1° = 0.945

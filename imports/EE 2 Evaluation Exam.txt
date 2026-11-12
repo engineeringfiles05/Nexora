@@ -1,0 +1,863 @@
+EE 2 Evaluation Exam
+Coverage: Machines (DC Machine, Alternators, Motors, & Transformers)
+
+1. To reverse the direction of rotation of a three phase induction motor, it is necessary to
+A. Interchanges all three line connections.
+B. Increase the resistance of the rotor circuit.
+C. Reverse the polarity of the rotor circuit.
+D. Interchanges any two of the three line connections.
+Answer: D
+Solution: Interchanging any two supply lines reverses the phase sequence, which reverses the rotating field and the rotor's direction. Swapping all three keeps the same sequence.
+
+2. Two single phase transformers are open delta connected. They supply a balanced 3-phase load of 100 kVA at a line voltage of 220 volts and a lagging power factor of 80%. What is the carried by each transformer?
+A. 50
+B. 75
+C. 57.7
+D. 100
+Answer: C
+Solution: In open delta each transformer carries the full line current at line voltage.
+• kVA per transformer = S/√3 = 100/√3 = 57.7 kVA
+
+3. A 4-pole lap-wound armature has 144 slots with two coil sides per slot, each coil having two turns. If the flus per pole is 20 mWb and the armature rotates 720 rpm. What is the induced voltage?
+A. 138.24 V
+B. 69.12 V
+C. 34.96V
+D. 276.48 V
+Answer: A
+Solution: Conductors Z = 144 slots × 2 coil sides × 2 turns = 576; lap winding a = P = 4
+• E = PΦZN/(60a) = 4 × 0.020 × 576 × 720/(60 × 4) = 138.24 V
+
+4. A 50-hp, 3-phase, 460 volts, 65A, 4 pole, 60 Hz, 1720 rpm induction motor has starting current of 600% the full-load current and 150% of the rated load torque at rated voltage and frequency. Determine the starting current when an autotransformer starter with 80% tap is used.
+A. 250A
+B. 390A
+C. 360A
+D. 312A
+Answer: A
+Solution: Direct-on-line starting current = 6 × 65 = 390 A
+• With an autotransformer at tap x = 0.8, the line current = x² × 390 = 0.64 × 390 = 249.6 A ≈ 250 A
+
+5. One primary and one secondary terminal of the two-winding transformer are connected to an ohm-meter instrument. What will be the reading on this instrument?
+A. Infinity
+B. zero or infinity
+C. equal to winding resistance
+D. zero
+Answer: A
+Solution: The primary and secondary of a two-winding transformer are electrically isolated (coupled only magnetically), so the ohmmeter reads infinity.
+
+6. In a single-phase transformer, the core losses is 60 W at 40 Hz and 95 W at 60 Hz both measured at the same maximum value of the flux density. Find the core losses in W at the frequency of 50 Hz.
+A. 69
+B. 77
+C. 89
+D. 56
+Answer: B
+Solution: At constant Bmax, Pcore = Af + Bf² (hysteresis + eddy).
+• 60 = 40A + 1600B and 95 = 60A + 3600B, giving B = 1/240 and A = 1.333
+• At 50 Hz: P = 1.333 × 50 + (1/240) × 2500 = 66.7 + 10.4 = 77 W
+
+7. A 2300/230 volts, 60 Hz transformer has 1000 turns at secondary and has a core size of 10 sq. cm. calculate the flux density in the core in Tesla.
+A. 0.383
+B. 0.423
+C. 0.644
+D. 0.863
+Answer: D
+Solution: E = 4.44fNΦm, so Φm = 230/(4.44 × 60 × 1000) = 8.634 × 10⁻⁴ Wb
+• Bm = Φm/A = 8.634 × 10⁻⁴ / 10 × 10⁻⁴ = 0.863 T
+
+8. Distribution factor Kd is defined as the ratio of emf’s of
+A. Distributed winding to full pitch winding
+B. Distributed winding to concentrated winding
+C. Concentrated winding to distributed winding
+D. Full pitch winding to distributed winding
+Answer: B
+Solution: Kd = (emf of distributed winding)/(emf of concentrated winding) = (vector sum)/(arithmetic sum), always ≤ 1.
+
+9. In a commutation process it is the
+A. current which is getting reversed
+B. voltage which is getting reversed
+C. both of these
+D. none of these
+Answer: A
+Solution: Commutation is the reversal of current in an armature coil as it passes under the brush.
+
+10. Core loss of a transformer is determined by means of a/an ____________test.
+A. Short Circuit Test
+B. Open Circuit Test
+C. No Load Test
+D. Insulation Test
+Answer: B
+Solution: The open-circuit test is done at rated voltage with negligible current, so the wattmeter reads the core (iron) loss.
+• Note: the open-circuit test is also called the no-load test (choice C).
+
+11. Which of the following plays an important role in over speed protection of a generator?
+A. Governor
+B. Overcurrent Relay
+C. Differential Protection
+D. Alarm
+Answer: A
+Solution: The governor controls the prime mover input and prevents overspeed when load is lost.
+
+12. An induction motor is developing 10 HP at speed of 1738 rpm. What is the percent slip?
+A. 3.4
+B. 2.1
+C. 3.2
+D. 5.2
+Answer: A
+Solution: Nearest synchronous speed (60 Hz, 4 poles) = 1800 rpm
+• s = (1800 − 1738)/1800 = 0.0344 = 3.4%
+
+13. By providing a variable resistance across the series field (diverter) in the dc motor, speeds above normal can be obtained because
+A. Armature current decreases
+B. Line current decreases
+C. Flux is reduced
+D. None of these
+Answer: C
+Solution: The diverter bypasses part of the current around the series field, reducing the flux. Since N ∝ Eb/Φ, the speed rises.
+
+14. Copper loss of a transformer is determined by means of a/an ___________ test.
+A. Short Circuit Test
+B. Open Circuit Test
+C. No Load Test
+D. Insulation Test
+Answer: A
+Solution: The short-circuit test is done at rated current with low voltage, so core loss is negligible and the wattmeter reads the full-load copper loss.
+
+15. If P is the pair of poles of the motor and f is the source frequency in cycles per second thane the speed synchronous is given by
+A. Ns = 60 P/f
+B. Ns = Pf/120
+C. Ns = 60 f/P
+D. Ns = f/60P
+Answer: C
+Solution: Ns = 120f/(number of poles). With P pairs of poles (2P poles), Ns = 120f/(2P) = 60f/P.
+
+16. Two compound generators are connected in parallel. If generator A has a series-field resistance of 0.0015 ohm and is adjusted to take 30% of the line load while generator B with a series field resistance of 0.001 ohm takes the remainder of the load. Determine the current flow in the equalizer when the load is 230 kW at 230 V.
+A. 100 A
+B. 400 A
+C. 300A
+D. 700A
+Answer: A
+Solution: Load current = 230,000/230 = 1000 A; armature A supplies 300 A and B supplies 700 A.
+• The series fields are in parallel (through the equalizer), so they share 1000 A inversely with resistance.
+• Series field A: 1000 × 0.001/(0.0015 + 0.001) = 400 A; series field B: 600 A
+• Equalizer current = 400 − 300 = 100 A
+
+17. Which of the following is NOT a reason why single-phase induction motor run?
+A. Two windings displaced from each other
+B. Hysteresis
+C. One of the current is made out of phase between the lines
+D. Shaded poles
+Answer: B
+Solution: A single-phase induction motor is started and run by creating a second, phase-displaced field: displaced windings, split-phase/capacitor currents, or shaded poles. Hysteresis is not one of these.
+
+18. A 72 slots three phase stator armature is wound for 8 poles with a 4/5 pitch. Determine the pitch factor.
+A. 0.966
+B. 0.967
+C. 0.951
+D. 0.957
+Answer: C
+Solution: Coil span = (4/5) × 180° = 144° electrical
+• kp = sin(144°/2) = sin 72° = 0.951
+
+19. A factory will be served by two units of 50 kVA transformers, 7.620 kV/240 V. The transformers will be installed as open-delta bank to serve the three-phase load of the factory. What is the maximum kVA load that this bank can carry without overloading?
+A. 75.5
+B. 86.6
+C. 50
+D. 100
+Answer: B
+Solution: Open-delta capacity = √3 × (kVA of one transformer) = √3 × 50 = 86.6 kVA
+
+20. A 3-phase, 60 Hz induction motor has 8 poles and operates with a slip of 0.04 for a certain load. Compute the speed of the rotor magnetic field with respect to the rotor.
+A. 900 rpm
+B. 45 rpm
+C. 855 rpm
+D. 36 rpm
+Answer: D
+Solution: Ns = 120 × 60/8 = 900 rpm
+• The rotor field rotates relative to the rotor at slip speed: sNs = 0.04 × 900 = 36 rpm
+
+21. A synchronous motor can develop synchronous torque
+A. When under loaded
+B. While over excited
+C. Below or above synchronous speed
+D. Only at synchronous speed
+Answer: D
+Solution: Steady synchronous torque exists only when the rotor is locked in step with the rotating field, i.e. at synchronous speed.
+
+22. A 60 cycle alternator has a speed of 200 rpm. How many poles has it?
+A. 20 pole
+B. 36 pole
+C. 24 pole
+D. 60 pole
+Answer: B
+Solution: P = 120f/N = 120 × 60/200 = 36 poles
+
+23. Synchronization of alternators means
+A. Connecting alternators in series
+B. Connecting alternators in parallel
+C. Transferring load to one alternator to another
+D. Adjusting the excitation of alternators
+Answer: B
+Solution: Synchronizing is the process of connecting an alternator in parallel with another alternator or the bus (matching voltage, frequency, phase sequence and phase).
+
+24. When the excitation of an unloaded salient pole synchronous motor suddenly gets disconnected, then
+A. The motor stops
+B. It runs at lower speed
+C. It runs at same speed
+D. It runs at very high speed
+Answer: C
+Solution: A salient-pole rotor develops reluctance torque even without excitation, so an unloaded motor keeps running at synchronous (the same) speed.
+
+25. Two single phase transformer are connected open-delta supplying three phase load 150 kVA at 80% power factor and a single phase load 30 kW at unity power factor connected across lines A and C. What should be the rating of each transformer so as not to exceed its rating?
+A. 100 kVA
+B. 75 kVA
+C. 125 kVA
+D. 200 kVA
+Answer: C
+Solution: Take the transformers on AB and CB, with currents in kVA per kV of line voltage.
+• 3-phase load: line current 150/√3 = 86.6 at −36.87° from each phase voltage
+• 1-phase load: 30 at unity pf from A to C, in phase with Vac (−30°)
+• Ia = 86.6∠−36.87° + 30∠−30° = 95.3 − j67.0, |Ia| = 116.4 kVA
+• Ic = 86.6∠83.13° − 30∠−30° = −15.6 + j101.0, |Ic| = 102.2 kVA
+• The more heavily loaded transformer carries about 116 kVA, so the next standard rating is 125 kVA.
+
+26. The relationship between frequency f, number of revolution per second n and pair of pole given by
+A. f = n/p
+B. f= np
+C. f = n/2p
+D. f = 2np
+Answer: B
+Solution: Each pole pair produces one cycle per revolution, so f = n × p (p = pairs of poles, n = rev/s).
+
+27. Alternators are usually designed to generate
+A. Variable frequency
+B. Definite frequencies
+C. Definite currents
+D. Definite power factor
+Answer: B
+Solution: Alternators are designed for a definite frequency (e.g. 60 Hz), fixed by speed and number of poles.
+
+28. A tap changer is used on transformer for
+A. adjustments in secondary voltage
+B. adjustments in both primary and secondary voltages
+C. adjustments in primary voltage
+D. none of the above
+Answer: A
+Solution: Changing taps changes the turns ratio so as to adjust (regulate) the secondary voltage.
+
+29. A 3-phase induction motor has nameplate speed rating of 702 rpm. Calculate the percent slip.
+A. 5%
+B. 3%
+C. 4%
+D. 2.5%
+Answer: D
+Solution: Nearest synchronous speed at 60 Hz is 720 rpm (10 poles).
+• s = (720 − 702)/720 = 0.025 = 2.5%
+
+30. An ideal transformer has voltage rating of 2400/240 V, a motor is connected to the secondary draws 40 A at 200 V, what resistance must be connected at primary to maintain this motor voltage?
+A. 150 ohm
+B. 75 ohm
+C. 100 ohm
+D. 50 ohm
+Answer: C
+Solution: For 200 V on the secondary, the transformer primary needs 200 × 10 = 2000 V.
+• Drop across the series resistor = 2400 − 2000 = 400 V
+• Primary current = 40/10 = 4 A, so R = 400/4 = 100 Ω
+
+31. A 10-kW, 250 V shunt generator, having an armature resistance of 0.1 Ω and a field resistance of 250 Ω, delivers full-load at rated voltage and 800 rpm. The machine is now run as a motor while taking 10 kW at 250 V. what is the speed of the motor? Neglect brush-contact drop.
+A. 774.8 rpm
+B. 814.6 rpm
+C. 804.6 rpm
+D. 784.6 rpm
+Answer: A
+Solution: Line current = 10,000/250 = 40 A; field current = 250/250 = 1 A
+• As generator: Ia = 41 A, Eg = 250 + 41 × 0.1 = 254.1 V
+• As motor: Ia = 39 A, Eb = 250 − 39 × 0.1 = 246.1 V
+• Same flux, so N = 800 × 246.1/254.1 = 774.8 rpm
+
+32. The motor on which stator and rotor magnetic field rotate at the same speed is
+A. Induction Motor
+B. Reduction Motor
+C. Universal Motor
+D. Synchronous Motor
+Answer: D
+Solution: In a synchronous motor the rotor field is locked to, and rotates with, the stator's rotating field at synchronous speed.
+
+33. The speed of synchronous motor
+A. reduces as the load increases
+B. adjust itself to new equilibrium speed whenever load changes
+C. increases as load increase
+D. always remains constant
+Answer: D
+Solution: A synchronous motor runs at Ns = 120f/P regardless of load (until it pulls out of step).
+
+34. The rating of a certain DC machine from the nameplate is 120 volts, 38.5 amp, 5 hp. Find the efficiency at full load?
+A. 86.5%
+B. 80.7%
+C. 83.26%
+D. 89.6%
+Answer: B
+Solution: Output = 5 × 746 = 3730 W; input = 120 × 38.5 = 4620 W
+• η = 3730/4620 = 80.7%
+
+35. A 250 volts, 10 Hp shunt motor has an armature resistance of 0.5 ohm and a field resistance of 250 ohms. The motor takes a current of 5 amp on no load and 37.1 amperes on rated load. Determine the rated efficiency.
+A. 89.7%
+B. 79.7%
+C. 85.7%
+D. 77.9%
+Answer: B
+Solution: Field current = 250/250 = 1 A
+• No load: input = 250 × 5 = 1250 W; Ia0 = 4 A, armature Cu = 0.5 × 4² = 8 W; field loss = 250 W; rotational loss = 1250 − 250 − 8 = 992 W
+• Rated load: Ia = 36.1 A, armature Cu = 0.5 × 36.1² = 651.6 W
+• Total losses = 250 + 992 + 651.6 = 1893.6 W; input = 250 × 37.1 = 9275 W
+• η = (9275 − 1893.6)/9275 = 79.6% ≈ 79.7%
+
+36. A 230 volt shunt motor has an armature whose resistance is 0.33 ohm. Assuming voltage across the brush contact is 2 volts, what armature current will flow when counter emf is 215 volts.
+A. 39.4A
+B. 34.6A
+C. 31.8A
+D. 37.2A
+Answer: A
+Solution: Ia = (V − Eb − Vbrush)/Ra = (230 − 215 − 2)/0.33 = 13/0.33 = 39.4 A
+
+37. In DC generators, lap winding is used for
+A. low voltage, low current
+B. low voltage, high current
+C. high voltage, high current
+D. high voltage, low current
+Answer: B
+Solution: Lap winding has as many parallel paths as poles (a = P), giving high current at low voltage. Wave winding (a = 2) suits high voltage, low current.
+
+38. Interpoles are connected _______ with the armature and compensating windings are connected in ______ with the armature.
+A. series, series
+B. shunt, series
+C. series, shunt
+D. shunt, shunt
+Answer: A
+Solution: Both interpoles and compensating windings carry armature current so their effect is proportional to load; both are connected in series with the armature.
+
+39. A 4400 volts, 60Hz transformer has a 620 watts hysteresis loss. Determine the hysteresis loss when the transformer is connected to 4400 volts, 50 Hz supply.
+A. 556 W
+B. 517W
+C. 692W
+D. 744W
+Answer: C
+Solution: Ph ∝ f·Bm^1.6 and, at constant voltage, Bm ∝ 1/f, so Ph ∝ f^(−0.6).
+• Ph(50) = 620 × (60/50)^0.6 = 620 × 1.1156 = 692 W
+
+40. A 100 kVA, 7967/240 volts single phase transformer as 3.2% impedance. Calculate the impedance referred to primary.
+A. 20.3 ohm
+B. 45.6 ohm
+C. 34.6 ohm
+D. 48.6 ohm
+Answer: A
+Solution: Zbase (primary) = 7967²/100,000 = 634.7 Ω
+• Z = 0.032 × 634.7 = 20.3 Ω
+
+41. Squirrel cage induction motor differs from the slip rings type in that it has no
+A. slip rings
+B. rotor windings
+C. windings on the stator
+D. rotating part
+Answer: A
+Solution: A squirrel-cage rotor has permanently short-circuited bars, so it needs no slip rings. The wound-rotor (slip-ring) type brings its rotor winding out through slip rings.
+
+42. The method most commonly used for synchronizing the alternators n power house is
+A. dark lamp method and a synchroscope
+B. bright lamp method only
+C. dark lamp method only
+D. bright lamp method and a synchroscope
+Answer: A
+Solution: Power stations synchronize with a synchroscope, usually backed up by synchronizing (dark) lamps as a check.
+• Review note: confirm this item against your review center's key.
+
+43. If the input of the prime mover of an alternator is kept constant but the excitation is increased then
+A. KVA will be leading
+B. KW will be change
+C. KVA will be lagging
+D. The power factor of the load remains constant
+Answer: C
+Solution: The real power (kW) is fixed by the prime mover input. Over-exciting the alternator makes it deliver more lagging reactive power, so its kVA output becomes lagging.
+
+44. What is the back emf of a 10 Hp shunt motor operating at 110 volts terminals if 90 ampere flow though a 0.05 ohm armature resistance?
+A. 102.5V
+B. 106.6V
+C. 105.5V
+D. 104.4V
+Answer: C
+Solution: Eb = V − IaRa = 110 − 90 × 0.05 = 105.5 V
+
+45. A self-excited shunt generator supplies a load of 12.5 kW at 125 V. The field resistance is 25 Ω and the armature resistance of 0.1 Ω. The total voltage drop because of brush contact and armature reaction at this load 3.5 V. Calculate the induced armature voltage.
+A. 129V
+B. 135V
+C. 263V
+D. 139V
+Answer: D
+Solution: IL = 12,500/125 = 100 A; If = 125/25 = 5 A; Ia = 105 A
+• Eg = 125 + 105 × 0.1 + 3.5 = 139 V
+
+46. A 60-hz induction motor has two poles and runs at 1720 rpm. What is the synchronous speed of the induction motor?
+A. 1200 rpm
+B. 1600 rpm
+C. 1800 rpm
+D. 1500 rpm
+Answer: C
+Solution: A rotor speed of 1720 rpm means the synchronous speed is just above it: 1800 rpm (Ns = 120 × 60/4).
+• Note: 1800 rpm corresponds to two pole pairs (4 poles); a true 2-pole motor would have Ns = 3600 rpm.
+
+47. What is the device or part of transformer used to cool oil naturally
+A. Radiator
+B. Breather
+C. Conservator
+D. Bushing
+Answer: A
+Solution: Radiators (cooling tubes or fins) give a large surface area for natural circulation and cooling of the transformer oil.
+
+48. Pitch factor is defined as the ratio of the emf’s of
+A. Distributed windings to full pitch winding
+B. Full pitch winding to short pitch winding
+C. Short pitch coil to full pitch coil
+D. Full pitch winding to concentrated winding
+Answer: C
+Solution: kp = (emf of short-pitched coil)/(emf of full-pitched coil) = cos(α/2), where α is the short-pitch angle.
+
+49. For two alternators operating in parallel, if the load shared by one of them is to be increased, it field excitation is
+A. To be strengthened keeping input torque same
+B. To be kept constant but input torque should be increased
+C. To be weakened keeping input torques same
+D. None of the above
+Answer: B
+Solution: Real-power (kW) sharing is changed by the prime-mover input (governor). Excitation changes only the reactive-power sharing.
+
+50. Which is not the characteristic of an ideal transformer?
+A. No magnetic leakage
+B. has no resistance
+C. infinite permeability
+D. finite permeability
+Answer: D
+Solution: An ideal transformer has no leakage, no winding resistance, no core loss and infinite core permeability. Finite permeability is not ideal.
+
+51. A 10 kVA distribution transformer has 240 volts secondary winding. The equivalent internal resistance of this transformer, referred to that winding is 0.048 ohm. What is the percent resistance?
+A. 1.2
+B. 1.0
+C. 0.83
+D. 0.75
+Answer: C
+Solution: Zbase = 240²/10,000 = 5.76 Ω
+• %R = 0.048/5.76 × 100 = 0.83%
+
+52. In the transformers
+A. HT windings is used near the core
+B. LT winding is used near the core
+C. HT winding is used away from the core
+D. LT winding is used away from the core
+Answer: B
+Solution: The low-tension winding is placed next to the core because it needs less insulation from the grounded core; the HT winding goes outside.
+
+53. The rotor of an induction motor gets its power from
+A. the line voltage
+B. sip rings
+C. a centrifugal switch
+D. magnetic switch
+Answer: A
+Solution: The rotor receives its power by electromagnetic induction from the stator, which is supplied by the line voltage. There is no conductive connection to the rotor.
+
+54. What is common in the two windings of a transformer?
+A. Electric current
+B. Magnetic circuit
+C. Wining wire gage
+D. None of these
+Answer: B
+Solution: The primary and secondary are linked only by the common magnetic circuit (core flux).
+
+55. If field of a synchronous motor is under-excited the power factor will be
+A. lagging
+B. unity
+C. leading
+D. more than unity
+Answer: A
+Solution: An under-excited synchronous motor draws lagging reactive current from the supply, so it operates at a lagging power factor.
+
+56. The reactance of a transformer is determined by its
+A. Leakage flux
+B. Size of the core
+C. Common core flux
+D. Permeability of thee material of the core
+Answer: A
+Solution: Transformer leakage reactance is due to the leakage flux that links only one winding.
+
+57. A 6-pole, lap wound, dc generator armature has a 720 active conductors. The generator is designed to generate 420 V at 1720 rpm. Determine the flux per pole.
+A. 20.65 mWb
+B. 20.35 mWb
+C. 30.24 mWb
+D. 60.64 mWb
+Answer: B
+Solution: Lap winding: a = P = 6, so E = ΦZN/60
+• Φ = 60E/(ZN) = 60 × 420/(720 × 1720) = 0.02035 Wb = 20.35 mWb
+
+58. A 2300/230 volt, 25kVA transformer has the following short circuit test data: Psc = 250 watts; Vsc = 57.5 volts and Isc = 104.2 amps. What is the percent resistance?
+A. 1%
+B. 2%
+C. 2.5%
+D. 2.3%
+Answer: A
+Solution: The short-circuit test is taken at (approximately) rated current, so Psc ≈ full-load copper loss.
+• %R = Pcu/S × 100 = 250/25,000 × 100 = 1%
+
+59. In any transformer, the voltage per turn in primary and secondary remains
+A. Always different
+B. Always in the ratio of k
+C. Always the same
+D. Sometimes same
+Answer: C
+Solution: Both windings link the same mutual flux, so emf per turn = 4.44fΦm is the same in primary and secondary.
+
+60. Which loss in the generator varies with the load
+A. Copper Loss
+B. Eddy Current Loss
+C. Hysteresis Loss
+D. Windage Loss
+Answer: A
+Solution: Copper loss (I²R) varies with the square of the load current. Core and mechanical losses are essentially constant.
+
+61. A 4-pole lap-wound armature has 144 slots with two coil sides per slot, each coil having two turns. If the flus per pole is 20 mWb and the armature rotates 720 rpm. What is the induced voltage?
+A. 138.24V
+B. 69.12V
+C. 34.96V
+D. 276.48V
+Answer: A
+Solution: Z = 144 × 2 × 2 = 576 conductors; lap winding a = P = 4
+• E = PΦZN/(60a) = 4 × 0.020 × 576 × 720/(60 × 4) = 138.24 V
+• Note: this item repeats item 3.
+
+62. A three phase 8 poles, 60 Hz induction motor runs with 3% slip. What is the motor speed in rpm?
+A. 900
+B. 864
+C. 873
+D. 855
+Answer: C
+Solution: Ns = 120 × 60/8 = 900 rpm
+• N = Ns(1 − s) = 900 × 0.97 = 873 rpm
+
+63. The rotor speed of a six pole 60 cycle induction motor is 960 rpm. Calculate the percent slip.
+A. 4.167%
+B. 2.833%
+C. 0.4167%
+D. 0.2833%
+Answer: A
+Solution: Intended solution: Ns = 120 × 50/6 = 1000 rpm, so s = (1000 − 960)/1000 = 4%, nearest choice 4.167%.
+• Review note: as printed (60 Hz, Ns = 1200 rpm) the slip is (1200 − 960)/1200 = 20%, which is not a choice. 4.167% results from dividing by the rotor speed: (1000 − 960)/960. Please check this item.
+
+64. What is the maximum speed at which a 50 Hz synchronous machine can be operated?
+A. 3400 rpm
+B. 3200 rpm
+C. 3600 rpm
+D. 3000 rpm
+Answer: D
+Solution: The minimum number of poles is 2, so Nmax = 120 × 50/2 = 3000 rpm
+
+65. The rotor of a 3-phase, 60 Hz, 4-pole induction motor takes 120kW at 3 Hz. Determine the rotor speed.
+A. 1750 rpm
+B. 1710 rpm
+C. 1720 rpm
+D. 1760 rpm
+Answer: B
+Solution: s = fr/f = 3/60 = 0.05; Ns = 120 × 60/4 = 1800 rpm
+• N = 1800 × (1 − 0.05) = 1710 rpm
+
+66. An alternator is said to be over-excited if it is operating at
+A. leading pf
+B. lagging pf
+C. unity pf
+D. zero voltage regulation
+Answer: B
+Solution: An over-excited alternator supplies lagging reactive power, i.e. it operates at a lagging power factor.
+
+67. Two single phase transformers are connected in parallel to supply a load of 150 kVA. Transformer A is rated 100 kVA with 3% impedance while transformer B is rated 75 kVA with 2% impedance. Calculate the load sharing of transformers in kVA.
+A. 90 & 60
+B. 71 & 79
+C. 74 & 76
+D. 72 & 78
+Answer: B
+Solution: Load shares in proportion to kVA/%Z: A = 100/3 = 33.33, B = 75/2 = 37.5, total 70.83
+• SA = 150 × 33.33/70.83 = 70.6 ≈ 71 kVA; SB = 150 × 37.5/70.83 = 79.4 ≈ 79 kVA
+
+68. In a dc generator, in case the resistance of the field winding is increased, the output voltage will
+A. increase
+B. decrease
+C. remain unaffected
+D. fluctuate heavily
+Answer: B
+Solution: A higher field resistance lowers the field current and flux, so the generated (and output) voltage decreases.
+
+69. In case of alternators, the stator frame serves
+A. To protect the whole machine
+B. To hold the armature stampings
+C. As a turn path for the flux
+D. To verticate the armature
+Answer: B
+Solution: The stator frame of an alternator supports and holds the laminated armature stampings (core); it is not meant to carry flux.
+
+70. The transformer oil used in transformers provide
+A. insulation and cooling
+B. insulation and lubrication
+C. insulation, cooling and lubrication
+D. cooling and lubrication
+Answer: A
+Solution: Transformer oil insulates the windings and carries heat away (cooling). There are no moving parts to lubricate.
+
+71. A 60 cycle alternator has 12 poles. What is the speed of alternator?
+A. 600 rpm
+B. 1500 rpm
+C. 1800 rpm
+D. 720 rpm
+Answer: A
+Solution: N = 120f/P = 120 × 60/12 = 600 rpm
+
+72. The primary of a transformer has 200 turns and is excited by a 60 Hz, 220 V source. What is the maximum value of the core flux?
+A. 4.13 mWb
+B. 3.56 mWb
+C. 4.04 mWb
+D. 6.31 mWb
+Answer: A
+Solution: Φm = V/(4.44fN) = 220/(4.44 × 60 × 200) = 4.13 × 10⁻³ Wb = 4.13 mWb
+
+73. The minimum armature current of the synchronous motor corresponds to operation at.
+A. 0.8 power factor lagging
+B. zero power factor
+C. unity power factor
+D. 0.85 power factor lagging
+Answer: C
+Solution: For a given load, armature current is minimum at unity power factor (the bottom of the V-curve).
+
+74. The function of a compensating winding is to neutralize the.
+A. Reactance voltage generated and consequence of commutation
+B. Cross magnetize the effect of armature reaction
+C. Demagnetizing the effect of armature reaction
+D. All of these
+Answer: B
+Solution: Compensating windings in the pole faces carry armature current in the opposite direction and neutralize the cross-magnetizing effect of armature reaction. Interpoles handle the reactance voltage of commutation.
+
+75. A three phase 6 pole wye connected synchronous motor, rated 25 hp, 400 volts. Determine the speed whens supplied from 60 hertz source.
+A. 1200 rpm
+B. 1000 rpm
+C. 900 rpm
+D. 600 rpm
+Answer: A
+Solution: Ns = 120f/P = 120 × 60/6 = 1200 rpm
+
+76. The speed regulation of a 3-phase synchronous motor is.
+A. 5%
+B. 0.4%
+C. 1%
+D. zero
+Answer: D
+Solution: Speed regulation = (Nnl − Nfl)/Nfl. A synchronous motor runs at the same speed at no load and full load, so its speed regulation is zero.
+
+77. The main function of the iron core in a transformer is to
+A. Provide strength to the windings
+B. Decrease the reluctance of the magnetic path
+C. To decrease the hysteresis losses
+D. Reduce eddy current losses
+Answer: B
+Solution: The high-permeability iron core provides a low-reluctance path so the mutual flux is set up with little magnetizing current.
+
+78. The speed of the dc shunt motor is required to be more that full load speed. This is possible by
+A. Increasing the armature current
+B. Increasing the excitation current
+C. Decreasing the armature current
+D. Reducing the field current
+Answer: D
+Solution: N ∝ Eb/Φ. Reducing the field current (field weakening) reduces Φ and raises the speed above normal.
+
+79. Three single-phase transformers rated 25 kVA each are connected in delta-delta to supply a balanced load of 75 kVA. On transformer is removed for repair, what is the overload kVA of each remaining transformer?
+A. 43.3
+B. 31.7
+C. 57.7
+D. 18.3
+Answer: D
+Solution: In open delta each transformer carries S/√3 = 75/√3 = 43.3 kVA
+• Overload on each = 43.3 − 25 = 18.3 kVA
+
+80. A 2400 volts, 60Hz transformer has a 300 W eddy current loss. Determine the eddy current loss when the transformer is connected to 2300 volt 50 Hz supply?
+A. 300W
+B. 275.5W
+C. 287.5W
+D. 280W
+Answer: B
+Solution: Pe ∝ Bm²f² and Bm ∝ V/f, so Pe ∝ V² (independent of frequency).
+• Pe = 300 × (2300/2400)² = 275.5 W
+
+81. What is the part of the power transformer that contains oil and absorbs the swell of the oil?
+A. Radiator
+B. Conservator
+C. Breather
+D. Bushing
+Answer: B
+Solution: The conservator tank on top of the transformer holds reserve oil and takes up the expansion and contraction of the oil with temperature.
+
+82. In synchronous motor, the synchronizing power comes into action when the rotor speed is.
+A. Equal to synchronous speed
+B. More than synchronous speed
+C. Less than synchronous speed
+D. Either less or more than synchronous speed
+Answer: D
+Solution: Synchronizing power acts whenever the rotor tends to fall behind or run ahead of synchronism, pulling it back into step.
+• Note: the PDF labels this last choice "C" twice; it is choice D.
+
+83. A 6-pole, wave wounds, dc generator armature has a 720 active conductors. The flux per pole is 20.35 mWb. What speed must the generator operate to induce 630 volts in the armature?
+A. 860 rpm
+B. 758 rpm
+C. 665 rpm
+D. 956 rpm
+Answer: A
+Solution: Wave winding: a = 2
+• N = 60aE/(PΦZ) = 60 × 2 × 630/(6 × 0.02035 × 720) = 860 rpm
+
+84. Distribution transformer used for lighting and industrial loads.
+A. Corner grounded delta
+B. Wye with neutral
+C. Delta
+D. Open delta
+Answer: B
+Solution: A wye secondary with neutral (4-wire) gives both line-to-neutral voltage for lighting and line-to-line 3-phase voltage for industrial (power) loads.
+
+85. A 5 kVA, 440/110 volts, 60 Hz, single phase transformer has an efficiency of 97.5% at rated load of unity power factor. What is the kVA rating if it used as 550/440 volts autotransformer?
+A. 50
+B. 12.5
+C. 25
+D. 20
+Answer: C
+Solution: The 110 V winding (series) rated current = 5000/110 = 45.45 A; the 440 V winding is common.
+• As an autotransformer: S = 550 × 45.45 = 25,000 VA = 25 kVA
+
+86. A 10kVA, 440/110 volts, 60 Hz, single-phase transformer has an efficiency of 97.5% at rated load of unity power factor? The rated core loss is 100 watts. What is the full load copper loss?
+A. 150W
+B. 125.4W
+C. 225W
+D. 156.4W
+Answer: D
+Solution: Input = 10,000/0.975 = 10,256.4 W; total losses = 256.4 W
+• Copper loss = 256.4 − 100 = 156.4 W
+
+87. A three phase salient pole, 440 volts, wye connected synchronous generator operates at a power angle of 20° while developing power of 36 kW. The machines constant are Xd = 2Xq = 5 ohms and Ra is negligible. Calculate the percent voltage regulation.
+A. 70%
+B. 78%
+C. 144%
+D. 54%
+Answer: B
+Solution: Per phase: V = 440/√3 = 254 V, P = 12 kW, Xd = 5 Ω, Xq = 2.5 Ω
+• P = (VE/Xd) sin δ + (V²/2)(1/Xq − 1/Xd) sin 2δ
+• Reluctance term = (254²/2)(0.4 − 0.2) sin 40° = 4148 W
+• 12,000 − 4148 = (254E/5) sin 20°, so E = 452 V
+• Regulation = (452 − 254)/254 = 78%
+
+88. What is the voltage regulation of a non-ideal transformer rated as 10 MVA, 13.8 kV/600 volts if no-load voltage at secondary is 630 volts?
+A. 2.5%
+B. 3%
+C. 5%
+D. 4.5%
+Answer: C
+Solution: VR = (Vnl − Vfl)/Vfl = (630 − 600)/600 = 5%
+
+89. Single phase transformer is rated 100 kVA, 2300/230 volts has 1% resistance. What is the resistance of the transformer referred to primary in ohm?
+A. 0.53
+B. 0.40
+C. 0.26
+D. 0.65
+Answer: A
+Solution: Zbase (primary) = 2300²/100,000 = 52.9 Ω
+• R = 0.01 × 52.9 = 0.529 ≈ 0.53 Ω
+
+90. A four pole generator has 500 conductors on the armature of the generator is running at 1200 rpm, find the average voltage generated between brushes for wave winding. The total flus per pole is 10⁶ lines.
+A. 200V
+B. 120V
+C. 100V
+D. 250V
+Answer: A
+Solution: Φ = 10⁶ lines = 0.01 Wb; wave winding a = 2
+• E = PΦZN/(60a) = 4 × 0.01 × 500 × 1200/(60 × 2) = 200 V
+
+91. Transformer polarity is important for
+A. Parallel Operation
+B. Resistance Test
+C. Insulation Test
+D. Open Circuit Test
+Answer: A
+Solution: Transformers must be connected with correct (like) polarity to be paralleled; otherwise a large circulating current flows.
+
+92. Two single phase transformer are connected in parallel to supply a load of 255 kVA. Transformer A is rated 100 kVA with 2% impedance while transformer B is rated 125 kVA with 3% impedance. Calculate the % load sharing of transformers.
+A. 56.5 & 43.5
+B. 54.5 & 45.5
+C. 58.3 & 41.7
+D. 64.2 & 35.8
+Answer: B
+Solution: Share ∝ kVA/%Z: A = 100/2 = 50, B = 125/3 = 41.67, total 91.67
+• A = 50/91.67 = 54.5%, B = 41.67/91.67 = 45.5%
+
+93. Calculate the voltage induced in the armature winding of a 4-pole, duplex lap-wound, dc machine having 728 active conductors and running at 1800 rpm. The flux per pole is 30 mWb.
+A. 1310.4V
+B. 720.4V
+C. 468.2V
+D. 327.6V
+Answer: D
+Solution: Duplex lap: a = mP = 2 × 4 = 8
+• E = PΦZN/(60a) = 4 × 0.030 × 728 × 1800/(60 × 8) = 327.6 V
+
+94. The armature of a dc generator is laminated to
+A. Reduce the bulk
+B. Reduce the eddy current loss
+C. Insulate the core
+D. Provide passage for cooling air
+Answer: B
+Solution: Thin insulated laminations break up eddy-current paths, reducing eddy-current loss.
+
+95. If the two phases of an induction motor is disconnected, the motor will __________.
+A. Continue to run depending on the load
+B. Run with less efficiency
+C. Stop
+D. Burn
+Answer: C
+Solution: With two of the three supply lines disconnected, no current can flow through the stator, so the motor stops. (Losing only one phase is single-phasing, where it may keep running.)
+
+96. The rotor speed of an induction motor is
+A. The same as the synchronous speed
+B. Slower than the synchronous speed
+C. Faster than the synchronous speed
+D. Determined by the frequency and number of poles
+Answer: B
+Solution: An induction motor must run below synchronous speed (slip > 0) so that emf and current are induced in the rotor to produce torque.
+
+97. The nameplate of an induction motor lists 960 rpm as the full load speed. For what frequency was the motor designed?
+A. 60 Hz
+B. 30 Hz
+C. 50 Hz
+D. 25 Hz
+Answer: C
+Solution: The synchronous speed just above 960 rpm is 1000 rpm = 120f/P with P = 6, so f = 1000 × 6/120 = 50 Hz.
+
+98. A generator at no-load operates 62.4 Hz, slope is 1kW/Hz. Load 1 = 2400 watts and Load 2 = 1000 watts. Find the frequency before and after adding the Load 2.
+A. 60 Hz & 59 Hz
+B. 61.2 Hz & 59.2 Hz
+C. 60 Hz & 59.1 Hz
+D. 60.6 Hz & 59.7 Hz
+Answer: A
+Solution: With load 1: f = 62.4 − 2.4 kW/(1 kW/Hz) = 60 Hz
+• After adding load 2: f = 62.4 − 3.4 = 59 Hz
+
+99. If field of a synchronous motor is over-excited the power factor will be
+A. lagging
+B. unity
+C. leading
+D. more than unity
+Answer: C
+Solution: An over-excited synchronous motor draws leading current (it supplies reactive power), so it operates at a leading power factor.
+
+100. A 120 volts shunt motor takes 75A at full load. Armature resistance is 0.2 ohms, field resistance of 40 ohms and brush contact is 2V. Find the stating resistance to limit the starting torque to 160% of rated load torque at the instant of starting.
+A. 0.856Ω
+B. 0.824Ω
+C. 0.821Ω
+D. 0.883Ω
+Answer: B
+Solution: If = 120/40 = 3 A; rated Ia = 75 − 3 = 72 A
+• Constant flux, so T ∝ Ia: starting Ia = 1.6 × 72 = 115.2 A
+• At start Eb = 0: Ra + Rs = (120 − 2)/115.2 = 1.0243 Ω
+• Rs = 1.0243 − 0.2 = 0.824 Ω
