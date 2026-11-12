@@ -31,8 +31,11 @@ import { findDuplicates, isReviewedForExams, type DuplicateDecision } from '../u
 import { buildExtractionReport, refreshQuestionAssessment, SUBJECT_NAMES } from '../utils/questionExtractor.ts';
 import {
   approvalBlocker,
+  approveMany,
   approveQuestion,
   issuesToConfirm,
+  planBulkApproval,
+  type BulkApprovalPlan,
   newManualQuestion,
   rejectQuestion,
   reopenQuestion,
@@ -111,6 +114,7 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   const [checked, setChecked] = useState<string[]>([]);
   const [editing, setEditing] = useState<{ question: Question; isNew: boolean } | null>(null);
   const [confirmApprove, setConfirmApprove] = useState<Question | null>(null);
+  const [confirmBulk, setConfirmBulk] = useState<{ what: string; plan: BulkApprovalPlan } | null>(null);
   const [solutionFor, setSolutionFor] = useState<Question | null>(null);
 
   useEffect(() => {
@@ -308,22 +312,31 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     setNotice(`Approved ${n} question(s) whose two readings matched with no open issues.`);
   };
 
-  const approveChecked = () => {
-    let n = 0;
-    let held = 0;
-    setStaged((prev) =>
-      prev.map((q) => {
-        if (!checked.includes(q.id) || q.reviewStatus !== 'pending') return q;
-        if (approvalBlocker(q) || issuesToConfirm(q).length) {
-          held++;
-          return q;
-        }
-        n++;
-        return approveQuestion(q);
-      })
+  /** Approves the given ids; questions with open findings are approved only after one confirmation. */
+  const finishBulkApprove = (what: string, plan: BulkApprovalPlan, includeFindings: boolean) => {
+    const ids = includeFindings ? [...plan.ready, ...plan.needConfirm] : plan.ready;
+    setStaged((prev) => approveMany(prev, ids));
+    const skipped = includeFindings ? 0 : plan.needConfirm.length;
+    setNotice(
+      `Approved ${ids.length} ${what} question(s).` +
+        (skipped ? ` ${skipped} with open findings were left pending.` : '') +
+        (plan.blocked.length ? ` ${plan.blocked.length} have text that was not read with certainty: edit them to match the PDF, then approve.` : '')
     );
-    setNotice(`Approved ${n} selected question(s).${held ? ` ${held} have open findings: open each one and approve it after comparing with the PDF.` : ''}`);
   };
+
+  const bulkApprove = (ids: string[], what: string) => {
+    const plan = planBulkApproval(staged, ids);
+    if (plan.ready.length + plan.needConfirm.length === 0) {
+      setNotice(plan.blocked.length ? `None of the ${what} questions can be approved yet: ${plan.blocked.length} need their text fixed first.` : `No ${what} questions are waiting for approval.`);
+      return;
+    }
+    if (plan.needConfirm.length) setConfirmBulk({ what, plan });
+    else finishBulkApprove(what, plan, false);
+  };
+
+  const approveChecked = () => bulkApprove(checked, 'selected');
+  const pendingShown = visible.filter((q) => q.reviewStatus === 'pending' && !approvalBlocker(q)).length;
+  const approveAllShown = () => bulkApprove(visible.map((q) => q.id), filter === 'all' && !search.trim() && !onlyThisPage ? 'pending' : 'shown');
 
   const move = (id: string, dir: -1 | 1) =>
     setStaged((prev) => {
@@ -677,10 +690,19 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                         Approve {counts.autoVerified} cross-checked
                       </button>
                       <button
+                        onClick={approveAllShown}
+                        disabled={pendingShown === 0}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white font-semibold flex items-center gap-1"
+                        title="Approves every pending question in the list below. Questions with open findings are approved only after you confirm."
+                      >
+                        <CheckCircle2 className="w-3 h-3" /> Approve all {pendingShown} shown
+                      </button>
+                      <button
                         onClick={() => setChecked(visible.filter((q) => q.reviewStatus !== 'rejected').map((q) => q.id))}
                         className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold"
+                        title="Ticks every question in the list below"
                       >
-                        Select shown
+                        Select all
                       </button>
                       {checked.length > 0 && (
                         <>
@@ -784,6 +806,55 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                 className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
               >
                 It matches the PDF — approve
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmBulk && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-3 text-xs">
+            <h3 className="text-base font-bold text-white">
+              Approve {confirmBulk.plan.ready.length + confirmBulk.plan.needConfirm.length} {confirmBulk.what} question(s)?
+            </h3>
+            <p className="text-slate-300">
+              {confirmBulk.plan.ready.length} have no open findings. {confirmBulk.plan.needConfirm.length} still have open findings
+              {confirmBulk.plan.needConfirm.length <= 12 &&
+                ` (#${staged
+                  .filter((q) => confirmBulk.plan.needConfirm.includes(q.id))
+                  .map((q) => q.originalQuestionNumber)
+                  .join(', #')})`}
+              . Approve those only if you compared them with the PDF and they match exactly.
+            </p>
+            {confirmBulk.plan.blocked.length > 0 && (
+              <p className="text-amber-200">
+                {confirmBulk.plan.blocked.length} more have text that was not read with certainty and will stay pending until you edit them.
+              </p>
+            )}
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
+              <button onClick={() => setConfirmBulk(null)} className="px-4 py-2 rounded-lg bg-slate-800 text-slate-200">
+                Cancel
+              </button>
+              {confirmBulk.plan.ready.length > 0 && (
+                <button
+                  onClick={() => {
+                    finishBulkApprove(confirmBulk.what, confirmBulk.plan, false);
+                    setConfirmBulk(null);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold"
+                >
+                  Approve only the {confirmBulk.plan.ready.length} without findings
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  finishBulkApprove(confirmBulk.what, confirmBulk.plan, true);
+                  setConfirmBulk(null);
+                }}
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+              >
+                They match the PDF — approve all {confirmBulk.plan.ready.length + confirmBulk.plan.needConfirm.length}
               </button>
             </div>
           </div>
