@@ -97,7 +97,7 @@ export function createApp(env: AppEnv = process.env, options: { certificates?: C
   // -------------------------------------------------------------------------
 
   app.post('/api/solve-question', aiAccess, solveLimit, express.json({ limit: '1mb' }), async (req, res) => {
-    const { question, options, subject, topic } = req.body ?? {};
+    const { question, options, subject, topic, program, fixedAnswer } = req.body ?? {};
     if (!question || typeof question !== 'string') return res.status(400).json({ error: 'Question statement is required.' });
     if (question.length > MAX_QUESTION_CHARS) {
       return res.status(413).json({ error: `Question statement must be ${MAX_QUESTION_CHARS} characters or fewer.` });
@@ -111,8 +111,10 @@ export function createApp(env: AppEnv = process.env, options: { certificates?: C
       const solution = await solveWithAi(ai, SOLVER_MODEL, {
         question,
         options: choices,
-        subject: typeof subject === 'string' ? subject : undefined,
-        topic: typeof topic === 'string' ? topic : undefined,
+        subject: typeof subject === 'string' ? subject.slice(0, 120) : undefined,
+        topic: typeof topic === 'string' ? topic.slice(0, 120) : undefined,
+        program: program === 'RME' || program === 'REE' ? program : undefined,
+        fixedAnswer: typeof fixedAnswer === 'string' ? fixedAnswer.slice(0, 4) : undefined,
       });
       return res.json({ solution });
     } catch (error: any) {

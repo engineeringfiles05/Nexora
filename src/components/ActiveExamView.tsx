@@ -27,6 +27,12 @@ interface Props {
   config: ExamConfig;
   questions: Question[];
   onFinishExam: (userAnswers: Record<string, string>, flaggedIds: string[], timeConsumedSeconds: number) => void;
+  /**
+   * Instant feedback: records the answer (it can't be changed afterwards) and returns the
+   * question with its correct answer and solution. Without it, questions are expected to
+   * carry their answers already.
+   */
+  onRevealAnswer?: (question: Question, answer: string) => Promise<Question>;
   onExitExam: () => void;
 }
 
@@ -34,6 +40,7 @@ export const ActiveExamView: React.FC<Props> = ({
   config,
   questions,
   onFinishExam,
+  onRevealAnswer,
   onExitExam,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,6 +52,10 @@ export const ActiveExamView: React.FC<Props> = ({
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isFormulaSheetOpen, setIsFormulaSheetOpen] = useState(false);
   const [showInstantExplanation, setShowInstantExplanation] = useState(false);
+  // Instant feedback: questions whose answer was committed and revealed (their choice is locked).
+  const [revealedIds, setRevealedIds] = useState<string[]>([]);
+  const [revealing, setRevealing] = useState<string | null>(null);
+  const [revealError, setRevealError] = useState<{ id: string; message: string } | null>(null);
 
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
@@ -111,14 +122,34 @@ export const ActiveExamView: React.FC<Props> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, currentQuestion, totalQuestions]);
 
+  const reveal = async (question: Question, key: string) => {
+    if (!onRevealAnswer) {
+      setRevealedIds((ids) => [...ids, question.id]);
+      return;
+    }
+    setRevealing(question.id);
+    setRevealError(null);
+    try {
+      await onRevealAnswer(question, key);
+      setRevealedIds((ids) => (ids.includes(question.id) ? ids : [...ids, question.id]));
+    } catch (err) {
+      setRevealError({ id: question.id, message: (err as Error)?.message || 'The answer could not be checked. Try again.' });
+    } finally {
+      setRevealing(null);
+    }
+  };
+
   const handleSelectOption = (key: string) => {
     if (!currentQuestion) return;
+    // With instant feedback the first answer is final: it is recorded before the answer is shown.
+    if (config.instantFeedback && (revealedIds.includes(currentQuestion.id) || revealing === currentQuestion.id)) return;
     setUserAnswers((prev) => ({
       ...prev,
       [currentQuestion.id]: key,
     }));
     if (config.instantFeedback) {
       setShowInstantExplanation(true);
+      void reveal(currentQuestion, key);
     }
   };
 
@@ -265,11 +296,13 @@ export const ActiveExamView: React.FC<Props> = ({
                 </span>
                 {currentQuestion.options.map((option, optIdx) => {
                   const isSelected = currentSelected === option.key;
+                  const locked = config.instantFeedback && (revealedIds.includes(currentQuestion.id) || revealing === currentQuestion.id);
                   return (
                     <div
                       key={`${option.key}-${optIdx}`}
                       onClick={() => handleSelectOption(option.key)}
-                      className={`p-4 rounded-xl border text-sm sm:text-base cursor-pointer transition flex items-center gap-4 ${
+                      aria-disabled={locked || undefined}
+                      className={`p-4 rounded-xl border text-sm sm:text-base ${locked ? 'cursor-not-allowed' : 'cursor-pointer'} transition flex items-center gap-4 ${
                         isSelected
                           ? 'border-indigo-500 bg-indigo-950/40 text-white font-medium shadow-md shadow-indigo-950/50 ring-1 ring-indigo-500'
                           : 'border-slate-800 bg-slate-950/50 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60'
@@ -290,8 +323,22 @@ export const ActiveExamView: React.FC<Props> = ({
                 })}
               </div>
 
-              {/* Instant feedback explanation (If quiz mode with instant feedback enabled) */}
-              {config.instantFeedback && showInstantExplanation && currentSelected && (
+              {config.instantFeedback && currentSelected && revealing === currentQuestion.id && (
+                <p className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 text-xs text-slate-300" role="status">
+                  Recording your answer and checking it…
+                </p>
+              )}
+              {config.instantFeedback && revealError?.id === currentQuestion.id && (
+                <div role="alert" className="p-4 rounded-xl border border-rose-800/60 bg-rose-950/30 text-xs text-rose-200 flex flex-wrap items-center gap-3">
+                  <span className="flex-1">{revealError.message}</span>
+                  <button onClick={() => currentSelected && void reveal(currentQuestion, currentSelected)} className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-semibold">
+                    Try again
+                  </button>
+                </div>
+              )}
+
+              {/* Instant feedback: shown once the answer is recorded, from the revealed key */}
+              {config.instantFeedback && (showInstantExplanation || revealedIds.includes(currentQuestion.id)) && currentSelected && revealedIds.includes(currentQuestion.id) && (
                 <div
                   className={`p-4 rounded-xl border text-xs space-y-2 animate-in fade-in duration-200 ${
                     currentSelected === currentQuestion.correctAnswer

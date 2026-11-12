@@ -36,7 +36,7 @@ test('reviewee queries are filtered the way firestore.rules requires; admins lis
   assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1', null), { examResults: [{ field: 'userId', value: 'uid-1' }] });
   assert.deepEqual(cloudQueryPlan('reviewee', 'uid-1'), { examResults: [{ field: 'userId', value: 'uid-1' }] });
   // Nobody lists the activity log: it is written for the record and has no page.
-  assert.deepEqual(cloudQueryPlan('admin', 'uid-1'), { questions: null, pdfSources: null, examResults: null, users: null });
+  assert.deepEqual(cloudQueryPlan('admin', 'uid-1'), { questions: null, questionKeys: null, pdfSources: null, examResults: null, users: null });
 });
 
 test('users and auditLogs are admin-only in the rules too', async () => {
@@ -149,7 +149,7 @@ test('reviewees only see their own results; admins see all', () => {
 test('signed-in data never touches the shared browser cache', async () => {
   const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
   // Account data comes only from the reducer, which is filled from Firestore.
-  assert.match(app, /const questions = cloud\.questions \?\? \[\]/);
+  assert.match(app, /const list = cloud\.questions \?\? \[\];/);
   assert.match(app, /const examResults = cloud\.examResults \?\? \[\]/);
   assert.match(app, /dispatchCloud\(\{ type: 'reset', uid: user\?\.uid \?\? null \}\)/);
 });

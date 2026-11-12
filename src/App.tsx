@@ -26,6 +26,7 @@ import {
   isApprovedForReviewees,
   isReviewedForExams,
   publishQuestionsToBank,
+  type DuplicateDecision,
   reconcileSourceCounts,
   selectExamQuestions,
 } from './utils/bank.ts';
@@ -41,7 +42,9 @@ import {
   saveAuditLogToFirestore,
   seedInitialFirestoreData,
   backfillContentCourse,
+  migrateAnswerKeys,
 } from './utils/firebaseSync.ts';
+import { mergeKey, revealAnswers } from './utils/answerKeys.ts';
 import {
   cloudQueryPlan,
   cloudReducer,
@@ -106,7 +109,14 @@ export default function App() {
   const signedInUid = authStatus === 'signed-in' && firebaseUser ? firebaseUser.uid : null;
   const currentUser = profile as UserProfile; // only read while signed in
 
-  const questions = cloud.questions ?? [];
+  // Admins load answer keys too and see whole questions; reviewees' questions have no answers
+  // until they have answered them (utils/answerKeys.ts).
+  const questions = useMemo(() => {
+    const list = cloud.questions ?? [];
+    if (!cloud.questionKeys) return list;
+    const keys = new Map(cloud.questionKeys.map((k) => [k.id, k]));
+    return list.map((q) => mergeKey(q, keys.get(q.id)));
+  }, [cloud.questions, cloud.questionKeys]);
   const storedSources = cloud.pdfSources ?? [];
   const examResults = cloud.examResults ?? [];
   const isSignedInAdmin = Boolean(signedInUid) && accountRole === 'admin';
@@ -141,6 +151,10 @@ export default function App() {
   const [activeExamConfig, setActiveExamConfig] = useState<ExamConfig | null>(null);
   const [activeExamQuestions, setActiveExamQuestions] = useState<Question[]>([]);
   const [activeResult, setActiveResult] = useState<ExamResult | null>(null);
+  /** Identifies this sitting in the reviewee's committed answers. */
+  const [examRunId, setExamRunId] = useState('');
+  /** Scoring after submission: answers are committed, then the keys are fetched. */
+  const [scoring, setScoring] = useState<{ error?: string; retry?: () => void } | null>(null);
 
   // Modal Launcher State
   const [launcherModalOpen, setLauncherModalOpen] = useState<boolean>(false);
@@ -245,7 +259,10 @@ export default function App() {
 
       if (account.role === 'admin') {
         // Seed an empty bank, then tag material from before courses existed as REE.
+        // Answers come out of question documents first: question writes that still carry them
+        // are refused by firestore.rules.
         seedInitialFirestoreData(INITIAL_QUESTIONS, INITIAL_PDF_SOURCES, INITIAL_AUDIT_LOGS)
+          .then(() => migrateAnswerKeys())
           .then(() => backfillContentCourse())
           .catch((err) => console.warn('Course backfill skipped:', err));
       }
@@ -416,23 +433,46 @@ export default function App() {
 
     setActiveExamConfig(config);
     setActiveExamQuestions(selection.questions);
+    setExamRunId(`exam-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+    setScoring(null);
     navigate('active-exam');
     return null;
   };
 
-  // Finish exam handler
-  const handleFinishExam = (
+  // Instant feedback: the answer is committed first, then its key is fetched (and the choice locks).
+  const handleRevealAnswer = async (q: Question, answer: string): Promise<Question> => {
+    const [revealed] = await revealAnswers(currentUser.id, examRunId, [q], { [q.id]: answer });
+    setActiveExamQuestions((prev) => prev.map((x) => (x.id === q.id ? revealed! : x)));
+    return revealed!;
+  };
+
+  // Finish exam handler: commit the answers, fetch the keys, then score.
+  const handleFinishExam = async (
     userAnswers: Record<string, string>,
     flaggedIds: string[],
     timeConsumedSeconds: number
   ) => {
     if (!activeExamConfig) return;
+    setScoring({});
+    let revealedQuestions: Question[];
+    try {
+      revealedQuestions = await revealAnswers(currentUser.id, examRunId || `exam-${Date.now()}`, activeExamQuestions, userAnswers);
+    } catch (err) {
+      console.warn('Scoring failed:', err);
+      setScoring({
+        error: (err as Error)?.message || 'Your answers could not be checked. Check your connection and try again.',
+        retry: () => void handleFinishExam(userAnswers, flaggedIds, timeConsumedSeconds),
+      });
+      return;
+    }
+    setScoring(null);
+    setActiveExamQuestions(revealedQuestions);
 
-    const scoreResult = calculateExamScore(activeExamQuestions, userAnswers);
+    const scoreResult = calculateExamScore(revealedQuestions, userAnswers);
 
     const newResult: ExamResult = {
       id: `res-${Date.now()}`,
-      examId: `exam-${Date.now()}`,
+      examId: examRunId || `exam-${Date.now()}`,
       userId: currentUser.id,
       userName: currentUser.name,
       type: activeExamConfig.type,
@@ -452,7 +492,7 @@ export default function App() {
       subjectBreakdown: scoreResult.subjectBreakdown,
       weakTopics: scoreResult.weakTopics,
       strongTopics: scoreResult.strongTopics,
-      questionSnapshots: activeExamQuestions,
+      questionSnapshots: revealedQuestions,
       examConfig: activeExamConfig,
     };
 
@@ -471,18 +511,21 @@ export default function App() {
   };
 
   // Admin: Publish new extracted questions
-  const handlePublishQuestions = (newQuestions: Question[], sourcePdf: PdfSource) => {
-    const published = publishQuestionsToBank(questions, storedSources, newQuestions, sourcePdf);
+  const handlePublishQuestions = (newQuestions: Question[], sourcePdf: PdfSource, decisions: Record<string, DuplicateDecision> = {}) => {
+    const published = publishQuestionsToBank(questions, storedSources, newQuestions, sourcePdf, decisions);
     setQuestions(published.questions);
     setPdfSources(published.sources);
-    // Save the questions as published (with the source ID they were filed under), not the staged copies.
+    // Save the questions as published (with the source ID they were filed under), not the staged
+    // copies, plus bank questions the admin chose to replace with the imported version.
     const added = published.questions.slice(questions.length);
-    const savedSource = published.sources.find((s) => added[0] && s.id === added[0].sourcePdfId) ?? sourcePdf;
-    if (added.length > 0) {
-      batchSaveQuestionsToFirestore(added).catch(reportSaveError('Batch save new questions to Firestore'));
+    const changed = [...added, ...published.replaced];
+    const filedUnder = changed[0]?.sourcePdfId;
+    const savedSource = published.sources.find((s) => filedUnder && s.id === filedUnder) ?? sourcePdf;
+    if (changed.length > 0) {
+      batchSaveQuestionsToFirestore(changed).catch(reportSaveError('Batch save new questions to Firestore'));
       savePdfSourceToFirestore(savedSource).catch(reportSaveError('Save PDF to Firestore'));
     }
-    return { added: added.length, skipped: published.skipped.length };
+    return { added: added.length, skipped: published.skipped.length, replaced: published.replaced.length };
   };
 
   // Admin audit log adder
@@ -690,9 +733,30 @@ export default function App() {
           <ActiveExamView
             config={activeExamConfig}
             questions={activeExamQuestions}
-            onFinishExam={handleFinishExam}
+            onFinishExam={(answers, flags, seconds) => void handleFinishExam(answers, flags, seconds)}
+            onRevealAnswer={handleRevealAnswer}
             onExitExam={() => navigate('reviewee-dashboard')}
           />
+        )}
+
+        {currentView === 'active-exam' && scoring && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Checking your answers">
+            <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-700 p-6 text-center space-y-4">
+              {scoring.error ? (
+                <>
+                  <p className="text-sm text-rose-200">{scoring.error}</p>
+                  <p className="text-xs text-slate-400">Your answers are kept. Nothing is lost by trying again.</p>
+                  <button onClick={scoring.retry} className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white">
+                    Try again
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm text-slate-200 flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin" aria-hidden /> Checking your answers…
+                </p>
+              )}
+            </div>
+          </div>
         )}
 
         {/* EXAMINATION RESULTS & STEP-BY-STEP REVIEW */}

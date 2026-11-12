@@ -181,6 +181,8 @@ export interface ExtractedFigure {
 export interface AiSolution {
   /** Choice key the AI picked, or undefined when it was not confident enough to pick one. */
   suggestedAnswer?: string;
+  /** What the question asks for (the "Find" step). */
+  find?: string;
   confidence: 'high' | 'medium' | 'low';
   explanation: string;
   stepByStepSolution: string;

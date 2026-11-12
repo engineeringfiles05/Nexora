@@ -15,9 +15,15 @@
   - Pending, rejected, suspended and deactivated accounts stay signed in but the app shows only their account status page; the rules refuse them all review material and exam saves, whatever URL they open.
   - The administrator creates reviewee profiles for others (never admins), and can't block, demote or delete their own account (rules and `/api/admin` both refuse).
   - `/api/admin/*` (email change, sign-in block, Auth account deletion) requires the verified administrator's ID token; the shared AI token is not accepted there.
+- **PDF imports** (AI PDF Question Importer):
+  - `importSessions/{sessionId}` and its `drafts/{draftId}` subcollection hold uploaded questionnaires' extraction results and draft questions. Only the administrator can read or write them; drafts reach reviewees only when published into `/questions` (with `isPublished` and the program's `course`).
+  - The uploaded file itself stays in the administrator's browser (IndexedDB) for preview and retries; it is not uploaded to storage.
 - **Question Bank**:
   - Only administrators can create, update, or delete `/questions/{questionId}`.
-  - Reviewees can read questions only if `resource.data.isPublished == true`.
+  - Reviewees can read questions only if `resource.data.isPublished == true` (and of their own course, with an active account).
+  - **Correct answers are not in `/questions`.** The answer, explanation, solution and review notes of each question live in `/questionKeys/{questionId}` (fields listed in `answerFields()` in firestore.rules and `PRIVATE_QUESTION_FIELDS` in `src/utils/answerKeys.ts`); the rules refuse any `/questions` write that contains them.
+  - A reviewee can read a question's key only after committing their own answer to it in `/users/{uid}/responses/{questionId}`: a record they can create once and never change. The app commits all answers when an exam is submitted (then scores it), or one answer at a time in instant-feedback quizzes (where the choice then locks). Only the administrator can list keys.
+  - Questions written before keys existed are split when the administrator signs in (`migrateAnswerKeys`); until then their answers are still in `/questions`.
 - **PDF Sources**:
   - Only administrators can create, update, or delete `/pdfSources/{pdfSourceId}`.
   - Reviewees can read PDF sources only if `resource.data.isPublicToReviewees == true`.

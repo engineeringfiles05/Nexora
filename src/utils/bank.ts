@@ -155,10 +155,6 @@ export function reconcileSourceCounts(source: PdfSource, questions: Question[]):
   };
 }
 
-/**
- * Publishes staged questions. Reimporting a filename keeps that source's ID and settings,
- * and counts are derived from the bank so partial publishes add up.
- */
 /** Bank questions that already hold the same text and choices (same fingerprint). */
 export function findBankDuplicates(bank: Question[], incoming: Question[]): Map<string, Question> {
   const byFingerprint = new Map<string, Question>();
@@ -171,17 +167,84 @@ export function findBankDuplicates(bank: Question[], incoming: Question[]): Map<
   return duplicates;
 }
 
+export interface DuplicateMatch {
+  match: Question;
+  kind: 'exact' | 'near';
+  /** Word overlap of the question text, 0 to 1 (1 for exact matches). */
+  similarity: number;
+}
+
+const NUMBER = /-?\d+(?:[.,]\d+)?/g;
+
+function words(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(NUMBER, ' ')
+      .replace(/[^a-zÀ-ɏ]+/g, ' ')
+      .split(' ')
+      .filter((w) => w.length > 1)
+  );
+}
+
+/** Numbers are compared exactly: "10 Ω" and "20 Ω" are different problems, however alike the wording. */
+function numbersOf(q: Question): string {
+  const all = `${q.question} ${q.options.map((o) => o.text).join(' ')}`.match(NUMBER) ?? [];
+  return all.map((n) => n.replace(',', '.')).sort().join('|');
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (!a.size && !b.size) return 1;
+  let shared = 0;
+  for (const w of a) if (b.has(w)) shared++;
+  return shared / (a.size + b.size - shared);
+}
+
+/**
+ * Exact duplicates (same text and choices) and near duplicates: the same numbers and at least
+ * `threshold` of the question's words in common, for example a re-typed copy with different
+ * punctuation or line breaks.
+ */
+export function findDuplicates(bank: Question[], incoming: Question[], threshold = 0.85): Map<string, DuplicateMatch> {
+  const exact = findBankDuplicates(bank, incoming);
+  const indexed = bank.map((q) => ({ q, words: words(q.question), numbers: numbersOf(q) }));
+  const result = new Map<string, DuplicateMatch>();
+  for (const q of incoming) {
+    const same = exact.get(q.id);
+    if (same) {
+      result.set(q.id, { match: same, kind: 'exact', similarity: 1 });
+      continue;
+    }
+    const w = words(q.question);
+    if (w.size < 4) continue; // too short to judge by wording
+    const n = numbersOf(q);
+    let best: DuplicateMatch | null = null;
+    for (const candidate of indexed) {
+      if (candidate.numbers !== n || candidate.q.id === q.id) continue;
+      const similarity = jaccard(w, candidate.words);
+      if (similarity >= threshold && (!best || similarity > best.similarity)) best = { match: candidate.q, kind: 'near', similarity };
+    }
+    if (best) result.set(q.id, best);
+  }
+  return result;
+}
+
+/** What to do with an imported question that is already in the bank. Default: skip. */
+export type DuplicateDecision = 'skip' | 'replace' | 'keep';
+
 /**
  * Publishes staged questions. Reimporting a filename or the same file under another name
- * keeps that source's ID and settings, counts are derived from the bank so partial publishes
- * add up, and questions whose text and choices are already in the bank are skipped.
+ * keeps that source's ID and settings, and counts are derived from the bank so partial
+ * publishes add up. Questions already in the bank (exact or near duplicates) are skipped,
+ * unless the admin chose to replace the bank copy or keep both.
  */
 export function publishQuestionsToBank(
   questions: Question[],
   sources: PdfSource[],
   incoming: Question[],
-  incomingSource: PdfSource
-): { questions: Question[]; sources: PdfSource[]; skipped: Question[] } {
+  incomingSource: PdfSource,
+  decisions: Record<string, DuplicateDecision> = {}
+): { questions: Question[]; sources: PdfSource[]; skipped: Question[]; replaced: Question[] } {
   const existing = sources.find(
     (source) =>
       source.id === incomingSource.id ||
@@ -191,27 +254,45 @@ export function publishQuestionsToBank(
   const source: PdfSource = existing
     ? { ...existing, status: 'published', ...(incomingSource.fileHash ? { fileHash: incomingSource.fileHash } : {}) }
     : { ...incomingSource, course: contentCourse(incomingSource) };
-  const duplicates = findBankDuplicates(questions, incoming);
+  const duplicates = findDuplicates(questions, incoming);
   const seen = new Set<string>();
   const skipped: Question[] = [];
+  const replacements = new Map<string, Question>(); // bank id -> incoming
   const fresh = incoming.filter((q) => {
     const key = q.contentFingerprint;
-    if (duplicates.has(q.id) || (key && seen.has(key))) {
+    const dup = duplicates.get(q.id);
+    const decision = dup ? decisions[q.id] ?? 'skip' : undefined;
+    if (dup && decision === 'replace' && !replacements.has(dup.match.id)) {
+      replacements.set(dup.match.id, q);
+      return false;
+    }
+    if ((dup && decision !== 'keep') || (key && seen.has(key))) {
       skipped.push(q);
       return false;
     }
     if (key) seen.add(key);
     return true;
   });
-  const published = fresh.map((q) => ({
+  const prepare = (q: Question): Question => ({
     ...q,
     isPublished: true,
     sourcePdfId: source.id,
     sourcePdfName: source.filename,
-    // Questions follow their question set's course (firestore.rules restricts reviewees to it).
-    course: contentCourse(source),
-  }));
-  const nextQuestions = [...questions, ...published];
+    // Questions follow the program chosen at import, else their set's course (firestore.rules
+    // restricts reviewees to their own course).
+    course: q.course === 'RME' || q.course === 'REE' ? q.course : contentCourse(source),
+  });
+  const replaced: Question[] = [];
+  const updatedBank = questions.map((bankQ) => {
+    const replacement = replacements.get(bankQ.id);
+    if (!replacement) return bankQ;
+    // The bank copy keeps its id (so exam history still points at it) and creation date.
+    const next = { ...prepare(replacement), id: bankQ.id, createdAt: bankQ.createdAt, updatedAt: new Date().toISOString() };
+    replaced.push(next);
+    return next;
+  });
+  const published = fresh.map(prepare);
+  const nextQuestions = [...updatedBank, ...published];
   const reconciled = reconcileSourceCounts(source, nextQuestions);
   return {
     questions: nextQuestions,
@@ -219,6 +300,7 @@ export function publishQuestionsToBank(
       ? sources.map((item) => (item.id === existing.id ? reconciled : item))
       : [reconciled, ...sources],
     skipped,
+    replaced,
   };
 }
 

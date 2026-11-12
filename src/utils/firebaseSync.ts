@@ -9,12 +9,14 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
+  deleteField,
   onSnapshot,
   query,
   where,
   writeBatch,
 } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase.ts';
+import { PRIVATE_QUESTION_FIELDS, hasPrivateFields, splitQuestion } from './answerKeys.ts';
 import {
   Question,
   PdfSource,
@@ -78,10 +80,11 @@ export async function seedInitialFirestoreData(
 
     const batch = writeBatch(db);
 
-    // Seed questions
+    // Seed questions: the answer goes to its own admin-only document (utils/answerKeys.ts).
     for (const q of initialQuestions) {
-      const ref = doc(db, 'questions', q.id);
-      batch.set(ref, sanitizeForFirestore({ course: 'REE', ...q }));
+      const { publicDoc, key } = splitQuestion({ course: 'REE', ...q });
+      batch.set(doc(db, 'questions', q.id), sanitizeForFirestore(publicDoc));
+      batch.set(doc(db, 'questionKeys', q.id), sanitizeForFirestore(key));
     }
 
     // Seed PDF sources
@@ -125,13 +128,38 @@ export async function backfillContentCourse(): Promise<number> {
 }
 
 /**
- * Saves or updates a question in Firestore
+ * Moves answers out of question documents written before answer keys existed: each one's
+ * answer, explanation and solution go to `questionKeys/{id}` and are removed from the
+ * question. Runs when the administrator signs in; does nothing once every question is split.
+ */
+export async function migrateAnswerKeys(): Promise<number> {
+  const snapshot = await getDocs(collection(db, 'questions'));
+  const pending = snapshot.docs.filter((d) => hasPrivateFields(d.data()));
+  for (let i = 0; i < pending.length; i += 200) {
+    const batch = writeBatch(db);
+    for (const d of pending.slice(i, i + 200)) {
+      const { key } = splitQuestion({ ...(d.data() as Question), id: d.id });
+      batch.set(doc(db, 'questionKeys', d.id), sanitizeForFirestore(key), { merge: true });
+      batch.update(d.ref, Object.fromEntries(PRIVATE_QUESTION_FIELDS.filter((f) => f in d.data()).map((f) => [f, deleteField()])));
+    }
+    await batch.commit();
+  }
+  return pending.length;
+}
+
+/**
+ * Saves or updates a question in Firestore: the question itself, and its answer key in an
+ * admin-only document, in one batch so they never disagree.
  */
 export async function saveQuestionToFirestore(question: Question): Promise<void> {
   if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = `questions/${question.id}`;
   try {
-    await setDoc(doc(db, 'questions', question.id), sanitizeForFirestore(question));
+    const { publicDoc, key } = splitQuestion(question);
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'questions', question.id), sanitizeForFirestore(publicDoc));
+    batch.set(doc(db, 'questionKeys', question.id), sanitizeForFirestore(key));
+    await batch.commit();
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -144,7 +172,10 @@ export async function deleteQuestionFromFirestore(questionId: string): Promise<v
   if (!isSignedIn()) return; // demo mode: the data stays in this browser
   const path = `questions/${questionId}`;
   try {
-    await deleteDoc(doc(db, 'questions', questionId));
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'questions', questionId));
+    batch.delete(doc(db, 'questionKeys', questionId));
+    await batch.commit();
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }
@@ -164,16 +195,19 @@ export async function batchSaveQuestionsToFirestore(questions: Question[]): Prom
     let docs = 0;
     let bytes = 0;
     for (const q of questions) {
-      const clean = sanitizeForFirestore(q);
-      const size = JSON.stringify(clean).length;
-      if (docs > 0 && (docs >= MAX_DOCS || bytes + size > MAX_BYTES)) {
+      const { publicDoc, key } = splitQuestion(q);
+      const cleanQuestion = sanitizeForFirestore(publicDoc);
+      const cleanKey = sanitizeForFirestore(key);
+      const size = JSON.stringify(cleanQuestion).length + JSON.stringify(cleanKey).length;
+      if (docs > 0 && (docs + 2 > MAX_DOCS || bytes + size > MAX_BYTES)) {
         await batch.commit();
         batch = writeBatch(db);
         docs = 0;
         bytes = 0;
       }
-      batch.set(doc(db, 'questions', q.id), clean);
-      docs++;
+      batch.set(doc(db, 'questions', q.id), cleanQuestion);
+      batch.set(doc(db, 'questionKeys', q.id), cleanKey);
+      docs += 2;
       bytes += size;
     }
     if (docs > 0) await batch.commit();

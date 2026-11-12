@@ -10,13 +10,14 @@
  * empty query result means "no records", not "keep what was there before".
  */
 
+import type { AnswerKey } from './answerKeys.ts';
 import type { Course, ExamResult, PdfSource, Question, UserProfile, UserRole } from '../types/index.ts';
 
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
 
-export type CloudCollection = 'questions' | 'pdfSources' | 'examResults' | 'users';
+export type CloudCollection = 'questions' | 'questionKeys' | 'pdfSources' | 'examResults' | 'users';
 export type QueryFilter = { field: string; value: string | boolean };
 export type QueryFilters = QueryFilter[];
 
@@ -24,12 +25,13 @@ export type QueryFilters = QueryFilter[];
  * What each role may list, mirroring firestore.rules. A list query is only allowed when its
  * filters guarantee every returned document passes the rule, so reviewees must filter: by
  * publication and by their own course. A collection missing from the plan is not queried at
- * all (reviewees: users; reviewees without a course: questions, pdfSources). The activity
+ * all (reviewees: users and questionKeys, whose answers they fetch one by one after answering;
+ * reviewees without a course: questions, pdfSources). The activity
  * log (auditLogs) is only written, never listed: it has no page in the app.
  * `null` means the whole collection.
  */
 export function cloudQueryPlan(role: UserRole, uid: string, course?: Course | null): Partial<Record<CloudCollection, QueryFilters | null>> {
-  if (role === 'admin') return { questions: null, pdfSources: null, examResults: null, users: null };
+  if (role === 'admin') return { questions: null, questionKeys: null, pdfSources: null, examResults: null, users: null };
   const own = { examResults: [{ field: 'userId', value: uid }] };
   if (course !== 'REE' && course !== 'RME') return own;
   return {
@@ -53,6 +55,8 @@ export interface CloudState {
   /** The account this data belongs to. Data for any other uid is discarded. */
   uid: string | null;
   questions: Question[] | null; // null while the first snapshot is loading
+  /** Answer keys (utils/answerKeys.ts), admins only; stays null (never queried) for reviewees. */
+  questionKeys: AnswerKey[] | null;
   pdfSources: PdfSource[] | null;
   examResults: ExamResult[] | null;
   /** Registered accounts, admins only; stays null (never queried) for reviewees. */
@@ -70,6 +74,7 @@ export type CloudAction =
 export const emptyCloudState = (uid: string | null = null): CloudState => ({
   uid,
   questions: null,
+  questionKeys: null,
   pdfSources: null,
   examResults: null,
   users: null,
@@ -108,6 +113,7 @@ export function describeSyncError(collection: CloudCollection | 'write', error: 
   const code = (error as { code?: string })?.code ?? '';
   const what = {
     questions: 'questions',
+    questionKeys: 'answer keys',
     pdfSources: 'question sets',
     examResults: 'exam history',
     users: 'registered reviewees',
