@@ -25,9 +25,12 @@ export const ROUTES = {
   account: { path: '/account', access: 'signed-in' },
   'active-exam': { path: '/exam', access: 'signed-in' },
   'exam-result': { path: '/results', access: 'signed-in' },
+  /** The only page for accounts that are not approved (pending, rejected, suspended, deactivated). */
+  'account-status': { path: '/account-status', access: 'signed-in' },
 
   'admin-dashboard': { path: '/admin', access: 'admin' },
   'user-management': { path: '/admin/users', access: 'admin' },
+  'user-approvals': { path: '/admin/approvals', access: 'admin' },
   'pdf-importer': { path: '/admin/importer', access: 'admin' },
   'question-bank': { path: '/admin/question-bank', access: 'admin' },
   'pdf-sources': { path: '/admin/pdfs', access: 'admin' },
@@ -64,7 +67,11 @@ export function homeFor(role: UserRole): View {
   return role === 'admin' ? 'admin-dashboard' : 'reviewee-dashboard';
 }
 
-export type SessionState = { status: 'signed-out' } | { status: 'signed-in'; role: UserRole };
+/**
+ * `restricted`: signed in, but the account is not approved. Such accounts see only their
+ * account status page, whatever address they open (firestore.rules refuses them the data too).
+ */
+export type SessionState = { status: 'signed-out' } | { status: 'signed-in'; role: UserRole; restricted?: boolean };
 
 export interface RouteDecision {
   view: View;
@@ -78,8 +85,12 @@ export function resolveRoute(requested: View | null, session: SessionState): Rou
     if (requested && ROUTES[requested].access === 'public') return { view: requested };
     return { view: 'login' };
   }
+  if (session.restricted && session.role !== 'admin') {
+    // A reset link still works; everything else is the status page.
+    return { view: requested === 'reset-password' ? requested : 'account-status' };
+  }
   const home = homeFor(session.role);
-  if (!requested) return { view: home };
+  if (!requested || requested === 'account-status') return { view: home };
   const access = ROUTES[requested].access;
   // A signed-in person following a reset link may still set a new password.
   if (access === 'public') return { view: requested === 'reset-password' ? requested : home };

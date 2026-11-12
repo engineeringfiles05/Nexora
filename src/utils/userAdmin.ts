@@ -29,6 +29,7 @@ export interface UserStats {
   active: number;
   inactive: number;
   pending: number;
+  rejected: number;
   suspended: number;
   newlyRegistered: number;
   recentlyActive: number;
@@ -41,6 +42,7 @@ export function computeUserStats(users: UserProfile[], now: number = Date.now())
     active: 0,
     inactive: 0,
     pending: 0,
+    rejected: 0,
     suspended: 0,
     newlyRegistered: 0,
     recentlyActive: 0,
@@ -83,7 +85,7 @@ export interface UserQuery {
 
 export const DEFAULT_USER_QUERY: UserQuery = { search: '', quick: 'all', course: 'any', sort: 'enrolledAt', direction: 'desc' };
 
-const STATUS_ORDER: Record<UserStatus, number> = { pending: 0, active: 1, suspended: 2, inactive: 3 };
+const STATUS_ORDER: Record<UserStatus, number> = { pending: 0, active: 1, rejected: 2, suspended: 3, inactive: 4 };
 
 export function filterUsers(users: UserProfile[], q: UserQuery, now: number = Date.now()): UserProfile[] {
   const terms = q.search.trim().toLowerCase().split(/\s+/).filter(Boolean);

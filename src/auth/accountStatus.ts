@@ -10,14 +10,18 @@
 
 import type { Course, UserProfile, UserStatus } from '../types/index.ts';
 
-export const USER_STATUSES: UserStatus[] = ['active', 'inactive', 'suspended', 'pending'];
+export const USER_STATUSES: UserStatus[] = ['pending', 'active', 'rejected', 'suspended', 'inactive'];
 
 export const STATUS_LABELS: Record<UserStatus, string> = {
-  active: 'Active',
-  inactive: 'Inactive',
-  suspended: 'Suspended',
   pending: 'Pending approval',
+  active: 'Approved',
+  rejected: 'Rejected',
+  suspended: 'Suspended',
+  inactive: 'Deactivated',
 };
+
+/** Every account created by public registration starts here (firestore.rules enforces it). */
+export const NEW_REGISTRATION_STATUS: UserStatus = 'pending';
 
 /** Profiles written before statuses existed are active. */
 export function statusOf(profile: Pick<UserProfile, 'status'> | null | undefined): UserStatus {
@@ -35,6 +39,8 @@ export function blockedMessage(profile: Pick<UserProfile, 'status' | 'statusReas
   switch (statusOf(profile)) {
     case 'pending':
       return 'Your account is waiting for approval by the NEXORA Academy administrator. You can sign in once it has been approved.';
+    case 'rejected':
+      return `Your registration was not approved.${reason} Contact NEXORA Academy if you think this is a mistake.`;
     case 'suspended':
       return `Your account has been suspended.${reason} Contact NEXORA Academy if you think this is a mistake.`;
     case 'inactive':
@@ -49,4 +55,3 @@ export function contentCourse(item: { course?: Course | null }): Course {
   return item.course === 'RME' ? 'RME' : 'REE';
 }
 
-export const SETTINGS_REGISTRATION_DOC = 'registration';

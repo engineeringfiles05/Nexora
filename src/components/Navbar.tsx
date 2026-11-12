@@ -19,6 +19,7 @@ import {
   Cloud,
   LogOut,
   Users,
+  Bell,
 } from 'lucide-react';
 import { UserProfile } from '../types/index.ts';
 import { Avatar } from './Avatar.tsx';
@@ -29,10 +30,12 @@ interface Props {
   currentView: string;
   onNavigate: (view: string) => void;
   pendingVerificationCount: number;
+  /** Registrations waiting for the administrator's approval. */
+  pendingApprovals?: number;
   onLogout?: () => void;
 }
 
-export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, pendingVerificationCount, onLogout }) => {
+export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, pendingVerificationCount, pendingApprovals = 0, onLogout }) => {
   const isAdmin = currentUser.role === 'admin';
   const countdown = getExamCountdown(configuredExamDate());
 
@@ -66,6 +69,11 @@ export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, 
             {isAdmin ? 'Administrator' : `Reviewee${currentUser.course ? ` · ${currentUser.course}` : ''}`}
           </span>
           {isAdmin && pendingVerificationCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" aria-hidden />}
+          {isAdmin && pendingApprovals > 0 && (
+            <button onClick={() => onNavigate('user-approvals')} className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-200 font-semibold hover:bg-amber-500/25">
+              <Bell className="w-3 h-3" /> {pendingApprovals} new registration{pendingApprovals === 1 ? '' : 's'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -209,6 +217,24 @@ export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, 
                 >
                   <Layers className="w-4 h-4" />
                   Overview
+                </button>
+
+                <button
+                  onClick={() => onNavigate('user-approvals')}
+                  title={pendingApprovals ? `${pendingApprovals} registration${pendingApprovals === 1 ? '' : 's'} waiting for approval` : 'User approvals'}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${
+                    currentView === 'user-approvals'
+                      ? 'bg-slate-800 text-indigo-400 border border-slate-700'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4" />
+                  Approvals
+                  {pendingApprovals > 0 && (
+                    <span className="min-w-[18px] px-1 py-0.5 text-[10px] leading-none rounded-full bg-amber-400 text-slate-950 font-extrabold tabular-nums" aria-label={`${pendingApprovals} pending`}>
+                      {pendingApprovals}
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -390,6 +416,13 @@ export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, 
               className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'admin-dashboard' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}
             >
               Overview
+            </button>
+            <button
+              onClick={() => onNavigate('user-approvals')}
+              className={`px-2.5 py-1 rounded whitespace-nowrap flex items-center gap-1 ${currentView === 'user-approvals' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}
+            >
+              Approvals
+              {pendingApprovals > 0 && <span className="px-1 rounded-full bg-amber-400 text-slate-950 text-[10px] font-extrabold tabular-nums">{pendingApprovals}</span>}
             </button>
             <button
               onClick={() => onNavigate('user-management')}

@@ -32,7 +32,7 @@ import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase.ts';
 import { sanitizeForFirestore } from '../utils/firebaseSync.ts';
 import type { Course, UserProfile, UserRole, UserStatus } from '../types/index.ts';
-import { SETTINGS_REGISTRATION_DOC, canAccessPlatform, statusOf } from './accountStatus.ts';
+import { NEW_REGISTRATION_STATUS, canAccessPlatform, statusOf } from './accountStatus.ts';
 import { roleForIdentity } from './roles.ts';
 import { normalizeEmail, sanitizeContact, sanitizeName } from './validation.ts';
 import { writeRememberPreference } from './sessionPolicy.ts';
@@ -108,16 +108,6 @@ export function ensureProfile(user: User): Promise<UserProfile> {
   return request;
 }
 
-/** Whether the administrator requires approval of new registrations (settings/registration). */
-export async function readRegistrationSettings(): Promise<{ requireApproval: boolean }> {
-  try {
-    const snapshot = await getDoc(doc(db, 'settings', SETTINGS_REGISTRATION_DOC));
-    return { requireApproval: snapshot.exists() && snapshot.data()?.requireApproval === true };
-  } catch {
-    return { requireApproval: false };
-  }
-}
-
 const LOGIN_STAMP_INTERVAL_MS = 10 * 60 * 1000;
 
 async function loadOrCreateProfile(user: User): Promise<UserProfile> {
@@ -144,10 +134,9 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
       : null,
     providerOf(user)
   );
-  // firestore.rules only accepts role "reviewee" here (except for the verified site owner),
-  // and status "pending" while the administrator requires approval of new accounts.
-  const { requireApproval } = base.role === 'admin' ? { requireApproval: false } : await readRegistrationSettings();
-  const status: UserStatus = requireApproval ? 'pending' : 'active';
+  // Every new account waits for the administrator's approval; firestore.rules only accepts
+  // role "reviewee" and status "pending" here. The verified site owner is never locked out.
+  const status: UserStatus = base.role === 'admin' ? 'active' : NEW_REGISTRATION_STATUS;
   const profile: UserProfile = { ...base, status, enrolledAt: now, updatedAt: now, ...(status === 'active' ? { lastLoginAt: now } : {}) };
   await setDoc(ref, sanitizeForFirestore(profile));
   return profile;

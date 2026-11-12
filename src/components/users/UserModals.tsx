@@ -233,10 +233,17 @@ export const EditUserModal: React.FC<{
 
 const STATUS_COPY: Record<UserStatus, { title: string; verb: string; explain: string; tone: 'danger' | 'safe' }> = {
   active: {
-    title: 'Activate account',
-    verb: 'Activate',
-    explain: 'The reviewee can sign in again and use all materials for their course. Their history is unchanged.',
+    title: 'Reactivate account',
+    verb: 'Reactivate',
+    explain: 'The reviewee can use NEXORA Academy again with all materials for their course. Their history is unchanged.',
     tone: 'safe',
+  },
+  rejected: {
+    title: 'Reject account',
+    verb: 'Reject',
+    explain:
+      'The registration is declined: the person keeps seeing a "not approved" page and can\u2019t open the dashboard, review materials or examinations. You can still approve the account later.',
+    tone: 'danger',
   },
   inactive: {
     title: 'Deactivate account',
@@ -268,8 +275,12 @@ export const StatusModal: React.FC<{ user: UserProfile; status: UserStatus; onCl
 }) => {
   const copy = STATUS_COPY[status];
   const current = statusOf(user);
-  const title = status === 'active' ? (current === 'suspended' ? 'Restore account' : current === 'pending' ? 'Approve account' : copy.title) : copy.title;
-  const verb = status === 'active' ? (current === 'suspended' ? 'Restore' : current === 'pending' ? 'Approve' : copy.verb) : copy.verb;
+  const approving = status === 'active' && (current === 'pending' || current === 'rejected');
+  const title = approving ? 'Approve account' : copy.title;
+  const verb = approving ? 'Approve' : copy.verb;
+  const explain = approving
+    ? 'The reviewee gets full access to NEXORA Academy for their course straight away. If they are signed in, their pending page opens the dashboard by itself.'
+    : copy.explain;
   const [reason, setReason] = useState(status === 'active' ? '' : user.statusReason ?? '');
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -286,7 +297,7 @@ export const StatusModal: React.FC<{ user: UserProfile; status: UserStatus; onCl
     <Modal title={title} subtitle={`${user.name} · ${user.email}`} onClose={onClose} busy={busy}>
       <div className="space-y-4">
         {failure && <Notice tone="error">{failure}</Notice>}
-        <p className="text-sm text-slate-300 leading-relaxed">{copy.explain}</p>
+        <p className="text-sm text-slate-300 leading-relaxed">{explain}</p>
         {status !== 'active' && (
           <label className="block">
             <span className="block text-xs font-semibold text-slate-300 mb-1.5">
