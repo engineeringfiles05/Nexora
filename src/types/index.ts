@@ -5,16 +5,25 @@
 
 export type UserRole = 'admin' | 'reviewee';
 
+/** The board exam a reviewee is preparing for. */
+export type Course = 'REE' | 'RME';
+
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  /** Display only. Permissions come from the verified sign-in (see auth/roles.ts and firestore.rules). */
   role: UserRole;
   avatar: string;
   title?: string;
   targetExam?: string;
   examDate?: string;
   enrolledAt: string;
+  course?: Course;
+  contactNumber?: string;
+  /** How the account signs in: 'password' (email and password) or 'google.com'. */
+  authProvider?: string;
+  updatedAt?: string;
 }
 
 export type SubjectId = 'math' | 'esas' | 'ee';

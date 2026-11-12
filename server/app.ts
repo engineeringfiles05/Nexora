@@ -18,6 +18,7 @@
 import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import { createRateLimiter, rateLimitAi, requireAiAccess } from './aiGuards.ts';
+import { adminIdentityGate, googleCertificates, type CertificateSource } from './firebaseAuth.ts';
 import { createGeminiReader } from './extraction/imageReader.ts';
 import { createJobStore } from './extraction/jobs.ts';
 import { ExtractionError, runExtraction, type ExtractionProgress, type PipelineResult } from './extraction/pipeline.ts';
@@ -31,7 +32,7 @@ export interface AppEnv {
 export const SERVERLESS_MAX_UPLOAD_BYTES = 3_200_000;
 const SELF_HOSTED_MAX_UPLOAD_BYTES = 60 * 1024 * 1024;
 
-export function createApp(env: AppEnv = process.env) {
+export function createApp(env: AppEnv = process.env, options: { certificates?: CertificateSource } = {}) {
   const app = express();
   const serverless = Boolean(env.VERCEL) || env.NEXORA_SERVERLESS === 'true';
   const isProduction = env.NODE_ENV === 'production';
@@ -43,7 +44,13 @@ export function createApp(env: AppEnv = process.env) {
   const envLimit = (name: string, fallback: number) => Number(env[name]) || fallback;
 
   // Checked before bodies are parsed, so rejected callers can't make the server read a large upload.
-  const aiAccess = requireAiAccess({ token: env.NEXORA_ADMIN_TOKEN || '', isProduction: isProduction || serverless });
+  // A request signed in with Firebase must be the verified administrator (403 for reviewees);
+  // otherwise the shared admin token applies, as before.
+  const identityGate = adminIdentityGate({ certificates: options.certificates ?? googleCertificates(), projectId: env.FIREBASE_PROJECT_ID || undefined });
+  const tokenGate = requireAiAccess({ token: env.NEXORA_ADMIN_TOKEN || '', isProduction: isProduction || serverless });
+  const aiAccess: express.RequestHandler = (req, res, next) => {
+    identityGate(req, res, (err?: unknown) => (err ? next(err) : tokenGate(req, res, next)));
+  };
   // Per process. On serverless each instance counts separately, so these are a floor, not a cap.
   const aiDailyBudget = createRateLimiter({ limit: envLimit('AI_DAILY_LIMIT', 500), windowMs: 24 * HOUR_MS });
   const solveLimit = rateLimitAi(createRateLimiter({ limit: envLimit('AI_SOLVE_HOURLY_LIMIT', 120), windowMs: HOUR_MS }), aiDailyBudget);
@@ -71,6 +78,8 @@ export function createApp(env: AppEnv = process.env) {
       imageReading: Boolean(reader),
       // Never return the admin token here: this route is public. Development doesn't need one.
       adminTokenRequired: Boolean(env.NEXORA_ADMIN_TOKEN) || isProduction || serverless,
+      // The administrator's verified Firebase sign-in is accepted instead of the token.
+      adminSignIn: true,
       platform: serverless ? 'serverless' : 'server',
       extractionJobs: Boolean(jobs),
       streamingExtraction: true,

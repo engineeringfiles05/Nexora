@@ -41,6 +41,7 @@ import {
 import {
   fileToBase64,
   getServerCapabilities,
+  hasIdTokenProvider,
   readSessionToken,
   requestAiSolution,
   runExtractionJob,
@@ -86,6 +87,7 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   const [token, setToken] = useState<string>(() => readSessionToken());
   const [imageReading, setImageReading] = useState<boolean | null>(null);
   const [tokenRequired, setTokenRequired] = useState(true);
+  const [signInAccepted, setSignInAccepted] = useState(false);
   const [server, setServer] = useState<ServerCapabilities | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,8 +120,10 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     getServerCapabilities().then((c) => {
       setServer(c);
       setImageReading(c.imageReading);
-      // Development servers without NEXORA_ADMIN_TOKEN need no token, so the field is hidden.
-      setTokenRequired(c.adminTokenRequired);
+      // Development servers without NEXORA_ADMIN_TOKEN need no token, and a server that verifies
+      // the administrator's sign-in needs none either, so the field is hidden.
+      setTokenRequired(c.adminTokenRequired && !(c.adminSignIn && hasIdTokenProvider()));
+      setSignInAccepted(c.adminSignIn && hasIdTokenProvider());
     });
   }, []);
 
@@ -612,7 +616,8 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
             </label>
           ) : (
             <p className="flex-1 text-xs text-slate-400 flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5" /> Development server: no admin token needed.
+              <KeyRound className="w-3.5 h-3.5" />{' '}
+              {signInAccepted ? 'Signed in as administrator: your sign-in authorizes AI features.' : 'Development server: no admin token needed.'}
             </p>
           )}
           <div className="flex gap-2 md:ml-auto">

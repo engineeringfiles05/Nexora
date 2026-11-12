@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { canSwitchDemoRole, cloudQueryPlan, cloudReducer, describeSyncError, emptyCloudState, sortAuditLogs, visibleResults } from './session.ts';
+import { cloudQueryPlan, cloudReducer, describeSyncError, emptyCloudState, sortAuditLogs, visibleResults } from './session.ts';
 import { RevieweeRosterView } from '../components/RevieweeRosterView.tsx';
 import { countdownLabel, getExamCountdown, parseExamDate } from './examDate.ts';
 import { DEMO_STORAGE_PREFIX, LEGACY_STORAGE_PREFIX, isRecordArray, loadPersisted, savePersisted } from './persistence.ts';
@@ -53,23 +53,21 @@ test('admin audit history comes from Firestore, survives reloads, and respects e
   assert.equal(cloudReducer(s, { type: 'reset', uid: 'other' }).auditLogs, null);
 });
 
-test('App subscribes from the role plan, and the roster uses registered users when signed in', async () => {
+test('App subscribes from the role plan, and the roster lists registered reviewee accounts', async () => {
   const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /const auditLogs = signedInUid \? sortAuditLogs\(cloud\.auditLogs \?\? \[\]\) : demoAudit/);
-  assert.match(app, /\? \(cloud\.users \?\? \[\]\)\.filter\(\(u\) => u\.role === 'reviewee'\)\s*: \[DEMO_USERS\[1\]\]/);
+  assert.match(app, /const auditLogs = sortAuditLogs\(cloud\.auditLogs \?\? \[\]\)/);
+  assert.match(app, /const rosterReviewees: UserProfile\[\] = \(cloud\.users \?\? \[\]\)\.filter\(\(u\) => u\.role === 'reviewee'\)/);
   assert.match(app, /reviewees=\{rosterReviewees\}/);
-  assert.doesNotMatch(app, /reviewees=\{\[DEMO_USERS\[1\]\]\}/);
+  assert.doesNotMatch(app, /DEMO_USERS/);
 });
 
-test('the roster shows honest loading, empty, error and demo states', () => {
+test('the roster shows honest loading, empty and error states', () => {
   const render = (props: Partial<React.ComponentProps<typeof RevieweeRosterView>>) =>
     renderToStaticMarkup(React.createElement(RevieweeRosterView, { reviewees: [], examResults: [], ...props }));
   assert.match(render({ loading: true }), /Loading registered reviewees/);
   assert.match(render({}), /No reviewee accounts yet/);
   assert.match(render({ error: 'Your account is not allowed to load registered reviewees.' }), /not allowed to load registered reviewees/);
-  const demo = render({ reviewees: [DEMO_USERS[1]], isDemo: true });
-  assert.match(demo, /Demo mode: this is a sample reviewee/);
-  assert.match(demo, /Mark Lawrence Cruz/);
+  assert.match(render({ reviewees: [DEMO_USERS[1]] }), /Mark Lawrence Cruz/);
   assert.doesNotMatch(render({ loading: true, reviewees: [DEMO_USERS[1]] }), /Mark Lawrence Cruz/);
 });
 
@@ -136,9 +134,9 @@ test('reviewees only see their own results; admins see all', () => {
 
 test('signed-in data never touches the shared browser cache', async () => {
   const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
-  // Only the demo state is persisted; account data comes from the reducer.
-  assert.match(app, /const questions = signedInUid \? cloud\.questions \?\? \[\] : demoQuestions/);
-  assert.match(app, /const examResults = signedInUid \? cloud\.examResults \?\? \[\] : demoResults/);
+  // Account data comes only from the reducer, which is filled from Firestore.
+  assert.match(app, /const questions = cloud\.questions \?\? \[\]/);
+  assert.match(app, /const examResults = cloud\.examResults \?\? \[\]/);
   assert.match(app, /dispatchCloud\(\{ type: 'reset', uid: user\?\.uid \?\? null \}\)/);
 });
 
@@ -160,34 +158,27 @@ test('demo state never hydrates from the legacy shared cache, and leaves it unto
   assert.notEqual(DEMO_STORAGE_PREFIX, LEGACY_STORAGE_PREFIX);
 });
 
-test('App only uses the demo-namespaced storage hook', async () => {
+test('App keeps no account data or sign-in state in browser storage', async () => {
   const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(app, /usePersistentState/);
-  assert.equal((app.match(/useDemoPersistentState</g) ?? []).length, 4);
+  assert.doesNotMatch(app, /usePersistentState|useDemoPersistentState|localStorage|sessionStorage/);
 });
 
-// ---- Finding 3: no demo role switching while signed in ----
+// ---- Finding 3: roles come from the account, never from a switch in the app ----
 
-test('demo role switching is only possible signed out', () => {
-  assert.equal(canSwitchDemoRole(false), true);
-  assert.equal(canSwitchDemoRole(true), false);
+test('the navbar shows the account role and offers no role switcher', () => {
+  const props = { currentView: 'reviewee-dashboard', onNavigate: () => {}, pendingVerificationCount: 0, onLogout: () => {} };
+  const reviewee = renderToStaticMarkup(React.createElement(Navbar, { ...props, currentUser: { ...DEMO_USERS[1], course: 'RME' as const } }));
+  assert.match(reviewee, /Reviewee · RME/);
+  assert.doesNotMatch(reviewee, /Demo Role|Signed-in role:|Question Bank|Audit Logs/);
+  const admin = renderToStaticMarkup(React.createElement(Navbar, { ...props, currentUser: DEMO_USERS[0] }));
+  assert.match(admin, /Administrator/);
+  assert.match(admin, /Question Bank/);
 });
 
-test('signed in, the role buttons are disabled and labelled as the account role', () => {
-  const props = { currentUser: DEMO_USERS[1], currentView: 'reviewee-dashboard', onNavigate: () => {}, onSwitchRole: () => {}, allUsers: DEMO_USERS, onSelectUser: () => {}, pendingVerificationCount: 0 };
-  const signedIn = renderToStaticMarkup(React.createElement(Navbar, { ...props, canSwitchRole: false }));
-  assert.equal((signedIn.match(/<button[^>]*disabled=""/g) ?? []).length, 2);
-  assert.match(signedIn, /Signed-in role:/);
-  const demo = renderToStaticMarkup(React.createElement(Navbar, { ...props, canSwitchRole: true }));
-  assert.match(demo, /Demo Role:/);
-  assert.doesNotMatch(demo, /<button[^>]*disabled=""/);
-});
-
-test('App guards every path that could replace a signed-in identity', async () => {
+test('App has no demo role switching and routes every page through resolveRoute', async () => {
   const app = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
-  assert.match(app, /const handleSwitchRole = \(role: UserRole\) => \{\s*if \(!canSwitchDemoRole\(Boolean\(firebaseUser\)\)\) return;/);
-  assert.match(app, /if \(canSwitchDemoRole\(Boolean\(firebaseUser\)\)\) setCurrentUser\(u\)/);
-  assert.match(app, /if \(canSwitchDemoRole\(Boolean\(firebaseUser\)\)\) setCurrentUser\(DEMO_USERS\[1\]\)/);
+  assert.doesNotMatch(app, /handleSwitchRole|canSwitchDemoRole|setCurrentUser/);
+  assert.match(app, /resolveRoute\(requestedView, session\)/);
 });
 
 // ---- Finding 4: honest exam countdown from one configured date ----

@@ -20,6 +20,8 @@ export function tokensMatch(provided: string, expected: string): boolean {
  */
 export function requireAiAccess(options: { token: string; isProduction: boolean }) {
   return (req: Request, res: Response, next: NextFunction) => {
+    // Already verified as the administrator's Firebase sign-in (server/firebaseAuth.ts).
+    if (res.locals?.identity?.role === 'admin') return next();
     // In local development or AI Studio preview (non-production), AI features are accessible
     // without requiring users in the UI to manually guess or configure an admin secret.
     if (!options.isProduction) {
