@@ -13,6 +13,7 @@ import {
   reconcileSourceCounts,
   selectExamQuestions,
   splitPublishableQuestions,
+  ALL_QUESTIONS,
 } from './utils/bank.ts';
 import { calculateExamScore } from './utils/examEngine.ts';
 import { createExamCountdown } from './utils/examTimer.ts';
@@ -245,6 +246,19 @@ test('asking for more questions than qualify is refused with the real numbers, n
   if (!short.ok) assert.match(short.error, /Only 12 .* but 15 were requested/);
   const exact = selectExamQuestions(bank, [source()], config({ questionCount: 12 }));
   assert.ok(exact.ok && exact.questions.length === 12);
+});
+
+test('"All questions" takes every question that matches the filters, however many there are', () => {
+  const bank = [
+    ...Array.from({ length: 37 }, (_, i) => question({ id: `q${i}` })),
+    question({ id: 'draft', isPublished: false }),
+    question({ id: 'other-pdf', sourcePdfId: 's2' }),
+  ];
+  const all = selectExamQuestions(bank, [source()], config({ questionCount: ALL_QUESTIONS, pdfSourceId: 's1' }));
+  assert.ok(all.ok);
+  if (all.ok) assert.equal(all.questions.length, 37);
+  const none = selectExamQuestions([], [source()], config({ questionCount: ALL_QUESTIONS }));
+  assert.equal(none.ok, false);
 });
 
 test('the dashboard cards show the same defaults the launcher uses', async () => {

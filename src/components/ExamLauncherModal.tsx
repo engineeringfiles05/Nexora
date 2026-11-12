@@ -16,7 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { ExamType, ExamConfig, Subject, PdfSource, DifficultyLevel, SubjectId } from '../types/index.ts';
-import { EXAM_MODE_DEFAULTS, getSelectableSources } from '../utils/bank.ts';
+import { ALL_QUESTIONS, EXAM_DURATION_OPTIONS, EXAM_MODE_DEFAULTS, getSelectableSources } from '../utils/bank.ts';
 
 interface Props {
   isOpen: boolean;
@@ -268,7 +268,7 @@ export const ExamLauncherModal: React.FC<Props> = ({
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-300">
-              Questions: <strong className="text-indigo-400">{questionCount}</strong>
+              Questions: <strong className="text-indigo-400">{questionCount === ALL_QUESTIONS ? 'All' : questionCount}</strong>
             </label>
             <select
               value={questionCount}
@@ -281,6 +281,7 @@ export const ExamLauncherModal: React.FC<Props> = ({
               <option value={15}>15 Questions</option>
               <option value={20}>20 Questions</option>
               <option value={30}>30 Questions (Intense)</option>
+              <option value={ALL_QUESTIONS}>All matching questions</option>
             </select>
           </div>
 
@@ -293,12 +294,11 @@ export const ExamLauncherModal: React.FC<Props> = ({
               onChange={(e) => setDurationMinutes(Number(e.target.value))}
               className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
             >
-              <option value={10}>10 Minutes</option>
-              <option value={15}>15 Minutes</option>
-              <option value={20}>20 Minutes</option>
-              <option value={30}>30 Minutes</option>
-              <option value={45}>45 Minutes</option>
-              <option value={60}>60 Minutes</option>
+              {EXAM_DURATION_OPTIONS.map((m) => (
+                <option key={m} value={m}>
+                  {m < 60 ? `${m} Minutes` : `${m} Minutes (${m / 60} hr${m > 60 ? 's' : ''})`}
+                </option>
+              ))}
             </select>
           </div>
         </div>

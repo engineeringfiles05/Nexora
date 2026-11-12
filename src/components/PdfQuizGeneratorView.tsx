@@ -17,7 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { PdfSource, Question, DifficultyLevel } from '../types/index.ts';
-import { getSelectableSources, isQuestionEligibleForExam } from '../utils/bank.ts';
+import { ALL_QUESTIONS, EXAM_DURATION_OPTIONS, getSelectableSources, isQuestionEligibleForExam } from '../utils/bank.ts';
 
 interface Props {
   pdfSources: PdfSource[];
@@ -146,7 +146,8 @@ export const PdfQuizGeneratorView: React.FC<Props> = ({
                 <option value={10}>10 Questions</option>
                 <option value={15}>15 Questions</option>
                 <option value={20}>20 Questions</option>
-                <option value={30}>All Available</option>
+                <option value={30}>30 Questions</option>
+                <option value={ALL_QUESTIONS}>All Available</option>
               </select>
             </div>
 
@@ -171,10 +172,11 @@ export const PdfQuizGeneratorView: React.FC<Props> = ({
                 onChange={(e) => setDurationMinutes(Number(e.target.value))}
                 className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
               >
-                <option value={10}>10 Minutes</option>
-                <option value={20}>20 Minutes</option>
-                <option value={30}>30 Minutes</option>
-                <option value={45}>45 Minutes</option>
+                {EXAM_DURATION_OPTIONS.map((m) => (
+                  <option key={m} value={m}>
+                    {m < 60 ? `${m} Minutes` : `${m} Minutes (${m / 60} hr${m > 60 ? 's' : ''})`}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
