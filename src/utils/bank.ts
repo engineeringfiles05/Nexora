@@ -73,6 +73,27 @@ export const EXAM_MODE_DEFAULTS: Record<ExamType, { questionCount: number; durat
   pdf_quiz: { questionCount: 15, durationMinutes: 30, instantFeedback: false },
 };
 
+/** What deleting an uploaded PDF does to the Question Bank. */
+export interface PdfSourceDeletion {
+  /** Questions to delete (with their answer keys). */
+  deleteIds: string[];
+  /** Questions kept as standalone bank questions: no longer tied to the deleted PDF. */
+  detached: Question[];
+}
+
+/**
+ * Exams only use a PDF's questions while the PDF exists, so its questions are either deleted
+ * with it or detached: kept like manually written questions, with the PDF's name for reference.
+ */
+export function planPdfSourceDeletion(sourceId: string, questions: Question[], keepQuestions: boolean): PdfSourceDeletion {
+  const linked = questions.filter((q) => q.sourcePdfId === sourceId);
+  if (!keepQuestions) return { deleteIds: linked.map((q) => q.id), detached: [] };
+  return {
+    deleteIds: [],
+    detached: linked.map(({ sourcePdfId: _id, ...q }) => ({ ...q, updatedAt: new Date().toISOString() })),
+  };
+}
+
 /** questionCount value meaning "every question that matches the filters". */
 export const ALL_QUESTIONS = 0;
 
