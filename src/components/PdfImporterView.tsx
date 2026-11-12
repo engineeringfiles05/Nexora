@@ -3,32 +3,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+/**
+ * AI PDF Question Importer. Several questionnaires can be queued; each is extracted (text layer,
+ * cross-checked against the page image, scanned pages read from their image), optionally
+ * answered and solved by AI, and saved as drafts in Firestore (utils/importQueue.ts). Nothing
+ * reaches reviewees until the administrator approves and publishes it into the Question Bank.
+ */
+
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
   Download,
   Eye,
-  FileCheck,
   FileText,
   FileUp,
-  KeyRound,
   ListChecks,
   Plus,
-  RefreshCw,
+  RotateCcw,
   Search,
   Sparkles,
   Split,
-  UploadCloud,
   X,
 } from 'lucide-react';
 import type { PdfSource, Question } from '../types/index.ts';
-import { IMPORT_PRESETS } from '../data/importPresets.ts';
-import { findBankDuplicates, isReviewedForExams } from '../utils/bank.ts';
-import { classifyQuestionnaireFile, formatFileSize } from '../utils/importFile.ts';
-import { buildExtractionReport, refreshQuestionAssessment } from '../utils/questionExtractor.ts';
+import { findDuplicates, isReviewedForExams, type DuplicateDecision } from '../utils/bank.ts';
+import { buildExtractionReport, refreshQuestionAssessment, SUBJECT_NAMES } from '../utils/questionExtractor.ts';
 import {
-  applyAiSolution,
   approvalBlocker,
   approveQuestion,
   issuesToConfirm,
@@ -38,36 +39,31 @@ import {
   saveEdit,
   setAnswer,
 } from '../utils/importReview.ts';
-import {
-  fileToBase64,
-  getServerCapabilities,
-  hasIdTokenProvider,
-  readSessionToken,
-  requestAiSolution,
-  runExtractionJob,
-  runExtractionStream,
-  uploadTooLarge,
-  BACKEND_UNAVAILABLE,
-  type ServerCapabilities,
-  sha256Hex,
-  writeSessionToken,
-  type ExtractionResult,
-  type JobProgress,
-} from '../utils/importerClient.ts';
+import { hasIdTokenProvider, readSessionToken, writeSessionToken } from '../utils/importerClient.ts';
+import * as importQueue from '../utils/importQueue.ts';
+import { totals as importTotals, type ImportSession } from '../utils/importSessions.ts';
+import { parseSolutionSections } from '../utils/solutionFormat.ts';
 import { PdfPageViewer, type ViewerHighlight } from './importer/PdfPageViewer.tsx';
 import { QuestionReviewCard, STATUS_STYLE } from './importer/QuestionReviewCard.tsx';
 import { QuestionEditor } from './importer/QuestionEditor.tsx';
 import { ExtractionReportPanel } from './importer/ExtractionReportPanel.tsx';
 import { ExamPreview } from './importer/ExamPreview.tsx';
+import { ImportDashboard } from './importer/ImportDashboard.tsx';
+import { ImportUploader, type UploadSettings } from './importer/ImportUploader.tsx';
+import { ImportQueueList } from './importer/ImportQueueList.tsx';
 
 interface Props {
   existingQuestions: Question[];
   pdfSources: PdfSource[];
-  onPublishQuestions: (newQuestions: Question[], sourcePdf: PdfSource) => { added: number; skipped: number } | void;
+  onPublishQuestions: (
+    newQuestions: Question[],
+    sourcePdf: PdfSource,
+    decisions?: Record<string, DuplicateDecision>
+  ) => { added: number; skipped: number; replaced?: number } | void;
   onAddAuditLog: (action: string, details: string, badge?: string) => void;
 }
 
-type Filter = 'all' | 'attention' | 'incomplete' | 'needs_review' | 'verified' | 'approved' | 'rejected';
+type Filter = 'all' | 'attention' | 'incomplete' | 'needs_review' | 'verified' | 'approved' | 'rejected' | 'unanswered' | 'duplicates' | 'selected';
 
 const REPORT_LABEL = { verified: 'Verified', needs_review: 'Needs review', incomplete: 'Incomplete', failed: 'Failed' } as const;
 const REPORT_STYLE = {
@@ -77,32 +73,34 @@ const REPORT_STYLE = {
   failed: 'bg-rose-900 text-rose-100 border-rose-600',
 } as const;
 
-export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources, onPublishQuestions, onAddAuditLog }) => {
-  // ----- input -----
-  const [file, setFile] = useState<File | null>(null);
-  const [fileHash, setFileHash] = useState<string>('');
-  const [presetId, setPresetId] = useState<string>('custom');
-  const [rawText, setRawText] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
-  const [token, setToken] = useState<string>(() => readSessionToken());
-  const [imageReading, setImageReading] = useState<boolean | null>(null);
-  const [tokenRequired, setTokenRequired] = useState(true);
-  const [signInAccepted, setSignInAccepted] = useState(false);
-  const [server, setServer] = useState<ServerCapabilities | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const SELECTED_KEY = 'nexora.importer.session';
+const readSelected = () => {
+  try {
+    return sessionStorage.getItem(SELECTED_KEY);
+  } catch {
+    return null;
+  }
+};
+const writeSelected = (id: string | null) => {
+  try {
+    if (id) sessionStorage.setItem(SELECTED_KEY, id);
+    else sessionStorage.removeItem(SELECTED_KEY);
+  } catch {
+    // Storage blocked: the open import just isn't remembered.
+  }
+};
 
-  // ----- processing -----
-  const [processing, setProcessing] = useState(false);
-  const [progress, setProgress] = useState<JobProgress | null>(null);
+export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources, onPublishQuestions, onAddAuditLog }) => {
+  const store = useSyncExternalStore(importQueue.subscribe, importQueue.getState, importQueue.getState);
+  const [token, setToken] = useState<string>(() => readSessionToken());
+  const [sessionId, setSessionId] = useState<string | null>(readSelected);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
+  const [repeat, setRepeat] = useState<{ files: File[]; settings: UploadSettings; names: string[] } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ImportSession | null>(null);
+  const [confirmReextract, setConfirmReextract] = useState(false);
 
-  // ----- staging -----
-  const [result, setResult] = useState<Omit<ExtractionResult, 'questions'> | null>(null);
-  const [staged, setStaged] = useState<Question[]>([]);
-  const [publishedIds, setPublishedIds] = useState<string[]>([]);
-  const [acknowledgedMissing, setAcknowledgedMissing] = useState<number[]>([]);
+  // ----- review UI state -----
   const [tab, setTab] = useState<'review' | 'report' | 'preview'>('review');
   const [mobilePanel, setMobilePanel] = useState<'pdf' | 'questions'>('questions');
   const [viewerPage, setViewerPage] = useState(1);
@@ -110,26 +108,68 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [onlyThisPage, setOnlyThisPage] = useState(false);
+  const [checked, setChecked] = useState<string[]>([]);
   const [editing, setEditing] = useState<{ question: Question; isNew: boolean } | null>(null);
   const [confirmApprove, setConfirmApprove] = useState<Question | null>(null);
   const [solutionFor, setSolutionFor] = useState<Question | null>(null);
-  const [aiBusy, setAiBusy] = useState<string[]>([]);
-  const [bulkAi, setBulkAi] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
-    getServerCapabilities().then((c) => {
-      setServer(c);
-      setImageReading(c.imageReading);
-      // Development servers without NEXORA_ADMIN_TOKEN need no token, and a server that verifies
-      // the administrator's sign-in needs none either, so the field is hidden.
-      setTokenRequired(c.adminTokenRequired && !(c.adminSignIn && hasIdTokenProvider()));
-      setSignInAccepted(c.adminSignIn && hasIdTokenProvider());
-    });
+    void importQueue.load();
   }, []);
+
+  useEffect(() => {
+    importQueue.setBank(existingQuestions);
+  }, [existingQuestions]);
 
   useEffect(() => {
     writeSessionToken(token);
   }, [token]);
+
+  const server = store.server;
+  const aiAvailable = Boolean(server?.imageReading);
+  const tokenRequired = Boolean(server?.adminTokenRequired) && !(server?.adminSignIn && hasIdTokenProvider());
+  const signInAccepted = Boolean(server?.adminSignIn && hasIdTokenProvider());
+
+  // ----- the open import -----
+  const session = sessionId ? store.sessions.find((s) => s.id === sessionId) ?? null : null;
+  const staged = useMemo(() => (sessionId ? store.drafts[sessionId] ?? [] : []), [store.drafts, sessionId]);
+  const result = session?.result ?? null;
+  const file = sessionId ? store.files[sessionId] ?? null : null;
+  const publishedIds = session?.publishedIds ?? [];
+  const acknowledgedMissing = session?.acknowledgedMissing ?? [];
+  const decisions = session?.duplicateDecisions ?? {};
+
+  useEffect(() => {
+    if (!sessionId || !store.loaded) return;
+    if (!store.sessions.some((s) => s.id === sessionId)) {
+      setSessionId(null);
+      writeSelected(null);
+      return;
+    }
+    void importQueue.open(sessionId);
+  }, [sessionId, store.loaded, store.sessions.length]);
+
+  const openSession = (id: string) => {
+    setSessionId(id);
+    writeSelected(id);
+    setChecked([]);
+    setFilter('all');
+    setSearch('');
+    setTab('review');
+    setSelectedId(null);
+    setViewerPage(1);
+    void importQueue.open(id).then(() => {
+      const first = importQueue.getState().drafts[id]?.[0];
+      if (first) {
+        setSelectedId(first.id);
+        setViewerPage(first.sourcePdfPage ?? 1);
+      }
+      requestAnimationFrame(() => document.getElementById('import-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    });
+  };
+
+  const setStaged = (fn: (prev: Question[]) => Question[]) => sessionId && importQueue.updateDrafts(sessionId, fn);
+  const update = (id: string, fn: (q: Question) => Question) => setStaged((prev) => prev.map((q) => (q.id === id ? fn(q) : q)));
 
   // ----- derived -----
   const report = useMemo(() => {
@@ -150,30 +190,33 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     });
   }, [result, staged, acknowledgedMissing]);
 
-  const bankDuplicates = useMemo(() => findBankDuplicates(existingQuestions, staged), [existingQuestions, staged]);
+  const duplicates = useMemo(() => findDuplicates(existingQuestions, staged), [existingQuestions, staged]);
+  const allTotals = useMemo(() => importTotals(store.sessions), [store.sessions]);
+  const importedBefore = useMemo(
+    () => (session ? pdfSources.find((s) => (session.fileHash && s.fileHash === session.fileHash) || s.filename.toLowerCase() === session.filename.toLowerCase()) ?? null : null),
+    [session, pdfSources]
+  );
 
-  const existingSource = useMemo(() => {
-    const name = file?.name ?? IMPORT_PRESETS.find((p) => p.id === presetId)?.name;
-    return pdfSources.find((s) => (fileHash && s.fileHash === fileHash) || (name && s.filename.toLowerCase() === name.toLowerCase())) ?? null;
-  }, [file, fileHash, presetId, pdfSources]);
-
+  const publishable = (q: Question) => q.reviewStatus === 'approved' && isReviewedForExams(q) && !publishedIds.includes(q.id);
   const counts = useMemo(() => {
     const live = staged.filter((q) => q.reviewStatus !== 'rejected');
     return {
       total: live.length,
       approved: live.filter((q) => q.reviewStatus === 'approved').length,
-      autoVerified: live.filter((q) => q.reviewStatus === 'pending' && q.contentStatus === 'verified').length,
-      publishable: live.filter((q) => q.reviewStatus === 'approved' && isReviewedForExams(q) && !publishedIds.includes(q.id)).length,
+      autoVerified: live.filter((q) => q.reviewStatus === 'pending' && q.contentStatus === 'verified' && !approvalBlocker(q)).length,
+      publishable: live.filter(publishable).length,
+      selectedPublishable: live.filter((q) => checked.includes(q.id) && publishable(q)).length,
       approvedNoAnswer: live.filter((q) => q.reviewStatus === 'approved' && !isReviewedForExams(q)).length,
       needAi: live.filter((q) => !q.aiSolution && q.options.length >= 2).length,
+      unanswered: live.filter((q) => !q.correctAnswer).length,
     };
-  }, [staged, publishedIds]);
+  }, [staged, publishedIds, checked]);
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
     return staged.filter((q) => {
       if (onlyThisPage && !(q.sourcePdfPages ?? [q.sourcePdfPage]).includes(viewerPage)) return false;
-      if (term && !`${q.originalQuestionNumber} ${q.question} ${q.options.map((o) => o.text).join(' ')}`.toLowerCase().includes(term)) return false;
+      if (term && !`${q.originalQuestionNumber} ${q.question} ${q.options.map((o) => o.text).join(' ')} ${q.topic}`.toLowerCase().includes(term)) return false;
       switch (filter) {
         case 'attention':
           return q.reviewStatus === 'pending' && q.contentStatus !== 'verified';
@@ -184,11 +227,17 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
         case 'approved':
         case 'rejected':
           return q.reviewStatus === filter;
+        case 'unanswered':
+          return q.reviewStatus !== 'rejected' && !q.correctAnswer;
+        case 'duplicates':
+          return duplicates.has(q.id);
+        case 'selected':
+          return checked.includes(q.id);
         default:
           return true;
       }
     });
-  }, [staged, filter, search, onlyThisPage, viewerPage]);
+  }, [staged, filter, search, onlyThisPage, viewerPage, duplicates, checked]);
 
   const highlights: ViewerHighlight[] = useMemo(
     () =>
@@ -205,97 +254,31 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     [staged, selectedId]
   );
 
-  // ----- input handlers -----
-  const loadFile = async (f: File) => {
-    const kind = classifyQuestionnaireFile(f);
-    if (!kind) {
-      setError(`"${f.name}" is not supported. Choose a PDF or a TXT file.`);
-      return;
-    }
-    if (f.size > 60 * 1024 * 1024) {
-      setError(`"${f.name}" is larger than 60 MB. Split it into smaller files.`);
-      return;
-    }
-    setError(null);
-    setPresetId('custom');
-    setFile(kind === 'pdf' ? f : null);
-    setFileHash('');
-    if (kind === 'text') {
-      const text = await f.text(); // the whole file; nothing is truncated
-      setRawText(text);
-      setPresetId(`file:${f.name}`);
-      setFileHash(await sha256Hex(text).catch(() => ''));
-    } else {
-      setRawText('');
-      setFileHash(await sha256Hex(await f.arrayBuffer()).catch(() => ''));
-    }
-  };
-
-  const choosePreset = (id: string) => {
-    const preset = IMPORT_PRESETS.find((p) => p.id === id);
-    if (!preset) return;
-    setPresetId(id);
-    setFile(null);
-    setFileHash('');
-    setRawText(preset.text.trim());
-    setError(null);
-  };
-
-  const inputName = file?.name ?? (presetId.startsWith('file:') ? presetId.slice(5) : IMPORT_PRESETS.find((p) => p.id === presetId)?.name);
-  const hasInput = Boolean(file) || Boolean(rawText.trim());
-
-  // ----- extraction -----
-  const startExtraction = async () => {
-    if (!hasInput) return;
-    if (server && !server.available) {
-      setError(BACKEND_UNAVAILABLE);
-      return;
-    }
-    const tooLarge = file && server ? uploadTooLarge(file.size, server) : null;
-    if (tooLarge) {
-      setError(tooLarge);
-      return;
-    }
-    setProcessing(true);
+  // ----- uploads -----
+  const startImport = async (files: File[], settings: UploadSettings, allowRepeat = false) => {
     setError(null);
     setNotice(null);
-    setProgress({ stage: 'Uploading the document', percent: 1 });
-    cancelRef.current = { cancelled: false };
-    try {
-      const filename = inputName || 'Uploaded_Questionnaire.pdf';
-      const body = file
-        ? { base64Pdf: await fileToBase64(file), filename, fileSize: formatFileSize(file.size) }
-        : { rawText, filename, fileSize: formatFileSize(new Blob([rawText]).size) };
-      // Streaming works everywhere, including serverless hosting; jobs only on older servers.
-      const data =
-        server?.streamingExtraction || !server?.extractionJobs
-          ? await runExtractionStream(body, token, setProgress, cancelRef.current)
-          : await runExtractionJob(body, token, setProgress, cancelRef.current);
-      const { questions, ...meta } = data;
-      setResult(meta);
-      setStaged(questions);
-      setPublishedIds([]);
-      setAcknowledgedMissing([]);
-      setSelectedId(questions[0]?.id ?? null);
-      setViewerPage(questions[0]?.sourcePdfPage ?? 1);
-      setTab(questions.length ? 'review' : 'report');
-      setFilter('all');
-      onAddAuditLog(
-        'PDF Extraction Completed',
-        `Extracted ${questions.length} question(s) from "${filename}" (${data.totalPages} page(s)). Status: ${REPORT_LABEL[data.report.overallStatus]}. ${data.report.questionsRequiringVerification} need review.`,
-        REPORT_LABEL[data.report.overallStatus]
+    setRepeat(null);
+    const outcome = await importQueue.enqueue(files, { ...settings, autoAnswer: settings.autoAnswer && aiAvailable, allowRepeat });
+    const parts: string[] = [];
+    if (outcome.queued.length) {
+      parts.push(
+        `${outcome.queued.length} file${outcome.queued.length === 1 ? '' : 's'} queued. Processing continues in the background while you use other pages; results are saved as drafts.`
       );
-    } catch (e: any) {
-      setError(e?.message || 'The document could not be processed.');
-    } finally {
-      setProcessing(false);
-      setProgress(null);
+      if (!sessionId) openSession(outcome.queued[0]!);
     }
+    if (outcome.rejected.length) setError(outcome.rejected.map((r) => `${r.name}: ${r.reason}`).join(' '));
+    if (outcome.repeated.length) {
+      setRepeat({
+        files: files.filter((f) => outcome.repeated.some((r) => r.name === f.name)),
+        settings,
+        names: outcome.repeated.map((r) => r.name),
+      });
+    }
+    if (parts.length) setNotice(parts.join(' '));
   };
 
   // ----- review actions -----
-  const update = (id: string, fn: (q: Question) => Question) => setStaged((prev) => prev.map((q) => (q.id === id ? fn(q) : q)));
-
   const selectQuestion = (q: Question) => {
     setSelectedId(q.id);
     const first = q.sourceRegions?.[0]?.page ?? q.sourcePdfPage;
@@ -325,54 +308,49 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     setNotice(`Approved ${n} question(s) whose two readings matched with no open issues.`);
   };
 
+  const approveChecked = () => {
+    let n = 0;
+    let held = 0;
+    setStaged((prev) =>
+      prev.map((q) => {
+        if (!checked.includes(q.id) || q.reviewStatus !== 'pending') return q;
+        if (approvalBlocker(q) || issuesToConfirm(q).length) {
+          held++;
+          return q;
+        }
+        n++;
+        return approveQuestion(q);
+      })
+    );
+    setNotice(`Approved ${n} selected question(s).${held ? ` ${held} have open findings: open each one and approve it after comparing with the PDF.` : ''}`);
+  };
+
   const move = (id: string, dir: -1 | 1) =>
     setStaged((prev) => {
       const i = prev.findIndex((q) => q.id === id);
       const j = i + dir;
       if (i < 0 || j < 0 || j >= prev.length) return prev;
       const copy = [...prev];
-      [copy[i], copy[j]] = [copy[j], copy[i]];
+      [copy[i], copy[j]] = [copy[j]!, copy[i]!];
       return copy; // original question numbers are kept; only the exam order changes
     });
 
-  const askAi = async (q: Question) => {
-    setAiBusy((b) => [...b, q.id]);
-    try {
-      const solution = await requestAiSolution(q, token);
-      update(q.id, (x) => applyAiSolution(x, solution));
-    } catch (e: any) {
-      setError(`AI solution for #${q.originalQuestionNumber}: ${e?.message || e}`);
-      throw e;
-    } finally {
-      setAiBusy((b) => b.filter((id) => id !== q.id));
-    }
+  const solve = (q: Question, mode: 'answer' | 'solution') => {
+    if (!sessionId) return;
+    importQueue.solveQuestion(sessionId, q.id, mode).catch((e: any) => setError(`AI ${mode === 'solution' ? 'solution' : 'answer'} for #${q.originalQuestionNumber}: ${e?.message || e}`));
   };
 
-  const askAiForAll = async () => {
-    const queue = staged.filter((q) => q.reviewStatus !== 'rejected' && !q.aiSolution && q.options.length >= 2);
-    setBulkAi({ done: 0, total: queue.length });
-    let failures = 0;
-    let index = 0;
-    const worker = async () => {
-      while (index < queue.length) {
-        const q = queue[index++];
-        try {
-          await askAi(q);
-        } catch {
-          failures++;
-        }
-        setBulkAi((s) => (s ? { ...s, done: s.done + 1 } : s));
-      }
-    };
-    await Promise.all([worker(), worker()]);
-    setBulkAi(null);
-    setNotice(`AI solutions added for ${queue.length - failures} question(s)${failures ? `; ${failures} failed` : ''}. Question text and choices were not changed.`);
+  const answerAll = async () => {
+    if (!sessionId) return;
+    const outcome = await importQueue.answerAll(sessionId);
+    setNotice(`AI answers added for ${outcome.done - outcome.failed} question(s)${outcome.failed ? `; ${outcome.failed} failed (see the import log)` : ''}. Question text and choices were not changed.`);
   };
 
   const addMissing = (n?: number) => {
     if (!result) return;
     const number = n ?? Math.max(0, ...staged.map((q) => q.originalQuestionNumber ?? 0)) + 1;
-    setEditing({ question: newManualQuestion(number, viewerPage, result.sourcePdfId, result.filename, result.documentHash), isNew: true });
+    const blank = newManualQuestion(number, viewerPage, result.sourcePdfId, result.filename, result.documentHash);
+    setEditing({ question: { ...blank, course: session?.program, ...(session && session.subjectId !== 'auto' ? { subjectId: session.subjectId, subjectName: SUBJECT_NAMES[session.subjectId] } : {}) }, isNew: true });
   };
 
   const saveEditing = (draft: Question) => {
@@ -392,20 +370,24 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     setEditing(null);
   };
 
-  const publish = () => {
-    if (!result) return;
-    const ready = staged.filter((q) => q.reviewStatus === 'approved' && isReviewedForExams(q) && !publishedIds.includes(q.id));
+  const publish = (which: 'approved' | 'selected') => {
+    if (!result || !session) return;
+    const ready = staged.filter((q) => publishable(q) && (which === 'approved' || checked.includes(q.id)));
     if (ready.length === 0) {
-      setError('Nothing is ready to publish. A question needs administrator approval and a verified answer.');
+      setError(
+        which === 'selected'
+          ? 'None of the selected questions can be published yet. A question needs administrator approval and a verified answer.'
+          : 'Nothing is ready to publish. A question needs administrator approval and a verified answer.'
+      );
       return;
     }
     const source: PdfSource = {
       id: result.sourcePdfId,
       filename: result.filename,
       originalName: result.filename,
-      fileSize: result.report.fileSize ?? (file ? formatFileSize(file.size) : 'Unknown'),
+      fileSize: result.report.fileSize ?? session.fileSize,
       pageCount: result.totalPages,
-      uploadDate: new Date().toISOString().split('T')[0],
+      uploadDate: new Date().toISOString().split('T')[0]!,
       status: 'published',
       questionsCount: ready.length,
       verifiedCount: ready.length,
@@ -413,23 +395,31 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
       subjectCoverage: [],
       isPublicToReviewees: true,
       allowedModes: ['quiz', 'practice', 'preboard', 'mock'],
-      notes: `Imported with the strict PDF importer on ${new Date().toLocaleDateString()}. Every published question was approved by an administrator.`,
+      notes: `Imported with the AI PDF importer on ${new Date().toLocaleDateString()}. Every published question was approved by an administrator.`,
       ...(report ? { extractionReport: report } : {}),
       fileHash: result.documentHash,
+      course: session.program,
     };
-    const toPublish = ready.map((q) => refreshQuestionAssessment({ ...q, isPublished: true }));
-    const outcome = onPublishQuestions(toPublish, source) || { added: toPublish.length, skipped: 0 };
-    setPublishedIds((prev) => [...prev, ...ready.map((q) => q.id)]);
+    const toPublish = ready.map((q) => refreshQuestionAssessment({ ...q, isPublished: true, course: q.course ?? session.program }));
+    const outcome = onPublishQuestions(toPublish, source, decisions) || { added: toPublish.length, skipped: 0, replaced: 0 };
+    const replaced = outcome.replaced ?? 0;
+    importQueue.updateSession(
+      session.id,
+      (s) => ({ publishedIds: [...s.publishedIds, ...ready.map((q) => q.id)] }),
+      `Published ${outcome.added} question(s)${replaced ? `, replaced ${replaced} in the bank` : ''}${outcome.skipped ? `, skipped ${outcome.skipped} duplicate(s)` : ''}.`
+    );
+    void importQueue.flushDrafts(session.id);
+    setChecked((c) => c.filter((id) => !ready.some((q) => q.id === id)));
     const held = staged.filter((q) => q.reviewStatus !== 'rejected' && !publishedIds.includes(q.id) && !ready.includes(q)).length;
     onAddAuditLog(
       'Questions Published to Bank',
-      `Published ${outcome.added} admin-approved question(s) from "${result.filename}"${outcome.skipped ? `; skipped ${outcome.skipped} already in the bank` : ''}.`,
+      `Published ${outcome.added} admin-approved ${session.program} question(s) from "${result.filename}"${replaced ? `; replaced ${replaced} bank question(s)` : ''}${outcome.skipped ? `; skipped ${outcome.skipped} already in the bank` : ''}.`,
       'Published'
     );
     setNotice(
-      `Published ${outcome.added} question(s) to the Question Bank.${outcome.skipped ? ` ${outcome.skipped} were already in the bank and were skipped.` : ''}${
+      `Published ${outcome.added} question(s) to the Question Bank${replaced ? ` and replaced ${replaced}` : ''}.${outcome.skipped ? ` ${outcome.skipped} duplicate(s) were skipped.` : ''}${
         held ? ` ${held} question(s) are still waiting for approval or an answer.` : ''
-      }`
+      } Published questions are available to ${session.program} reviewees in the exam modules allowed for this question set.`
     );
   };
 
@@ -454,17 +444,20 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     requestAnimationFrame(() => document.getElementById(`staged-${q.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   };
 
+  const toggleChecked = (id: string) => setChecked((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
+  const answering = session?.status === 'answering';
+
   // ----- render -----
   return (
     <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
       <header className="flex flex-col gap-2 border-b border-slate-800 pb-5">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
           <FileUp className="w-8 h-8 text-indigo-400 shrink-0" />
-          PDF Question Importer
+          AI PDF Question Importer
         </h1>
         <p className="text-xs sm:text-sm text-slate-400 max-w-4xl">
-          Questions and choices are taken from the PDF exactly as printed. Each page is checked against an independent reading of its image when page-image reading is
-          available, anything uncertain is flagged, and nothing reaches reviewees until an administrator approves it.
+          Questions and choices are taken from the PDF exactly as printed and checked against an independent reading of each page image. AI then works out answers and
+          step-by-step solutions, flagging anything it can't determine. Everything is saved as drafts; nothing reaches reviewees until you approve and publish it.
         </p>
       </header>
 
@@ -477,6 +470,12 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
           </button>
         </div>
       )}
+      {(store.loadError || store.saveError) && (
+        <div role="alert" className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-800/70 text-amber-100 text-xs flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-300 shrink-0" />
+          <span className="flex-1">{store.loadError ?? store.saveError}</span>
+        </div>
+      )}
       {notice && (
         <div role="status" className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/70 text-emerald-200 text-xs flex items-start gap-3">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
@@ -486,185 +485,61 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
           </button>
         </div>
       )}
-
-      {/* ---------- Upload ---------- */}
-      <section className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 space-y-4 shadow-xl">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <UploadCloud className="w-5 h-5 text-indigo-400" />
-              Upload a questionnaire
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Text PDFs, scanned papers, multi-column layouts, equations, diagrams and tables. Up to{' '}
-              {server?.maxUploadBytes ? formatFileSize(server.maxUploadBytes) : '60 MB'}
-              {server?.timeLimitSeconds ? ` and about ${Math.floor(server.timeLimitSeconds / 60)} minutes of processing per file on this hosting` : ''}.
-            </p>
-          </div>
-          <span
-            className={`self-start px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-              imageReading ? 'bg-emerald-950 text-emerald-300 border-emerald-800/60' : 'bg-amber-950 text-amber-300 border-amber-800/60'
-            }`}
-            title={
-              imageReading
-                ? 'Scanned pages are read from their image, and every text page is cross-checked against its image.'
-                : 'Without GEMINI_API_KEY on the server, scanned pages cannot be read and text pages are not cross-checked.'
-            }
-          >
-            {server === null
-              ? 'Checking server…'
-              : !server.available
-                ? 'Extraction service unavailable'
-                : imageReading
-                  ? 'Page-image reading & cross-check: on'
-                  : 'Page-image reading: off (text layer only)'}
+      {repeat && (
+        <div role="alert" className="p-3.5 rounded-xl bg-amber-950/50 border border-amber-800/60 text-amber-100 text-xs flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="flex-1">
+            <strong>Already imported:</strong> {repeat.names.join(', ')}. The same file is in your imports below, so it was not processed again.
           </span>
+          <button onClick={() => void startImport(repeat.files, repeat.settings, true)} className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold">
+            Import again anyway
+          </button>
+          <button onClick={() => setRepeat(null)} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200">
+            Dismiss
+          </button>
         </div>
+      )}
 
-        {server && !server.available && (
-          <div role="alert" className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-800/70 text-rose-100 text-xs space-y-1">
-            <p className="font-bold">The PDF importer can't run on this deployment.</p>
-            <p>{BACKEND_UNAVAILABLE}</p>
-            <p className="text-rose-200/80">Nothing you upload here will be processed. The rest of the site keeps working.</p>
-          </div>
-        )}
+      <ImportDashboard totals={allTotals} loading={!store.loaded} />
 
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setIsDragging(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) loadFile(f);
-          }}
-          onClick={() => fileInputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition ${
-            isDragging ? 'border-indigo-400 bg-indigo-950/20' : hasInput ? 'border-emerald-500/60 bg-emerald-950/10' : 'border-slate-700 hover:border-slate-500 bg-slate-950/40'
-          }`}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            accept=".pdf,.txt,application/pdf,text/plain"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) loadFile(f);
-              e.target.value = '';
-            }}
-          />
-          <div className="flex flex-col items-center gap-2">
-            {hasInput ? <FileCheck className="w-8 h-8 text-emerald-400" /> : <UploadCloud className="w-8 h-8 text-slate-400" />}
-            {hasInput ? (
-              <>
-                <div className="text-sm font-bold text-white break-all">{inputName}</div>
-                <div className="text-xs text-slate-400">{file ? formatFileSize(file.size) : 'Text questionnaire'} · click to choose another file</div>
-              </>
-            ) : (
-              <>
-                <div className="text-sm font-bold text-white">
-                  Drop a PDF here, or <span className="text-indigo-400 underline">browse</span>
-                </div>
-                <div className="text-xs text-slate-400">PDF or TXT</div>
-              </>
-            )}
-          </div>
+      {server && !server.available && (
+        <div role="alert" className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-800/70 text-rose-100 text-xs space-y-1">
+          <p className="font-bold">The PDF importer can't run on this deployment.</p>
+          <p>The extraction service (/api) did not answer. Saved imports can still be reviewed and published.</p>
         </div>
+      )}
 
-        {existingSource && (
-          <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/50 text-amber-200 text-xs">
-            <strong>This document was imported before</strong> ({existingSource.filename}, {existingSource.uploadDate}, {existingSource.questionsCount} question(s)). You can extract it
-            again: questions already in the bank are detected and skipped when you publish.
-          </div>
-        )}
+      <ImportUploader server={server} tokenRequired={tokenRequired} signInAccepted={signInAccepted} token={token} onTokenChange={setToken} onStart={(files, settings) => startImport(files, settings)} />
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-slate-400">Samples:</span>
-          {IMPORT_PRESETS.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => choosePreset(p.id)}
-              title={p.description}
-              className={`px-2.5 py-1 rounded-lg border ${presetId === p.id ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'}`}
-            >
-              {p.name.replace(/\.pdf$/i, '')}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-col md:flex-row md:items-end gap-3 pt-1">
-          {tokenRequired ? (
-            <label className="flex-1 max-w-md text-xs">
-              <span className="flex items-center gap-1.5 text-slate-300 font-semibold mb-1">
-                <KeyRound className="w-3.5 h-3.5" /> Admin access token
-              </span>
-              <input
-                type="password"
-                autoComplete="off"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="The NEXORA_ADMIN_TOKEN value set on the server"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white"
-              />
-            </label>
-          ) : (
-            <p className="flex-1 text-xs text-slate-400 flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5" />{' '}
-              {signInAccepted ? 'Signed in as administrator: your sign-in authorizes AI features.' : 'Development server: no admin token needed.'}
-            </p>
-          )}
-          <div className="flex gap-2 md:ml-auto">
-            {processing && (
-              <button onClick={() => (cancelRef.current.cancelled = true)} className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold">
-                Cancel
-              </button>
-            )}
-            <button
-              onClick={startExtraction}
-              disabled={processing || !hasInput || server?.available === false}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 disabled:opacity-40 text-white font-bold text-xs flex items-center gap-2"
-            >
-              {processing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {processing ? 'Extracting…' : 'Extract questions'}
-            </button>
-          </div>
-        </div>
-
-        {processing && progress && (
-          <div className="p-3.5 bg-slate-950 rounded-2xl border border-indigo-900/50 space-y-2" aria-live="polite">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-300 gap-3">
-              <span className="text-indigo-300">{progress.stage}</span>
-              <span className="font-bold text-white">{progress.percent}%</span>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-500 to-emerald-400 h-2 rounded-full transition-all duration-500" style={{ width: `${Math.max(2, progress.percent)}%` }} />
-            </div>
-          </div>
-        )}
-      </section>
+      <ImportQueueList
+        sessions={store.sessions}
+        progress={store.progress}
+        selectedId={sessionId}
+        onOpen={openSession}
+        onRetry={(id) => void importQueue.retry(id)}
+        onCancel={(id) => importQueue.cancel(id)}
+        onDelete={setConfirmDelete}
+      />
 
       {/* ---------- Workspace ---------- */}
-      {result && report && (
-        <section className="bg-slate-900 border border-slate-800 rounded-3xl p-3 sm:p-5 space-y-4 shadow-2xl">
+      {session && result && report && (
+        <section id="import-workspace" className="bg-slate-900 border border-slate-800 rounded-3xl p-3 sm:p-5 space-y-4 shadow-2xl scroll-mt-4">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-800 pb-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-extrabold text-white break-all">{result.filename}</h2>
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase border ${REPORT_STYLE[report.overallStatus]}`}>
-                  {REPORT_LABEL[report.overallStatus]}
-                </span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase border ${REPORT_STYLE[report.overallStatus]}`}>{REPORT_LABEL[report.overallStatus]}</span>
+                <span className="px-2 py-0.5 rounded border border-slate-700 text-[11px] text-slate-200 font-semibold">{session.program}</span>
+                <span className="text-[11px] text-slate-400">{session.subjectId === 'auto' ? 'subject per question' : SUBJECT_NAMES[session.subjectId]}</span>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                {result.totalPages} page(s) · {counts.total} question(s) · {report.totalChoicesDetected} choices · {counts.approved} approved ·{' '}
-                {report.questionsRequiringVerification} need review
+                {result.totalPages} page(s) · {counts.total} question(s) · {report.totalChoicesDetected} choices · {counts.approved} approved · {report.questionsRequiringVerification} need review ·{' '}
+                {counts.unanswered} without an answer{duplicates.size ? ` · ${duplicates.size} duplicate(s)` : ''}
               </p>
+              {answering && session.answering && (
+                <p className="text-xs text-indigo-300 mt-1 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Generating answers and solutions: {session.answering.done}/{session.answering.total}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs">
@@ -686,25 +561,53 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                   </button>
                 ))}
               </div>
+              <button
+                onClick={() => setConfirmReextract(true)}
+                disabled={session.status === 'extracting' || session.status === 'queued'}
+                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 text-xs font-semibold flex items-center gap-1.5 border border-slate-700"
+                title="Run the extraction again on the same file"
+              >
+                <RotateCcw className="w-4 h-4" /> Retry extraction
+              </button>
               <button onClick={exportJson} className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 border border-slate-700">
                 <Download className="w-4 h-4" /> JSON
               </button>
               <button
-                onClick={publish}
+                onClick={() => publish('selected')}
+                disabled={counts.selectedPublishable === 0}
+                className="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs flex items-center gap-2"
+                title="Publishes the ticked questions that are approved and have a verified answer"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Publish {counts.selectedPublishable} selected
+              </button>
+              <button
+                onClick={() => publish('approved')}
                 disabled={counts.publishable === 0}
                 title={counts.approvedNoAnswer ? `${counts.approvedNoAnswer} approved question(s) still need an answer.` : undefined}
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs flex items-center gap-2"
               >
-                <CheckCircle2 className="w-4 h-4" /> Publish {counts.publishable} approved
+                <CheckCircle2 className="w-4 h-4" /> Publish all {counts.publishable} approved
               </button>
             </div>
           </div>
+
+          {importedBefore && (
+            <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/50 text-amber-200 text-xs">
+              <strong>This document was published before</strong> ({importedBefore.filename}, {importedBefore.uploadDate}). Questions already in the bank are marked, and are skipped when you
+              publish unless you choose otherwise on the question.
+            </div>
+          )}
+          {!file && session.kind === 'pdf' && (
+            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs">
+              The original PDF isn't stored in this browser, so the page view shows the extracted text. Questions, answers and review changes are saved in Firestore as usual.
+            </div>
+          )}
 
           {tab === 'report' && (
             <ExtractionReportPanel
               report={report}
               onAddMissing={(n) => addMissing(n)}
-              onAcknowledgeMissing={(n) => setAcknowledgedMissing((a) => [...a, n])}
+              onAcknowledgeMissing={(n) => importQueue.updateSession(session.id, (s) => ({ acknowledgedMissing: [...s.acknowledgedMissing, n] }))}
               onGoToPage={(p) => {
                 setViewerPage(p);
                 setTab('review');
@@ -719,11 +622,7 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
             <>
               <div className="lg:hidden inline-flex w-full rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs">
                 {(['pdf', 'questions'] as const).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setMobilePanel(p)}
-                    className={`flex-1 px-3 py-2 rounded-lg font-semibold ${mobilePanel === p ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
-                  >
+                  <button key={p} onClick={() => setMobilePanel(p)} className={`flex-1 px-3 py-2 rounded-lg font-semibold ${mobilePanel === p ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>
                     {p === 'pdf' ? `Original PDF (p.${viewerPage})` : `Extracted questions (${visible.length})`}
                   </button>
                 ))}
@@ -749,21 +648,19 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="relative flex-1 min-w-[10rem]">
                         <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
-                        <input
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
-                          placeholder="Search text or number"
-                          className="w-full pl-8 pr-2 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
-                        />
+                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search text, number or topic" className="w-full pl-8 pr-2 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white" />
                       </div>
                       <select value={filter} onChange={(e) => setFilter(e.target.value as Filter)} className="px-2 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white" aria-label="Filter">
                         <option value="all">All ({staged.length})</option>
                         <option value="attention">Needs my attention</option>
+                        <option value="unanswered">Without an answer ({counts.unanswered})</option>
+                        <option value="duplicates">Duplicates ({duplicates.size})</option>
                         <option value="incomplete">{STATUS_STYLE.incomplete.label}</option>
                         <option value="needs_review">{STATUS_STYLE.needs_review.label}</option>
                         <option value="verified">Auto-verified</option>
                         <option value="approved">Approved</option>
                         <option value="rejected">Rejected</option>
+                        <option value="selected">Selected ({checked.length})</option>
                       </select>
                       <label className="flex items-center gap-1.5 text-slate-300">
                         <input type="checkbox" checked={onlyThisPage} onChange={(e) => setOnlyThisPage(e.target.checked)} />
@@ -779,14 +676,30 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                       >
                         Approve {counts.autoVerified} cross-checked
                       </button>
-                      {imageReading && (
+                      <button
+                        onClick={() => setChecked(visible.filter((q) => q.reviewStatus !== 'rejected').map((q) => q.id))}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold"
+                      >
+                        Select shown
+                      </button>
+                      {checked.length > 0 && (
+                        <>
+                          <button onClick={approveChecked} className="px-2.5 py-1 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white font-semibold">
+                            Approve {checked.length} selected
+                          </button>
+                          <button onClick={() => setChecked([])} className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+                            Clear selection
+                          </button>
+                        </>
+                      )}
+                      {aiAvailable && (
                         <button
-                          onClick={askAiForAll}
-                          disabled={Boolean(bulkAi) || counts.needAi === 0}
+                          onClick={() => void answerAll()}
+                          disabled={answering || counts.needAi === 0}
                           className="px-2.5 py-1 rounded-lg bg-indigo-700 hover:bg-indigo-600 disabled:opacity-40 text-white font-semibold flex items-center gap-1"
                         >
                           <Sparkles className="w-3 h-3" />
-                          {bulkAi ? `AI solving ${bulkAi.done}/${bulkAi.total}…` : `AI answers for ${counts.needAi}`}
+                          {answering && session.answering ? `AI solving ${session.answering.done}/${session.answering.total}…` : `Generate answers for ${counts.needAi}`}
                         </button>
                       )}
                       <button onClick={() => addMissing()} className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center gap-1">
@@ -810,9 +723,13 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                           index={staged.indexOf(q)}
                           total={staged.length}
                           selected={q.id === selectedId}
-                          duplicateOf={bankDuplicates.get(q.id)}
-                          aiBusy={aiBusy.includes(q.id)}
-                          aiAvailable={Boolean(imageReading)}
+                          duplicate={duplicates.get(q.id)}
+                          duplicateDecision={decisions[q.id]}
+                          onDuplicateDecision={(d) => importQueue.setDuplicateDecision(session.id, q.id, d)}
+                          checked={checked.includes(q.id)}
+                          onToggleChecked={() => toggleChecked(q.id)}
+                          aiBusy={store.aiBusy.includes(q.id)}
+                          aiAvailable={aiAvailable}
                           onSelect={() => selectQuestion(q)}
                           onApprove={() => requestApprove(q)}
                           onUnapprove={() => update(q.id, reopenQuestion)}
@@ -823,7 +740,8 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                             update(q.id, (x) => saveEdit(x, { ...x, question: x.originalQuestionText ?? x.question, options: (x.originalOptions ?? x.options).map((o) => ({ ...o })) }))
                           }
                           onSetAnswer={(key) => update(q.id, (x) => setAnswer(x, key))}
-                          onAskAi={() => askAi(q).catch(() => {})}
+                          onAskAi={() => solve(q, 'answer')}
+                          onRegenerateSolution={() => solve(q, 'solution')}
                           onShowSolution={() => setSolutionFor(q)}
                         />
                       </div>
@@ -836,13 +754,12 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
         </section>
       )}
 
+      {session && !result && (session.status === 'queued' || session.status === 'extracting') && (
+        <p className="text-sm text-slate-400 text-center py-6">"{session.filename}" is being extracted. Its questions appear here when it finishes; you can leave this page meanwhile.</p>
+      )}
+
       {editing && (
-        <QuestionEditor
-          question={editing.question}
-          title={editing.isNew ? 'Add a question missing from the extraction' : undefined}
-          onCancel={() => setEditing(null)}
-          onSave={saveEditing}
-        />
+        <QuestionEditor question={editing.question} title={editing.isNew ? 'Add a question missing from the extraction' : undefined} onCancel={() => setEditing(null)} onSave={saveEditing} />
       )}
 
       {confirmApprove && (
@@ -873,41 +790,125 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
         </div>
       )}
 
-      {solutionFor && (
-        <SolutionDialog question={staged.find((q) => q.id === solutionFor.id) ?? solutionFor} onClose={() => setSolutionFor(null)} />
+      {confirmReextract && session && (
+        <ConfirmDialog
+          title="Retry extraction?"
+          body={`"${session.filename}" is extracted again from the original file. Its current drafts and your review changes for it are replaced; questions already published stay in the Question Bank.`}
+          confirmLabel="Extract again"
+          onCancel={() => setConfirmReextract(false)}
+          onConfirm={() => {
+            setConfirmReextract(false);
+            void importQueue.retry(session.id, { reextract: true });
+          }}
+        />
       )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete this import?"
+          body={`"${confirmDelete.filename}" and its ${confirmDelete.counts.extracted} draft question(s) are deleted. Questions already published to the Question Bank are not affected.`}
+          confirmLabel="Delete import"
+          danger
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={() => {
+            const target = confirmDelete;
+            setConfirmDelete(null);
+            if (target.id === sessionId) {
+              setSessionId(null);
+              writeSelected(null);
+            }
+            importQueue
+              .remove(target.id)
+              .then(() => onAddAuditLog('PDF Import Deleted', `Deleted the import of "${target.filename}" and its unpublished drafts.`))
+              .catch(() => setError('The import could not be deleted. Check your connection and try again.'));
+          }}
+        />
+      )}
+
+      {solutionFor && <SolutionDialog question={staged.find((q) => q.id === solutionFor.id) ?? solutionFor} onClose={() => setSolutionFor(null)} />}
     </div>
   );
 };
 
-const SolutionDialog: React.FC<{ question: Question; onClose: () => void }> = ({ question: q, onClose }) => (
-  <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/80 p-3 overflow-y-auto">
-    <div className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 text-xs my-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold text-white">Solution — question #{q.originalQuestionNumber}</h3>
-        <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close">
-          <X className="w-5 h-5" />
+const ConfirmDialog: React.FC<{ title: string; body: string; confirmLabel: string; danger?: boolean; onCancel: () => void; onConfirm: () => void }> = ({
+  title,
+  body,
+  confirmLabel,
+  danger,
+  onCancel,
+  onConfirm,
+}) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-3 text-sm">
+      <h3 className="text-base font-bold text-white">{title}</h3>
+      <p className="text-slate-300 text-xs leading-relaxed">{body}</p>
+      <div className="flex justify-end gap-2 pt-2 text-xs">
+        <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-slate-800 text-slate-200">
+          Cancel
+        </button>
+        <button onClick={onConfirm} className={`px-4 py-2 rounded-lg text-white font-bold ${danger ? 'bg-rose-600 hover:bg-rose-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}>
+          {confirmLabel}
         </button>
       </div>
-      {q.sourceSolutionText && (
-        <section className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-          <h4 className="font-semibold text-slate-200 mb-1">Printed in the PDF</h4>
-          <p className="text-slate-300 whitespace-pre-wrap">{q.sourceSolutionText}</p>
-        </section>
-      )}
-      {q.aiSolution ? (
-        <section className="p-3 rounded-xl bg-indigo-950/30 border border-indigo-900/60 space-y-2">
-          <h4 className="font-semibold text-indigo-200">
-            AI-generated ({q.aiSolution.model}) · answer {q.aiSolution.suggestedAnswer ?? 'not determined'} · {q.aiSolution.confidence} confidence
-          </h4>
-          <p className="text-slate-400">Generated separately from the question. It did not change the question text or choices.</p>
-          {q.aiSolution.stepByStepSolution && <pre className="whitespace-pre-wrap font-mono text-slate-200">{q.aiSolution.stepByStepSolution}</pre>}
-          {q.aiSolution.explanation && <p className="text-slate-300">{q.aiSolution.explanation}</p>}
-          {q.aiSolution.finalAnswerWithUnit && <p className="font-mono text-emerald-300">Result: {q.aiSolution.finalAnswerWithUnit}</p>}
-        </section>
-      ) : (
-        !q.sourceSolutionText && <p className="text-slate-300 whitespace-pre-wrap">{q.explanation}</p>
-      )}
     </div>
   </div>
 );
+
+const SECTION_STYLE: Record<string, string> = {
+  Given: 'text-sky-300',
+  Find: 'text-amber-300',
+  Formula: 'text-indigo-300',
+  Solution: 'text-slate-200',
+  'Final Answer': 'text-emerald-300',
+  Explanation: 'text-slate-300',
+};
+
+export const SolutionDialog: React.FC<{ question: Question; onClose: () => void }> = ({ question: q, onClose }) => {
+  const sections = parseSolutionSections(q.stepByStepSolution || q.aiSolution?.stepByStepSolution || '');
+  const hasExplanationSection = sections.some((s) => s.heading === 'Explanation');
+  return (
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/80 p-3 overflow-y-auto">
+      <div className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 text-xs my-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-white">Solution — question #{q.originalQuestionNumber}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-slate-300">
+          Correct answer:{' '}
+          {q.correctAnswer ? (
+            <strong className="text-emerald-300">
+              {q.correctAnswer}. {q.options.find((o) => o.key === q.correctAnswer)?.text}
+            </strong>
+          ) : (
+            <strong className="text-amber-300">Needs verification</strong>
+          )}
+        </p>
+        {q.sourceSolutionText && (
+          <section className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <h4 className="font-semibold text-slate-200 mb-1">Printed in the PDF</h4>
+            <p className="text-slate-300 whitespace-pre-wrap">{q.sourceSolutionText}</p>
+          </section>
+        )}
+        {q.aiSolution && (
+          <p className="text-slate-400">
+            AI-generated ({q.aiSolution.model}) · AI answer {q.aiSolution.suggestedAnswer ?? 'not determined'} · {q.aiSolution.confidence} confidence. Generated separately from the question; it did
+            not change the question text or choices. Edit the question to correct any of it.
+          </p>
+        )}
+        {sections.length > 0 ? (
+          <div className="space-y-3">
+            {sections.map((s, i) => (
+              <section key={i} className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                {s.heading && <h4 className={`font-bold uppercase tracking-wide text-[11px] mb-1 ${SECTION_STYLE[s.heading]}`}>{s.heading}</h4>}
+                <p className="whitespace-pre-wrap font-mono text-slate-200 leading-relaxed">{s.body}</p>
+              </section>
+            ))}
+          </div>
+        ) : null}
+        {!hasExplanationSection && q.explanation && !q.sourceSolutionText && <p className="text-slate-300 whitespace-pre-wrap">{q.explanation}</p>}
+      </div>
+    </div>
+  );
+};

@@ -129,6 +129,32 @@ export function applyAiSolution(q: Question, s: AiSolution): Question {
   return refreshQuestionAssessment(next);
 }
 
+/**
+ * "Regenerate solution": keeps the answer the question already has and only replaces the
+ * explanation and working. If the AI's working reaches another choice, that is flagged.
+ */
+export function applySolutionOnly(q: Question, s: AiSolution): Question {
+  const issues = (q.extractionIssues ?? []).filter((i) => i.code !== 'AI_DISAGREES' && i.code !== 'AI_UNSURE');
+  if (q.correctAnswer && s.suggestedAnswer && s.suggestedAnswer !== q.correctAnswer) {
+    issues.push({
+      code: 'AI_DISAGREES',
+      severity: 'info',
+      field: 'answer',
+      message: `The regenerated working reaches ${s.suggestedAnswer}, not ${q.correctAnswer} (${s.confidence} confidence). Check the answer.`,
+    });
+  }
+  return refreshQuestionAssessment({
+    ...q,
+    aiSolution: s,
+    explanation: q.sourceSolutionText ? q.sourceSolutionText : s.explanation,
+    stepByStepSolution: s.stepByStepSolution,
+    formulasUsed: s.formulasUsed,
+    givenValues: s.givenValues,
+    finalAnswerWithUnit: s.finalAnswerWithUnit,
+    extractionIssues: issues,
+  });
+}
+
 export function newManualQuestion(number: number, page: number, sourcePdfId: string, sourcePdfName: string, documentHash?: string): Question {
   const now = new Date().toISOString();
   return {

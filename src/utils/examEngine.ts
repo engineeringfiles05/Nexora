@@ -76,7 +76,9 @@ export function calculateExamScore(
     const isAnswered = selected !== undefined && selected !== '';
     if (isAnswered) answeredCount++;
 
-    const isCorrect = isAnswered && selected.trim().toUpperCase() === q.correctAnswer.trim().toUpperCase();
+    // A question without its answer key (not yet revealed) can't count as correct.
+    const key = (q.correctAnswer ?? '').trim().toUpperCase();
+    const isCorrect = isAnswered && key !== '' && selected.trim().toUpperCase() === key;
     if (isCorrect) correctCount++;
 
     // Subject tracking

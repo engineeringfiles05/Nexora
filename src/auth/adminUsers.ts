@@ -140,18 +140,18 @@ export async function setAccountStatus(uid: string, status: UserStatus, reason?:
   });
 }
 
-/** Removes the account's Firestore records: its exam results, then its profile. */
+/** Removes the account's Firestore records: exam results, committed answers, then the profile. */
 export async function deleteAccountRecords(uid: string): Promise<{ resultsDeleted: number }> {
   const results = await getDocs(query(collection(db, 'examResults'), where('userId', '==', uid)));
-  let deleted = 0;
-  for (let i = 0; i < results.docs.length; i += 400) {
+  const responses = await getDocs(collection(db, 'users', uid, 'responses'));
+  const refs = [...results.docs, ...responses.docs].map((d) => d.ref);
+  for (let i = 0; i < refs.length; i += 400) {
     const batch = writeBatch(db);
-    results.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
+    refs.slice(i, i + 400).forEach((ref) => batch.delete(ref));
     await batch.commit();
-    deleted += Math.min(400, results.docs.length - i);
   }
   await deleteDoc(doc(db, 'users', uid));
-  return { resultsDeleted: deleted };
+  return { resultsDeleted: results.docs.length };
 }
 
 /** Reads the account's profile again (the "check approval status" button). */

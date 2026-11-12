@@ -212,13 +212,21 @@ export async function runExtractionJob(
 }
 
 export async function requestAiSolution(
-  q: Pick<Question, 'question' | 'options' | 'subjectName' | 'topic'>,
-  token: string
+  q: Pick<Question, 'question' | 'options' | 'subjectName' | 'topic' | 'course'>,
+  token: string,
+  options: { fixedAnswer?: string } = {}
 ): Promise<AiSolution> {
   const res = await fetch('/api/solve-question', {
     method: 'POST',
     headers: await headers(token),
-    body: JSON.stringify({ question: q.question, options: q.options, subject: q.subjectName, topic: q.topic }),
+    body: JSON.stringify({
+      question: q.question,
+      options: q.options,
+      subject: q.subjectName,
+      topic: q.topic === 'Unclassified' ? undefined : q.topic,
+      program: q.course ?? undefined,
+      ...(options.fixedAnswer ? { fixedAnswer: options.fixedAnswer } : {}),
+    }),
   });
   const data = await readJson(res);
   if (!res.ok) throw new Error(data?.error || `AI solving failed (HTTP ${res.status}).`);

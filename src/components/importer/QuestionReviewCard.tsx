@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { ExtractionIssue, Question } from '../../types/index.ts';
+import type { DuplicateDecision, DuplicateMatch } from '../../utils/bank.ts';
 import { isEditedFromSource, openIssues } from '../../utils/questionExtractor.ts';
 
 /** Shows text exactly, with uncertain readings (⟦…⟧) and unreadable glyphs highlighted. */
@@ -87,7 +88,13 @@ interface Props {
   index: number;
   total: number;
   selected: boolean;
-  duplicateOf?: Question;
+  /** An exact or near copy already in the Question Bank. */
+  duplicate?: DuplicateMatch;
+  duplicateDecision?: DuplicateDecision;
+  onDuplicateDecision?: (decision: DuplicateDecision) => void;
+  /** Ticked for "Publish selected". */
+  checked?: boolean;
+  onToggleChecked?: () => void;
   aiBusy: boolean;
   aiAvailable: boolean;
   onSelect: () => void;
@@ -99,11 +106,13 @@ interface Props {
   onRestore: () => void;
   onSetAnswer: (key: string) => void;
   onAskAi: () => void;
+  /** Rewrites the working for the current answer, keeping the answer. */
+  onRegenerateSolution?: () => void;
   onShowSolution: () => void;
 }
 
 export const QuestionReviewCard: React.FC<Props> = (props) => {
-  const { question: q, selected, duplicateOf } = props;
+  const { question: q, selected, duplicate } = props;
   const status = q.contentStatus ?? 'needs_review';
   const issues = openIssues(q);
   const fieldIssue = (field: ExtractionIssue['field'], key?: string) =>
@@ -131,6 +140,16 @@ export const QuestionReviewCard: React.FC<Props> = (props) => {
       }`}
     >
       <header className="flex flex-wrap items-center gap-1.5 mb-2 text-[10px] font-mono">
+        {props.onToggleChecked && !rejected && (
+          <input
+            type="checkbox"
+            checked={Boolean(props.checked)}
+            onChange={props.onToggleChecked}
+            onClick={(e) => e.stopPropagation()}
+            className="w-4 h-4 accent-indigo-500"
+            aria-label={`Select question ${q.originalQuestionNumber} for publishing`}
+          />
+        )}
         <span className="px-2 py-0.5 rounded bg-slate-800 text-white font-bold text-xs">#{q.originalQuestionNumber}</span>
         <span className="px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/50" title="Source page(s) in the PDF">
           p.{pageLabel}
@@ -162,9 +181,12 @@ export const QuestionReviewCard: React.FC<Props> = (props) => {
                   : 'text layer only'}
         </span>
         {edited && <span className="px-1.5 py-0.5 rounded border border-sky-800/60 text-sky-300">edited</span>}
-        {duplicateOf && (
-          <span className="px-1.5 py-0.5 rounded border border-fuchsia-800/60 text-fuchsia-300" title={`Same as bank question ${duplicateOf.id}`}>
-            already in bank
+        {duplicate && (
+          <span
+            className="px-1.5 py-0.5 rounded border border-fuchsia-800/60 text-fuchsia-300"
+            title={`${duplicate.kind === 'exact' ? 'Same text and choices as' : `${Math.round(duplicate.similarity * 100)}% the same wording, same numbers as`} bank question ${duplicate.match.id}`}
+          >
+            {duplicate.kind === 'exact' ? 'already in bank' : 'similar to a bank question'}
           </span>
         )}
         <div className="ml-auto flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
@@ -285,7 +307,17 @@ export const QuestionReviewCard: React.FC<Props> = (props) => {
             disabled={props.aiBusy || q.options.length < 2}
             className="flex items-center gap-1 text-indigo-300 hover:text-indigo-200 disabled:opacity-40 font-semibold"
           >
-            <Sparkles className="w-3 h-3" /> {props.aiBusy ? 'Solving…' : q.aiSolution ? 'Re-solve with AI' : 'AI answer & solution'}
+            <Sparkles className="w-3 h-3" /> {props.aiBusy ? 'Solving…' : q.aiSolution ? 'Regenerate answer' : 'AI answer & solution'}
+          </button>
+        )}
+        {props.aiAvailable && props.onRegenerateSolution && q.correctAnswer && (
+          <button
+            onClick={props.onRegenerateSolution}
+            disabled={props.aiBusy}
+            title={`Keep answer ${q.correctAnswer} and write a new step-by-step solution`}
+            className="flex items-center gap-1 text-indigo-300 hover:text-indigo-200 disabled:opacity-40 font-semibold"
+          >
+            <RotateCcw className="w-3 h-3" /> Regenerate solution
           </button>
         )}
         {(q.aiSolution || q.sourceSolutionText || q.explanation) && (
@@ -314,6 +346,26 @@ export const QuestionReviewCard: React.FC<Props> = (props) => {
           )}
         </div>
       </footer>
+      {duplicate && props.onDuplicateDecision && !rejected && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 rounded-lg border border-fuchsia-900/60 bg-fuchsia-950/20 px-2.5 py-2 text-[11px] text-fuchsia-100" onClick={(e) => e.stopPropagation()}>
+          <span className="flex-1 min-w-[12rem]">
+            {duplicate.kind === 'exact' ? 'This question is already in the Question Bank.' : `A bank question has ${Math.round(duplicate.similarity * 100)}% of the same wording and the same numbers.`}{' '}
+            <span className="text-fuchsia-300/80">“{duplicate.match.question.slice(0, 90)}{duplicate.match.question.length > 90 ? '…' : ''}”</span>
+          </span>
+          <label className="flex items-center gap-1.5">
+            When publishing:
+            <select
+              value={props.duplicateDecision ?? 'skip'}
+              onChange={(e) => props.onDuplicateDecision!(e.target.value as DuplicateDecision)}
+              className="px-2 py-1 rounded bg-slate-950 border border-fuchsia-800/60 text-white"
+            >
+              <option value="skip">Skip it</option>
+              <option value="replace">Replace the bank copy</option>
+              <option value="keep">Keep both</option>
+            </select>
+          </label>
+        </div>
+      )}
     </article>
   );
 };

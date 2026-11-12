@@ -186,10 +186,13 @@ test('reimporting a filename keeps the source ID and settings, and counts add up
     allowedModes: ['quiz'],
     fileSize: '9 MB',
   });
-  const existing = [question({ id: 'old', sourcePdfId: 'stable' })];
+  // Three different questions (identical wording would now be caught as a duplicate).
+  const distinct = (id: string, sourcePdfId: string, wording: string) =>
+    question({ id, sourcePdfId, question: wording, contentFingerprint: `fp-${id}` });
+  const existing = [distinct('old', 'stable', 'Which instrument measures insulation resistance of cables and windings?')];
   const incomingSource = source({ id: 'new-id', filename: 'same.pdf', fileSize: '1 KB', questionsCount: 1 });
-  const first = publishQuestionsToBank(existing, [original], [question({ id: 'n1', sourcePdfId: 'new-id' })], incomingSource);
-  const second = publishQuestionsToBank(first.questions, first.sources, [question({ id: 'n2', sourcePdfId: 'new-id' })], incomingSource);
+  const first = publishQuestionsToBank(existing, [original], [distinct('n1', 'new-id', 'What causes eddy current losses inside transformer cores during operation?')], incomingSource);
+  const second = publishQuestionsToBank(first.questions, first.sources, [distinct('n2', 'new-id', 'Why do synchronous generators require a separate field excitation system?')], incomingSource);
 
   assert.equal(second.sources.length, 1);
   const saved = second.sources[0];

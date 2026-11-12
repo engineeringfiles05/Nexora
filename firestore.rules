@@ -129,6 +129,33 @@ service cloud.firestore {
         (request.auth.uid != userId || (incoming().get('status', 'active') == 'active' && incoming().role == 'admin'));
       // Deleting an account: the administrator only, and never their own profile.
       allow delete: if isAdmin() && isValidId(userId) && request.auth.uid != userId;
+
+      // A reviewee's committed answer to a question. It can be written once and never
+      // changed, and only then may they read that question's answer key (/questionKeys).
+      match /responses/{questionId} {
+        allow get, list: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+        allow create: if isSignedIn() && request.auth.uid == userId && isValidId(questionId) &&
+          (isActiveReviewee() || isAdmin()) &&
+          incoming().keys().hasOnly(['questionId', 'answer', 'examId', 'answeredAt']) &&
+          incoming().questionId == questionId &&
+          incoming().answer is string && incoming().answer.size() <= 4 &&
+          incoming().examId is string && incoming().examId.size() <= 128 &&
+          incoming().answeredAt is string && incoming().answeredAt.size() <= 40;
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
+    // What gives a question's answer away (mirrors PRIVATE_QUESTION_FIELDS in
+    // src/utils/answerKeys.ts). It lives only in /questionKeys, never in /questions.
+    function answerFields() {
+      return ['correctAnswer', 'extractedAnswerKey', 'explanation', 'stepByStepSolution', 'formulasUsed',
+              'givenValues', 'finalAnswerWithUnit', 'aiSolution', 'sourceSolutionText', 'extractionIssues',
+              'answerSource', 'flaggedReason'];
+    }
+
+    function questionPath(questionId) {
+      return /databases/$(database)/documents/questions/$(questionId);
     }
 
     // Question Bank Collection
@@ -139,7 +166,21 @@ service cloud.firestore {
         (isAdmin() || (isActiveReviewee() && resource.data.isPublished == true && resource.data.course == myCourse()));
       allow list: if isAdmin() ||
         (isActiveReviewee() && resource.data.isPublished == true && resource.data.course == myCourse());
-      allow create, update, delete: if isAdmin() && isValidId(questionId);
+      allow create, update: if isAdmin() && isValidId(questionId) && !incoming().keys().hasAny(answerFields());
+      allow delete: if isAdmin() && isValidId(questionId);
+    }
+
+    // Answer keys: the administrator always; a reviewee only for a published question of their
+    // course that they have already answered (users/{uid}/responses/{questionId}).
+    match /questionKeys/{questionId} {
+      allow get: if isValidId(questionId) && (isAdmin() || (
+        isActiveReviewee() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)/responses/$(questionId)) &&
+        exists(questionPath(questionId)) &&
+        get(questionPath(questionId)).data.isPublished == true &&
+        get(questionPath(questionId)).data.course == myCourse()));
+      allow list: if isAdmin();
+      allow write: if isAdmin() && isValidId(questionId);
     }
 
     // PDF Questionnaires Collection
@@ -160,6 +201,15 @@ service cloud.firestore {
       allow update: if isValidId(resultId) &&
         ((existing().userId == request.auth.uid && incoming().userId == request.auth.uid && isActiveReviewee()) || isAdmin());
       allow delete: if isAdmin() && isValidId(resultId);
+    }
+
+    // PDF import sessions and their draft questions: the administrator's private workspace.
+    // Drafts reach reviewees only when published into /questions.
+    match /importSessions/{sessionId} {
+      allow read, write: if isAdmin();
+      match /drafts/{draftId} {
+        allow read, write: if isAdmin();
+      }
     }
 
     // Administrative Audit Logs
