@@ -97,6 +97,17 @@ test('App builds its listeners from the role plan and never queries whole collec
   assert.match(app, /type: 'error', uid: signedInUid, collection: name/);
 });
 
+test('a refusal for the administrator points at outdated published rules, not at "ask an administrator"', () => {
+  const message = describeSyncError('auditLogs', { code: 'permission-denied' }, 'admin');
+  assert.match(message, /^Could not load the audit log\. The security rules published in Firebase are out of date/);
+  assert.match(message, /npm run deploy:rules/);
+  assert.doesNotMatch(message, /Ask an administrator/);
+  assert.match(describeSyncError('write', { code: 'permission-denied' }, 'admin'), /not saved\. The security rules published/);
+  // Reviewees keep the old advice, and other failures are unchanged for both.
+  assert.match(describeSyncError('auditLogs', { code: 'permission-denied' }), /Ask an administrator/);
+  assert.match(describeSyncError('users', new Error('offline'), 'admin'), /Check your connection/);
+});
+
 test('permission errors become readable messages', () => {
   assert.match(describeSyncError('questions', { code: 'permission-denied' }), /not allowed to load questions/);
   assert.match(describeSyncError('write', new Error('Missing or insufficient permissions.')), /not allowed to save/);
