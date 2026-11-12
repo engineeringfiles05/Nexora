@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-nexoraacademy-15a5429e-d3b5-4bbd-aafe-729875243888",
+      "rules": "firestore.rules"
+    }
+  ]
+}
