@@ -17,42 +17,21 @@ import {
   Clock,
   History,
   Cloud,
-  LogIn,
   LogOut,
 } from 'lucide-react';
-import { UserProfile, UserRole } from '../types/index.ts';
+import { UserProfile } from '../types/index.ts';
+import { Avatar } from './Avatar.tsx';
 import { configuredExamDate, countdownLabel, getExamCountdown } from '../utils/examDate.ts';
 
 interface Props {
   currentUser: UserProfile;
   currentView: string;
   onNavigate: (view: string) => void;
-  onSwitchRole: (role: UserRole) => void;
-  allUsers: UserProfile[];
-  onSelectUser: (user: UserProfile) => void;
   pendingVerificationCount: number;
-  firebaseUser?: any;
-  onLoginWithGoogle?: () => void;
   onLogout?: () => void;
-  isFirebaseConnected?: boolean;
-  /** False while signed in: the account's own role applies and demo switching is locked. */
-  canSwitchRole?: boolean;
 }
 
-export const Navbar: React.FC<Props> = ({
-  currentUser,
-  currentView,
-  onNavigate,
-  onSwitchRole,
-  allUsers,
-  onSelectUser,
-  pendingVerificationCount,
-  firebaseUser,
-  onLoginWithGoogle,
-  onLogout,
-  isFirebaseConnected = true,
-  canSwitchRole = true,
-}) => {
+export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, pendingVerificationCount, onLogout }) => {
   const isAdmin = currentUser.role === 'admin';
   const countdown = getExamCountdown(configuredExamDate());
 
@@ -75,41 +54,17 @@ export const Navbar: React.FC<Props> = ({
           </span>
         </div>
 
-        {/* Quick Role Switcher Pill */}
-        <div className="flex items-center gap-2">
+        {/* Signed-in role (set by the account, never chosen in the app) */}
+        <div className="flex items-center gap-2 text-[11px]">
+          <span className="hidden sm:inline text-slate-400">Signed in as</span>
           <span
-            className="text-[11px] text-slate-400"
-            title={canSwitchRole ? 'Demo mode: switch between the sample reviewee and administrator.' : 'Signed in: your account role applies. Sign out to use demo roles.'}
+            className={`px-2 py-0.5 rounded-md font-semibold border ${
+              isAdmin ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200' : 'bg-emerald-600/15 border-emerald-500/30 text-emerald-200'
+            }`}
           >
-            {canSwitchRole ? 'Demo Role:' : 'Signed-in role:'}
+            {isAdmin ? 'Administrator' : `Reviewee${currentUser.course ? ` · ${currentUser.course}` : ''}`}
           </span>
-          <div className={`inline-flex rounded-lg bg-slate-800 p-0.5 border border-slate-700 ${canSwitchRole ? '' : 'opacity-60'}`}>
-            <button
-              onClick={() => onSwitchRole('reviewee')}
-              disabled={!canSwitchRole}
-              className={`px-2.5 py-0.5 text-xs rounded-md font-medium transition disabled:cursor-not-allowed ${
-                !isAdmin
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Reviewee
-            </button>
-            <button
-              onClick={() => onSwitchRole('admin')}
-              disabled={!canSwitchRole}
-              className={`px-2.5 py-0.5 text-xs rounded-md font-medium transition flex items-center gap-1 disabled:cursor-not-allowed ${
-                isAdmin
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Admin
-              {pendingVerificationCount > 0 && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-              )}
-            </button>
-          </div>
+          {isAdmin && pendingVerificationCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" aria-hidden />}
         </div>
       </div>
 
@@ -327,63 +282,30 @@ export const Navbar: React.FC<Props> = ({
           </nav>
 
           {/* User Profile & Active Account */}
-          <div className="flex items-center gap-3">
-            {firebaseUser ? (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-                <img
-                  src={firebaseUser.photoURL || currentUser.avatar}
-                  alt={firebaseUser.displayName || currentUser.name}
-                  className="w-9 h-9 rounded-full object-cover border-2 border-emerald-500"
-                />
-                <div className="hidden sm:block text-left">
-                  <div className="text-xs font-semibold text-white truncate max-w-[150px]">
-                    {firebaseUser.displayName || currentUser.name}
-                  </div>
-                  <div className="text-[10px] text-emerald-400 flex items-center gap-1">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    {isAdmin ? 'Admin (Google)' : 'Reviewee (Google)'}
-                  </div>
-                </div>
-                {onLogout && (
-                  <button
-                    onClick={onLogout}
-                    title="Sign out from Google"
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition ml-1"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
-                {onLoginWithGoogle && (
-                  <button
-                    onClick={onLoginWithGoogle}
-                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    Sign in with Google
-                  </button>
-                )}
-                <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
-                  className="w-9 h-9 rounded-full object-cover border-2 border-slate-700"
-                />
-                <div className="hidden sm:block text-left">
-                  <div className="text-xs font-semibold text-white truncate max-w-[150px]">
-                    {currentUser.name}
-                  </div>
-                  <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                    <span
-                      className={`inline-block w-1.5 h-1.5 rounded-full ${
-                        isAdmin ? 'bg-indigo-400' : 'bg-emerald-400'
-                      }`}
-                    />
-                    {isAdmin ? 'Administrator' : 'REE Candidate'}
-                  </div>
-                </div>
-              </div>
+          <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+            <button
+              onClick={() => onNavigate('account')}
+              title="My Account"
+              className={`flex items-center gap-2 rounded-xl px-1.5 py-1 transition ${currentView === 'account' ? 'bg-slate-800' : 'hover:bg-slate-800/60'}`}
+            >
+              <Avatar name={currentUser.name} src={currentUser.avatar} className={`w-9 h-9 border-2 ${isAdmin ? 'border-indigo-500' : 'border-emerald-500'}`} />
+              <span className="hidden sm:block text-left">
+                <span className="block text-xs font-semibold text-white truncate max-w-[150px]">{currentUser.name}</span>
+                <span className="block text-[10px] text-slate-400 flex items-center gap-1">
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${isAdmin ? 'bg-indigo-400' : 'bg-emerald-400'}`} />
+                  {isAdmin ? 'Administrator' : currentUser.course ? `${currentUser.course} Reviewee` : 'Reviewee'}
+                </span>
+              </span>
+            </button>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                title="Sign out"
+                aria-label="Sign out"
+                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             )}
           </div>
         </div>
@@ -441,6 +363,12 @@ export const Navbar: React.FC<Props> = ({
             >
               History
             </button>
+            <button
+              onClick={() => onNavigate('account')}
+              className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'account' ? 'bg-emerald-600 text-white' : 'text-slate-300'}`}
+            >
+              My Account
+            </button>
           </>
         ) : (
           <>
@@ -479,6 +407,12 @@ export const Navbar: React.FC<Props> = ({
               className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'audit-logs' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}
             >
               Audit Logs
+            </button>
+            <button
+              onClick={() => onNavigate('account')}
+              className={`px-2.5 py-1 rounded whitespace-nowrap ${currentView === 'account' ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}
+            >
+              My Account
             </button>
           </>
         )}

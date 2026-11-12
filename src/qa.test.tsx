@@ -12,6 +12,7 @@ import { ExamLauncherModal } from './components/ExamLauncherModal.tsx';
 import { ExamResultView } from './components/ExamResultView.tsx';
 import { FormulaReferenceDrawer } from './components/FormulaReferenceDrawer.tsx';
 import { Navbar } from './components/Navbar.tsx';
+import { AuthPage } from './components/auth/AuthPage.tsx';
 import { PdfImporterView } from './components/PdfImporterView.tsx';
 import { PdfQuizGeneratorView } from './components/PdfQuizGeneratorView.tsx';
 import { PdfSourcesView } from './components/PdfSourcesView.tsx';
@@ -35,13 +36,17 @@ const config: ExamConfig = { type: 'practice', title: 'QA', description: '', que
 // claim browser interaction coverage: effects and event handlers need separate tests.
 const screens: [string, React.ReactElement][] = [
   ['App', <App />],
+  ['AuthPage (sign in)', <AuthPage view="login" onNavigate={noop} />],
+  ['AuthPage (register)', <AuthPage view="register" onNavigate={noop} />],
+  ['AuthPage (forgot password)', <AuthPage view="forgot-password" onNavigate={noop} />],
+  ['AuthPage (reset password)', <AuthPage view="reset-password" onNavigate={noop} />],
   ['ActiveExamView', <ActiveExamView config={config} questions={questions} onFinishExam={noop} onExitExam={noop} />],
   ['AdminDashboard', <AdminDashboard adminUser={data.DEMO_USERS[0]} {...{ questions, pdfSources, examResults, auditLogs }} onNavigate={noop} />],
   ['AuditLogsView', <AuditLogsView auditLogs={auditLogs} />],
   ['ExamLauncherModal', <ExamLauncherModal isOpen initialType="practice" {...{subjects, pdfSources}} onClose={noop} onLaunch={noop} />],
   ['ExamResultView', <ExamResultView result={examResults[0]} questions={questions} onRetake={noop} onBackToDashboard={noop} />],
   ['FormulaReferenceDrawer', <FormulaReferenceDrawer isOpen onClose={noop} />],
-  ['Navbar', <Navbar currentUser={data.DEMO_USERS[1]} currentView="reviewee-dashboard" onNavigate={noop} onSwitchRole={noop} allUsers={data.DEMO_USERS} onSelectUser={noop} pendingVerificationCount={0} />],
+  ['Navbar', <Navbar currentUser={data.DEMO_USERS[1]} currentView="reviewee-dashboard" onNavigate={noop} pendingVerificationCount={0} onLogout={noop} />],
   ['PdfImporterView', <PdfImporterView existingQuestions={questions} pdfSources={pdfSources} onPublishQuestions={noop} onAddAuditLog={noop} />],
   ['PdfQuizGeneratorView', <PdfQuizGeneratorView {...{questions, pdfSources}} onStartPdfQuiz={noop} />],
   ['PdfSourcesView', <PdfSourcesView pdfSources={pdfSources} onUpdateSource={noop} onNavigateToImporter={noop} onNavigateToQuiz={noop} />],

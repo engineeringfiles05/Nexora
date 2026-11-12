@@ -44,10 +44,29 @@ export interface JobProgress {
   totalPages?: number;
 }
 
-const headers = (token: string) => ({
-  'Content-Type': 'application/json',
-  ...(token ? { 'x-nexora-admin-token': token } : {}),
-});
+/**
+ * Supplies the signed-in account's Firebase ID token. The server checks it and only lets the
+ * verified administrator use the AI routes (see server/firebaseAuth.ts).
+ */
+type IdTokenProvider = () => Promise<string | null | undefined>;
+let idTokenProvider: IdTokenProvider | null = null;
+
+export function setIdTokenProvider(provider: IdTokenProvider | null) {
+  idTokenProvider = provider;
+}
+
+export function hasIdTokenProvider(): boolean {
+  return idTokenProvider !== null;
+}
+
+async function headers(token: string): Promise<Record<string, string>> {
+  const idToken = idTokenProvider ? await idTokenProvider().catch(() => null) : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'x-nexora-admin-token': token } : {}),
+    ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+  };
+}
 
 export const BACKEND_UNAVAILABLE =
   'The extraction service is not available on this deployment: its API (/api) did not answer. The importer cannot run here until the backend is deployed.';
@@ -74,6 +93,8 @@ export interface ServerCapabilities {
   available: boolean;
   imageReading: boolean;
   adminTokenRequired: boolean;
+  /** The server accepts a verified administrator sign-in instead of the admin token. */
+  adminSignIn: boolean;
   /** Start-then-poll jobs need one long-lived process; serverless hosting has none. */
   extractionJobs: boolean;
   streamingExtraction: boolean;
@@ -82,7 +103,7 @@ export interface ServerCapabilities {
 }
 
 export async function getServerCapabilities(fetcher: typeof fetch = fetch): Promise<ServerCapabilities> {
-  const unavailable: ServerCapabilities = { available: false, imageReading: false, adminTokenRequired: true, extractionJobs: false, streamingExtraction: false };
+  const unavailable: ServerCapabilities = { available: false, imageReading: false, adminTokenRequired: true, adminSignIn: false, extractionJobs: false, streamingExtraction: false };
   try {
     const res = await fetcher('/api/health');
     if (!res.ok || !(res.headers.get('content-type') || '').includes('application/json')) return unavailable;
@@ -93,6 +114,7 @@ export async function getServerCapabilities(fetcher: typeof fetch = fetch): Prom
       imageReading: Boolean(data.imageReading ?? data.hasApiKey),
       // Older servers don't report it; assume a token may be needed.
       adminTokenRequired: data.adminTokenRequired !== false,
+      adminSignIn: data.adminSignIn === true,
       // Older servers only had jobs.
       extractionJobs: data.extractionJobs !== false,
       streamingExtraction: data.streamingExtraction === true,
@@ -123,7 +145,7 @@ export async function runExtractionStream(
   fetcher: typeof fetch = fetch
 ): Promise<ExtractionResult> {
   const controller = new AbortController();
-  const res = await fetcher('/api/extract-stream', { method: 'POST', headers: headers(token), body: JSON.stringify(body), signal: controller.signal });
+  const res = await fetcher('/api/extract-stream', { method: 'POST', headers: await headers(token), body: JSON.stringify(body), signal: controller.signal });
   if (!res.ok || !res.body) {
     const data = await readJson(res);
     throw new Error(data?.error || `Extraction could not start (HTTP ${res.status}).`);
@@ -173,14 +195,14 @@ export async function runExtractionJob(
   onProgress: (p: JobProgress) => void,
   signal?: { cancelled: boolean }
 ): Promise<ExtractionResult> {
-  const start = await fetch('/api/extraction-jobs', { method: 'POST', headers: headers(token), body: JSON.stringify(body) });
+  const start = await fetch('/api/extraction-jobs', { method: 'POST', headers: await headers(token), body: JSON.stringify(body) });
   const started = await readJson(start);
   if (!start.ok) throw new Error(started?.error || `Extraction could not start (HTTP ${start.status}).`);
   const jobId: string = started.jobId;
   for (;;) {
     if (signal?.cancelled) throw new Error('Extraction was cancelled.');
     await new Promise((r) => setTimeout(r, 900));
-    const res = await fetch(`/api/extraction-jobs/${jobId}`, { headers: headers(token) });
+    const res = await fetch(`/api/extraction-jobs/${jobId}`, { headers: await headers(token) });
     const job = await readJson(res);
     if (!res.ok) throw new Error(job?.error || `Lost track of the extraction (HTTP ${res.status}).`);
     if (job.progress) onProgress(job.progress);
@@ -195,7 +217,7 @@ export async function requestAiSolution(
 ): Promise<AiSolution> {
   const res = await fetch('/api/solve-question', {
     method: 'POST',
-    headers: headers(token),
+    headers: await headers(token),
     body: JSON.stringify({ question: q.question, options: q.options, subject: q.subjectName, topic: q.topic }),
   });
   const data = await readJson(res);

@@ -20,14 +20,13 @@ import {
   PdfSource,
   ExamResult,
   AuditLog,
-  UserProfile,
 } from '../types/index.ts';
 
-const ADMIN_EMAIL = 'engineeringfiles05@gmail.com';
+import { isAdminEmail } from '../auth/roles.ts';
 
+/** True for the site owner's address. Admin access also needs a verified sign-in: see auth/roles.ts. */
 export function isUserAdmin(email?: string | null): boolean {
-  if (!email) return false;
-  return email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  return isAdminEmail(email);
 }
 
 /**
@@ -202,15 +201,3 @@ export async function saveAuditLogToFirestore(log: AuditLog): Promise<void> {
   }
 }
 
-/**
- * Saves a user profile to Firestore
- */
-export async function saveUserProfileToFirestore(user: UserProfile): Promise<void> {
-  if (!isSignedIn()) return; // demo mode: the data stays in this browser
-  const path = `users/${user.id}`;
-  try {
-    await setDoc(doc(db, 'users', user.id), sanitizeForFirestore(user));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
-  }
-}

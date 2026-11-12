@@ -6,6 +6,7 @@
 import React from 'react';
 import { Users, Award, TrendingUp, Calendar, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { UserProfile, ExamResult } from '../types/index.ts';
+import { Avatar } from './Avatar.tsx';
 
 interface Props {
   reviewees: UserProfile[];
@@ -13,17 +14,15 @@ interface Props {
   /** Signed-in admin, registered accounts still loading. */
   loading?: boolean;
   error?: string;
-  /** Demo mode shows a sample reviewee; say so. */
-  isDemo?: boolean;
 }
 
-export const RevieweeRosterView: React.FC<Props> = ({ reviewees, examResults, loading = false, error, isDemo = false }) => {
+export const RevieweeRosterView: React.FC<Props> = ({ reviewees, examResults, loading = false, error }) => {
   const status = error
     ? error
     : loading
       ? 'Loading registered reviewees…'
       : reviewees.length === 0
-        ? 'No reviewee accounts yet. Reviewees appear here after they sign in with Google.'
+        ? 'No reviewee accounts yet. Reviewees appear here after they create an account.'
         : null;
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 select-none">
@@ -43,9 +42,6 @@ export const RevieweeRosterView: React.FC<Props> = ({ reviewees, examResults, lo
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        {isDemo && (
-          <p className="text-xs text-amber-300">Demo mode: this is a sample reviewee, not a registered account. Sign in as an administrator to see real reviewees.</p>
-        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950 text-slate-400 uppercase font-mono text-[10px]">
@@ -77,18 +73,15 @@ export const RevieweeRosterView: React.FC<Props> = ({ reviewees, examResults, lo
                 return (
                   <tr key={rev.id} className="hover:bg-slate-800/40 transition">
                     <td className="p-3.5 font-bold text-white flex items-center gap-3">
-                      <img
-                        src={rev.avatar}
-                        alt={rev.name}
-                        className="w-8 h-8 rounded-full object-cover border border-slate-700"
-                      />
+                      <Avatar name={rev.name} src={rev.avatar} className="w-8 h-8 border border-slate-700" />
                       <div>
                         <div>{rev.name}</div>
                         <div className="text-[10px] text-slate-400 font-normal">{rev.email}</div>
+                        {rev.contactNumber && <div className="text-[10px] text-slate-500 font-normal">{rev.contactNumber}</div>}
                       </div>
                     </td>
                     <td className="p-3.5 text-slate-300">
-                      {rev.targetExam || 'Registered Electrical Engineer'}
+                      {rev.course ? `${rev.course} · ` : ''}{rev.targetExam || 'Course not selected yet'}
                     </td>
                     <td className="p-3.5 font-mono">
                       {userExams.length} Exams ({passedCount} Passed)

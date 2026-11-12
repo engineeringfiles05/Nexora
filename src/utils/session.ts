@@ -4,12 +4,10 @@
  */
 
 /**
- * Signed-in (account) data versus signed-out (demo) data.
- *
- * Demo mode keeps its sample data in this browser (utils/persistence.ts). A signed-in account
- * never reads or writes that cache: its data lives only in memory, comes from Firestore
- * queries that match the security rules for its role, and is cleared whenever the account
- * changes. An empty query result means "no records", not "keep what was there before".
+ * The signed-in account's data. Every page except the sign-in pages requires an account
+ * (auth/routes.ts). Account data lives only in memory, comes from Firestore queries that
+ * match the security rules for its role, and is cleared whenever the account changes. An
+ * empty query result means "no records", not "keep what was there before".
  */
 
 import type { AuditLog, ExamResult, PdfSource, Question, UserProfile, UserRole } from '../types/index.ts';
@@ -117,11 +115,6 @@ export function describeSyncError(collection: CloudCollection | 'write', error: 
 // ---------------------------------------------------------------------------
 // Identity rules
 // ---------------------------------------------------------------------------
-
-/** Demo role switching only exists signed out; a signed-in identity is never replaced. */
-export function canSwitchDemoRole(signedIn: boolean): boolean {
-  return !signedIn;
-}
 
 /** Reviewees only ever see their own results; administrators see everyone's. */
 export function visibleResults(user: Pick<UserProfile, 'id' | 'role'>, results: ExamResult[]): ExamResult[] {

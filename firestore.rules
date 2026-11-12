@@ -25,26 +25,58 @@ service cloud.firestore {
       return resource.data;
     }
 
+    // Only the site owner's account, with an address Firebase has verified, is an administrator
+    // (mirrors src/auth/roles.ts). Public registration can never produce an administrator.
     function isAdmin() {
-      return isSignedIn() && (
-        (request.auth.token.email == 'engineeringfiles05@gmail.com' && request.auth.token.email_verified == true) ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
+      return isSignedIn() &&
+        request.auth.token.email == 'engineeringfiles05@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    function optionalString(data, field, maxSize) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxSize);
+    }
+
+    // Profile documents: known fields only, with the same limits as the registration form.
+    function isValidProfile(data, userId) {
+      return data.keys().hasOnly(['id', 'name', 'email', 'role', 'avatar', 'title', 'targetExam', 'examDate',
+                                  'enrolledAt', 'course', 'contactNumber', 'authProvider', 'updatedAt']) &&
+        data.id == userId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
+        data.email is string && data.email.size() <= 254 &&
+        data.role in ['reviewee', 'admin'] &&
+        (!('course' in data) || data.course in ['REE', 'RME']) &&
+        optionalString(data, 'contactNumber', 20) &&
+        optionalString(data, 'avatar', 2048) &&
+        optionalString(data, 'title', 120) &&
+        optionalString(data, 'targetExam', 200) &&
+        optionalString(data, 'examDate', 40) &&
+        optionalString(data, 'enrolledAt', 40) &&
+        optionalString(data, 'authProvider', 40) &&
+        optionalString(data, 'updatedAt', 40);
+    }
+
+    // Nobody chooses their own role: every account is a reviewee, except the owner's own profile.
+    function isAllowedRole(data, userId) {
+      return data.role == 'reviewee' || (data.role == 'admin' && isAdmin() && request.auth.uid == userId);
     }
 
     // Users Collection
     match /users/{userId} {
       allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      allow create: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin()) && incoming().id == userId;
-      allow update: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin()) && incoming().id == existing().id;
+      // An account creates only its own profile, under its own sign-in email.
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId &&
+        isValidProfile(incoming(), userId) &&
+        incoming().email == request.auth.token.email &&
+        isAllowedRole(incoming(), userId);
+      // Owners and the administrator may edit details, never the id, email, enrolment date or role.
+      allow update: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin()) &&
+        isValidProfile(incoming(), userId) &&
+        incoming().email == existing().email &&
+        incoming().get('enrolledAt', null) == existing().get('enrolledAt', null) &&
+        isAllowedRole(incoming(), userId);
       allow delete: if isAdmin() && isValidId(userId);
-    }
-
-    // Admins Collection
-    match /admins/{userId} {
-      allow read: if isSignedIn() && isValidId(userId);
-      allow write: if isAdmin() && isValidId(userId);
     }
 
     // Question Bank Collection

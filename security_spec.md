@@ -2,9 +2,11 @@
 
 ## 1. Data Invariants
 - **Identity & Access**:
-  - `isAdmin()` checks whether the requester's UID exists in `/admins/{uid}` or their verified email matches the bootstrapped administrator `engineeringfiles05@gmail.com`.
-  - Non-admins can only read and write their own `/users/{userId}` profile, where `{userId} == request.auth.uid`.
-  - Reviewees can never write or alter documents in `/admins/{userId}`.
+  - Accounts are Firebase Authentication accounts (email and password, or Google). Firebase stores and hashes passwords; the app never sees or stores them.
+  - `isAdmin()` is true only for the site owner, `engineeringfiles05@gmail.com`, with `email_verified == true`. There is no other way to become an administrator (the former `/admins/{uid}` grant was removed). The same rule is applied in the app (`src/auth/roles.ts`) and the API (`server/firebaseAuth.ts`).
+  - Every account created through public registration is a reviewee. Nobody chooses a role: `/users/{userId}` accepts `role: 'reviewee'`, and `role: 'admin'` only on the verified owner's own profile.
+  - Non-admins can only read and write their own `/users/{userId}` profile, where `{userId} == request.auth.uid`; the profile's email must be the sign-in email, and the id, email and enrolment date can't be changed. Only known fields are accepted, with size limits (name 120, contact number 20 characters; course `REE` or `RME`).
+  - Admin API routes (AI extraction and solving) verify the Firebase ID token sent as `Authorization: Bearer`: a reviewee's token gets 403, a forged or expired one 401.
 - **Question Bank**:
   - Only administrators can create, update, or delete `/questions/{questionId}`.
   - Reviewees can read questions only if `resource.data.isPublished == true`.
@@ -18,7 +20,7 @@
   - Only administrators can read or create `/auditLogs/{logId}`.
 
 ## 2. The Dirty Dozen Payloads (Targeting Vulnerabilities)
-1. **Malicious Reviewee Self-Elevation to Admin**: Non-admin attempts to create a document in `/admins/{attackerUid}`. -> REJECTED (Permission Denied).
+1. **Malicious Reviewee Self-Elevation to Admin**: Non-admin writes `role: 'admin'` into their own `/users/{uid}` profile, or creates `/admins/{attackerUid}`. -> REJECTED (Permission Denied).
 2. **Reviewee Modifying Questions**: Non-admin attempts to edit `/questions/math-001` to alter the official answer. -> REJECTED.
 3. **Reviewee Injecting Unpublished Questions**: Non-admin tries to read `/questions/hidden-001` where `isPublished: false`. -> REJECTED.
 4. **Result Spoofing for Another User**: Attacker sets `userId: 'victim-uid'` on a high-scoring `/examResults/{resId}` submission. -> REJECTED.

@@ -47,7 +47,14 @@ test('the Vercel function entry exports the API in serverless mode', async () =>
 
 test('vercel.json routes every /api path to that function, with the time limit and pdf.js data files', async () => {
   const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
-  assert.deepEqual(config.rewrites, [{ source: '/api/:path*', destination: '/api' }]);
+  assert.deepEqual(config.rewrites[0], { source: '/api/:path*', destination: '/api' });
+  // Every other address is the web app, so /admin or /dashboard can be opened directly
+  // (the app then checks the sign-in), but /api paths never fall through to it.
+  const spa = config.rewrites[1];
+  assert.equal(spa.destination, '/index.html');
+  const pattern = new RegExp(`^${spa.source}$`);
+  for (const path of ['/', '/login', '/admin', '/admin/question-bank', '/dashboard', '/apiary']) assert.ok(pattern.test(path), path);
+  for (const path of ['/api', '/api/health', '/api/extract-stream']) assert.ok(!pattern.test(path), path);
   const fn = config.functions['api/index.ts'];
   assert.equal(fn.maxDuration, 300);
   assert.match(fn.includeFiles, /pdfjs-dist\/cmaps/);
