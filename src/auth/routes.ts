@@ -35,7 +35,6 @@ export const ROUTES = {
   'question-bank': { path: '/admin/question-bank', access: 'admin' },
   'pdf-sources': { path: '/admin/pdfs', access: 'admin' },
   'reviewees-roster': { path: '/admin/reviewees', access: 'admin' },
-  'audit-logs': { path: '/admin/audit-logs', access: 'admin' },
 } as const satisfies Record<string, { path: string; access: Access }>;
 
 export type View = keyof typeof ROUTES;

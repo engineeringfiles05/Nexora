@@ -47,7 +47,6 @@ import {
   cloudReducer,
   describeSyncError,
   emptyCloudState,
-  sortAuditLogs,
   visibleResults,
   type CloudCollection,
 } from './utils/session.ts';
@@ -70,7 +69,6 @@ import { ActiveExamView } from './components/ActiveExamView.tsx';
 import { ExamResultView } from './components/ExamResultView.tsx';
 import { ExamLauncherModal } from './components/ExamLauncherModal.tsx';
 import { RevieweeRosterView } from './components/RevieweeRosterView.tsx';
-import { AuditLogsView } from './components/AuditLogsView.tsx';
 import { AccountSettingsView } from './components/AccountSettingsView.tsx';
 import { UserManagementView, type UserLogEntry } from './components/users/UserManagementView.tsx';
 import { PendingRegistrationsPanel, UserApprovalsView, pendingQueue } from './components/users/UserApprovalsView.tsx';
@@ -111,8 +109,6 @@ export default function App() {
   const questions = cloud.questions ?? [];
   const storedSources = cloud.pdfSources ?? [];
   const examResults = cloud.examResults ?? [];
-  // Admin-only collections: reviewees never query them, so they stay null (shown as empty).
-  const auditLogs = sortAuditLogs(cloud.auditLogs ?? []);
   const isSignedInAdmin = Boolean(signedInUid) && accountRole === 'admin';
   const rosterReviewees: UserProfile[] = (cloud.users ?? []).filter((u) => u.role === 'reviewee');
 
@@ -128,7 +124,6 @@ export default function App() {
   const setQuestions = scopedSetter<Question>('questions');
   const setPdfSources = scopedSetter<PdfSource>('pdfSources');
   const setExamResults = scopedSetter<ExamResult>('examResults');
-  const setAuditLogs = scopedSetter<AuditLog>('auditLogs');
 
   // Cloud write failures are shown, not just logged.
   const reportSaveError = (label: string) => (err: unknown) => {
@@ -504,7 +499,7 @@ export default function App() {
       ...(badge ? { badge } : {}),
       ...(target ? { targetUserId: target.id, targetUserName: target.name, targetUserEmail: target.email } : {}),
     };
-    setAuditLogs((prev) => [newLog, ...prev]);
+    // Recorded in Firestore (auditLogs) for the record; the app has no page that lists it.
     saveAuditLogToFirestore(newLog).catch(reportSaveError('Save audit log to Firestore'));
   };
 
@@ -831,10 +826,6 @@ export default function App() {
             loading={isSignedInAdmin && cloud.users === null && !cloud.errors.users}
             error={cloud.errors.users}
           />
-        )}
-
-        {currentView === 'audit-logs' && (
-          <AuditLogsView auditLogs={auditLogs} />
         )}
 
         {currentView === 'user-management' && (
