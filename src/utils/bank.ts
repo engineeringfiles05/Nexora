@@ -73,6 +73,12 @@ export const EXAM_MODE_DEFAULTS: Record<ExamType, { questionCount: number; durat
   pdf_quiz: { questionCount: 15, durationMinutes: 30, instantFeedback: false },
 };
 
+/** questionCount value meaning "every question that matches the filters". */
+export const ALL_QUESTIONS = 0;
+
+/** Timer choices in minutes; the longer ones suit exams with all questions selected. */
+export const EXAM_DURATION_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 240];
+
 /** Builds an exam, or explains why it can't. Never widens filters to avoid an empty exam. */
 export function selectExamQuestions(
   questions: Question[],
@@ -111,8 +117,10 @@ export function selectExamQuestions(
     };
   }
 
+  const wantsAll = config.questionCount <= ALL_QUESTIONS;
+
   // Never quietly run a shorter exam than the one requested.
-  if (pool.length < config.questionCount) {
+  if (!wantsAll && pool.length < config.questionCount) {
     return {
       ok: false,
       error: `Only ${pool.length} published, reviewed question${pool.length === 1 ? ' matches' : 's match'} these settings, but ${config.questionCount} were requested. Choose ${pool.length} or fewer questions, or widen the subject, topic or difficulty.`,
@@ -120,7 +128,7 @@ export function selectExamQuestions(
   }
 
   let selected = config.randomizeQuestions ? shuffled(pool, random) : pool;
-  selected = selected.slice(0, config.questionCount);
+  if (!wantsAll) selected = selected.slice(0, config.questionCount);
   if (config.randomizeChoices) {
     selected = selected.map((q) => ({ ...q, options: shuffled(q.options, random) }));
   }

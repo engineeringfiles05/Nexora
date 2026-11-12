@@ -431,7 +431,8 @@ export default function App() {
     const selection = selectExamQuestions(questions, pdfSources, config);
     if (!selection.ok) return selection.error;
 
-    setActiveExamConfig(config);
+    // "All questions" becomes the actual number, so results and history show the real count.
+    setActiveExamConfig({ ...config, questionCount: selection.questions.length });
     setActiveExamQuestions(selection.questions);
     setExamRunId(`exam-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
     setScoring(null);
