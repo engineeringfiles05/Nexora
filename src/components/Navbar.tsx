@@ -85,8 +85,8 @@ export const Navbar: React.FC<Props> = ({ currentUser, currentView, onNavigate, 
             onClick={() => onNavigate(isAdmin ? 'admin-dashboard' : 'reviewee-dashboard')}
             className="flex items-center gap-3 cursor-pointer group select-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <img src="/logo.png" alt="Nexora Academy logo" className="w-full h-full object-contain p-1" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+              <img src="/logo.png" alt="Nexora Academy logo" className="w-full h-full object-contain p-1 brightness-0 invert" />
             </div>
             <div>
               <div className="flex items-center gap-2">
