@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Ban, CheckCircle2, Hourglass, PauseCircle } from 'lucide-react';
+import { Ban, CheckCircle2, Hourglass, PauseCircle, XCircle } from 'lucide-react';
 import type { UserStatus } from '../../types/index.ts';
 import { STATUS_LABELS } from '../../auth/accountStatus.ts';
 
@@ -13,6 +13,7 @@ const STATUS_STYLE: Record<UserStatus, { className: string; icon: React.Componen
   inactive: { className: 'bg-slate-700/40 border-slate-600 text-slate-300', icon: PauseCircle },
   suspended: { className: 'bg-rose-500/10 border-rose-500/40 text-rose-200', icon: Ban },
   pending: { className: 'bg-amber-500/10 border-amber-500/40 text-amber-200', icon: Hourglass },
+  rejected: { className: 'bg-fuchsia-500/10 border-fuchsia-500/40 text-fuchsia-200', icon: XCircle },
 };
 
 /** Status always shows an icon and a label, never color alone. */

@@ -53,7 +53,8 @@ import {
 } from './utils/session.ts';
 import { setIdTokenProvider } from './utils/importerClient.ts';
 import { buildProfile, ensureProfile, sessionStartedAt, signOutEverywhere, watchOwnProfile } from './auth/authService.ts';
-import { blockedMessage, canAccessPlatform, contentCourse } from './auth/accountStatus.ts';
+import { canAccessPlatform, contentCourse, statusOf } from './auth/accountStatus.ts';
+import { fetchProfile } from './auth/adminUsers.ts';
 import { isAuthView, isView, pathForView, resolveRoute, viewForPath, type SessionState, type View } from './auth/routes.ts';
 import { IDLE_TIMEOUT_MS, isIdleExpired, isSessionExpired, readRememberPreference } from './auth/sessionPolicy.ts';
 
@@ -72,6 +73,8 @@ import { RevieweeRosterView } from './components/RevieweeRosterView.tsx';
 import { AuditLogsView } from './components/AuditLogsView.tsx';
 import { AccountSettingsView } from './components/AccountSettingsView.tsx';
 import { UserManagementView, type UserLogEntry } from './components/users/UserManagementView.tsx';
+import { PendingRegistrationsPanel, UserApprovalsView, pendingQueue } from './components/users/UserApprovalsView.tsx';
+import { AccountStatusScreen } from './components/auth/AccountStatusScreen.tsx';
 import { AuthLoadingScreen, AuthPage, type AuthNotice } from './components/auth/AuthPage.tsx';
 
 // Admin API calls carry the signed-in account's ID token; the server verifies it.
@@ -157,7 +160,7 @@ export default function App() {
     authStatus === 'loading'
       ? null
       : authStatus === 'signed-in' && profile
-        ? { status: 'signed-in', role: profile.role }
+        ? { status: 'signed-in', role: profile.role, restricted: !canAccessPlatform(profile) }
         : { status: 'signed-out' };
   const decision = session ? resolveRoute(requestedView, session) : null;
   // Exam pages need an exam in progress; after a refresh there is none, so go home instead.
@@ -238,13 +241,9 @@ export default function App() {
         setProfileWarning('Your profile could not be loaded from the cloud, so some details may be missing. Try refreshing the page.');
       }
       if (auth.currentUser?.uid !== user.uid) return; // the account changed meanwhile
-      // Inactive, suspended and pending accounts can't use the platform (firestore.rules
-      // enforces the same): explain why and end the session.
-      if (!canAccessPlatform(account)) {
-        setAuthNotice({ tone: 'error', text: blockedMessage(account) });
-        await signOutEverywhere().catch(() => {});
-        return;
-      }
+      // Accounts that aren't approved (pending, rejected, suspended, deactivated) stay signed
+      // in but see only their account status page (auth/routes.ts); firestore.rules refuses
+      // them all review material, so nothing else can be reached.
       setProfile(account);
       setAuthNotice(null);
       setAuthStatus('signed-in');
@@ -289,8 +288,8 @@ export default function App() {
     };
   }, [authStatus]);
 
-  // The account's own profile, live: when the administrator deactivates, suspends or deletes
-  // the account it signs out at once, and course or detail changes apply immediately.
+  // The account's own profile, live: approval opens the dashboard at once; rejection,
+  // suspension or deactivation switches to the status page at once; deletion signs out.
   useEffect(() => {
     if (!signedInUid || !firebaseUser) return;
     const user = firebaseUser;
@@ -306,12 +305,17 @@ export default function App() {
           }
           return;
         }
-        if (!canAccessPlatform(next)) {
-          setAuthNotice({ tone: 'error', text: blockedMessage(next) });
-          signOutEverywhere().catch(() => {});
-          return;
-        }
-        setProfile((prev) => (prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+        setProfile((prev) => {
+          if (prev && JSON.stringify(prev) === JSON.stringify(next)) return prev;
+          if (prev && !canAccessPlatform(prev) && canAccessPlatform(next)) {
+            setToast({ tone: 'success', text: `Your account has been approved. Welcome to NEXORA Academy, ${next.name.split(/\s+/)[0]}!` });
+          }
+          if (prev && canAccessPlatform(prev) && !canAccessPlatform(next)) {
+            setActiveExamConfig(null);
+            setLauncherModalOpen(false);
+          }
+          return next;
+        });
       },
       (err) => console.warn('Profile listener error:', err)
     );
@@ -319,12 +323,14 @@ export default function App() {
   const accountRoleRef = useRef<UserRole>('reviewee');
   accountRoleRef.current = accountRole;
   const accountCourse = profile?.course ?? null;
+  const restricted = profile ? !canAccessPlatform(profile) : false;
 
   // Real-time Firestore data for the signed-in account. Queries follow firestore.rules for the
   // account's role (reviewees can only list published questions and public sources of their
   // own course, and their own results); empty results replace old data, and failures are shown.
   useEffect(() => {
-    if (!signedInUid) return;
+    // Accounts that aren't approved load nothing (the rules would refuse it anyway).
+    if (!signedInUid || restricted) return;
     const plan = cloudQueryPlan(accountRole, signedInUid, accountCourse);
     // Without a course there is nothing to list: clear whatever a previous course showed.
     for (const name of ['questions', 'pdfSources'] as const) {
@@ -343,7 +349,24 @@ export default function App() {
       );
     });
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
-  }, [signedInUid, accountRole, accountCourse]);
+  }, [signedInUid, accountRole, accountCourse, restricted]);
+
+  // Admin notification when someone registers while the dashboard is open.
+  const knownPending = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!isSignedInAdmin || !cloud.users) {
+      knownPending.current = null;
+      return;
+    }
+    const queue = pendingQueue(cloud.users);
+    const ids = new Set(queue.map((u) => u.id));
+    if (knownPending.current) {
+      const fresh = queue.filter((u) => !knownPending.current!.has(u.id));
+      if (fresh.length === 1) setToast({ tone: 'info', text: `New registration: ${fresh[0]!.name} (${fresh[0]!.email}) is waiting for your approval.` });
+      else if (fresh.length > 1) setToast({ tone: 'info', text: `${fresh.length} new registrations are waiting for your approval.` });
+    }
+    knownPending.current = ids;
+  }, [isSignedInAdmin, cloud.users]);
 
   // Signing out ends the Firebase session and returns to the sign-in page.
   const handleLogout = async () => {
@@ -498,7 +521,7 @@ export default function App() {
         notice={authNotice}
         onDismissNotice={() => setAuthNotice(null)}
         onRegistered={(name, status) =>
-          // A pending account is signed out with an explanation on the sign-in page instead.
+          // A new account waits for approval: its status page says so instead.
           status !== 'pending' &&
           setToast({
             tone: 'success',
@@ -509,8 +532,35 @@ export default function App() {
     );
   }
 
+  // ----- Signed in, but not approved: the status page is all there is -----
+  if (currentView === 'account-status') {
+    return (
+      <>
+        <AccountStatusScreen
+          profile={currentUser}
+          onLogout={handleLogout}
+          onCheckStatus={async () => {
+            const stored = await fetchProfile(firebaseUser.uid);
+            if (!stored) return false;
+            const next = buildProfile(firebaseUser, stored, firebaseUser.providerData[0]?.providerId);
+            const changed = statusOf(next) !== statusOf(currentUser);
+            if (changed) setProfile(next);
+            return changed;
+          }}
+        />
+        {toast && (
+          <div role="status" className="fixed z-50 bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm rounded-2xl border border-emerald-700/50 bg-slate-900/95 px-4 py-3 shadow-2xl text-sm text-slate-100">
+            {toast.text}
+          </div>
+        )}
+      </>
+    );
+  }
+
   // Reviewee screens only show the current person's own results.
   const myResults = visibleResults(currentUser, examResults);
+  const pendingApprovals = isSignedInAdmin && cloud.users ? pendingQueue(cloud.users).length : 0;
+  const logUserAction = (entry: UserLogEntry) => handleAddAuditLog(entry.action, entry.details, entry.badge, entry.target);
   const plannedCollections = signedInUid ? (Object.keys(cloudQueryPlan(accountRole, signedInUid, accountCourse)) as CloudCollection[]) : [];
   const cloudLoading = plannedCollections.some((name) => cloud[name] === null);
   const syncErrors = signedInUid ? Object.entries(cloud.errors) : [];
@@ -528,6 +578,7 @@ export default function App() {
           currentView={currentView}
           onNavigate={handleNavigate}
           pendingVerificationCount={pendingVerificationCount}
+          pendingApprovals={pendingApprovals}
           onLogout={handleLogout}
         />
       )}
@@ -665,6 +716,20 @@ export default function App() {
         )}
 
         {/* ADMINISTRATOR VIEWS */}
+        {currentView === 'admin-dashboard' && cloud.users && (
+          <PendingRegistrationsPanel users={cloud.users} onLog={logUserAction} onOpenApprovals={() => navigate('user-approvals')} />
+        )}
+
+        {currentView === 'user-approvals' && (
+          <UserApprovalsView
+            users={cloud.users ?? []}
+            loading={isSignedInAdmin && cloud.users === null && !cloud.errors.users}
+            error={cloud.errors.users}
+            admin={currentUser}
+            onLog={logUserAction}
+          />
+        )}
+
         {currentView === 'admin-dashboard' && (
           <AdminDashboard
             adminUser={currentUser}
@@ -781,7 +846,8 @@ export default function App() {
             examResults={examResults}
             subjects={SUBJECTS}
             admin={currentUser}
-            onLog={(entry) => handleAddAuditLog(entry.action, entry.details, entry.badge, entry.target)}
+            onLog={logUserAction}
+            onOpenApprovals={() => navigate('user-approvals')}
           />
         )}
 

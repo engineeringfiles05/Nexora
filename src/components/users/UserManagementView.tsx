@@ -30,21 +30,18 @@ import {
   Trash2,
   UserPlus,
   Users,
-  X,
+  XCircle,
 } from 'lucide-react';
 import type { ExamResult, Subject, UserProfile, UserStatus } from '../../types/index.ts';
 import { STATUS_LABELS, statusOf } from '../../auth/accountStatus.ts';
-import { describeAuthError } from '../../auth/validation.ts';
 import {
   createReviewee,
   deleteAccountRecords,
   resendSetupEmail,
-  setAccountStatus,
-  setRequireApproval,
   updateRevieweeProfile,
-  watchRegistrationSettings,
 } from '../../auth/adminUsers.ts';
-import { AdminApiError, deleteAuthAccount, getAdminCapabilities, setSignInBlocked, setSignInEmail } from '../../utils/adminApi.ts';
+import { deleteAuthAccount, setSignInEmail } from '../../utils/adminApi.ts';
+import { errorText, useAccountActions, type UserLogEntry } from './useAccountActions.tsx';
 import {
   DEFAULT_USER_QUERY,
   computeUserStats,
@@ -57,11 +54,11 @@ import {
 } from '../../utils/userAdmin.ts';
 import { Avatar } from '../Avatar.tsx';
 import { BarChart } from './MiniCharts.tsx';
-import { AddUserModal, DeleteUserModal, EditUserModal, StatusModal, type AddUserValues, type EditUserValues } from './UserModals.tsx';
+import { AddUserModal, DeleteUserModal, EditUserModal, type AddUserValues, type EditUserValues } from './UserModals.tsx';
 import { UserDetailsPanel } from './UserDetailsPanel.tsx';
 import { StatusBadge, formatDate, formatRelative } from './userUi.tsx';
 
-export type UserLogEntry = { action: string; details: string; badge?: string; target?: Pick<UserProfile, 'id' | 'name' | 'email'> };
+export type { UserLogEntry } from './useAccountActions.tsx';
 
 interface Props {
   /** Every profile in Firestore (live). The administrator's own is filtered out here. */
@@ -72,20 +69,22 @@ interface Props {
   subjects: Subject[];
   admin: UserProfile;
   onLog: (entry: UserLogEntry) => void;
+  /** Opens the User Approvals page. */
+  onOpenApprovals?: () => void;
 }
 
 type Dialog =
   | { kind: 'add' }
   | { kind: 'edit'; user: UserProfile }
-  | { kind: 'status'; user: UserProfile; status: UserStatus }
   | { kind: 'delete'; user: UserProfile };
 
 const QUICK_FILTERS: { id: QuickFilter; label: string }[] = [
   { id: 'all', label: 'All users' },
-  { id: 'active', label: 'Active' },
-  { id: 'inactive', label: 'Inactive' },
-  { id: 'suspended', label: 'Suspended' },
   { id: 'pending', label: 'Pending approval' },
+  { id: 'active', label: 'Approved' },
+  { id: 'rejected', label: 'Rejected' },
+  { id: 'suspended', label: 'Suspended' },
+  { id: 'inactive', label: 'Deactivated' },
   { id: 'recent', label: 'Recently registered' },
 ];
 
@@ -97,46 +96,21 @@ const SORTS: { id: SortKey; label: string }[] = [
   { id: 'lastLoginAt', label: 'Last login' },
 ];
 
-function errorText(error: unknown): string {
-  if (error instanceof AdminApiError) return error.message;
-  const code = (error as { code?: string })?.code ?? '';
-  if (code === 'permission-denied') return 'Firestore refused the change. Make sure the latest firestore.rules are published.';
-  if (code.startsWith('auth/')) return describeAuthError(error);
-  return 'The change could not be saved. Check your connection and try again.';
-}
-
-export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, error, examResults, subjects, admin, onLog }) => {
+export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, error, examResults, subjects, admin, onLog, onOpenApprovals }) => {
   const users = useMemo(() => allUsers.filter((u) => u.id !== admin.id && u.role !== 'admin'), [allUsers, admin.id]);
   const [query, setQuery] = useState<UserQuery>(DEFAULT_USER_QUERY);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(null);
-  const [serviceAccount, setServiceAccount] = useState<boolean | null>(null);
-  const [requireApproval, setRequireApprovalState] = useState<boolean | null>(null);
-  const [approvalBusy, setApprovalBusy] = useState(false);
   const [resendBusy, setResendBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const { serviceAccount, setNotice, applyStatus, requestStatus, elements: statusElements } = useAccountActions(onLog);
 
   useEffect(() => {
-    getAdminCapabilities().then((c) => setServiceAccount(c.serviceAccount));
-    const unsubscribe = watchRegistrationSettings(
-      (s) => setRequireApprovalState(s.requireApproval),
-      () => setRequireApprovalState(false)
-    );
     const tick = setInterval(() => setNow(Date.now()), 60_000);
-    return () => {
-      unsubscribe();
-      clearInterval(tick);
-    };
+    return () => clearInterval(tick);
   }, []);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), notice.tone === 'error' ? 12_000 : 7_000);
-    return () => clearTimeout(timer);
-  }, [notice]);
 
   const stats = useMemo(() => computeUserStats(users, now), [users, now]);
   const weekly = useMemo(() => weeklyRegistrations(users, 8, now), [users, now]);
@@ -178,44 +152,6 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
         ? 'An account with this email address already exists.'
         : errorText(err);
     }
-  };
-
-  /** Firestore first (it is what blocks access), then the Auth-level sign-in block if available. */
-  const applyStatus = async (user: UserProfile, status: UserStatus, reason: string): Promise<string | null> => {
-    const before = statusOf(user);
-    try {
-      await setAccountStatus(user.id, status, reason);
-    } catch (err) {
-      return errorText(err);
-    }
-    let authNote = '';
-    if (serviceAccount) {
-      try {
-        await setSignInBlocked(user.id, status !== 'active');
-      } catch (err) {
-        authNote = ` The status is saved and enforced, but blocking sign-in at Firebase Authentication failed: ${errorText(err)}`;
-      }
-    }
-    const action =
-      status === 'active'
-        ? before === 'suspended'
-          ? 'Account Restored'
-          : before === 'pending'
-            ? 'Account Approved'
-            : 'Account Activated'
-        : status === 'suspended'
-          ? 'Account Suspended'
-          : status === 'inactive'
-            ? 'Account Deactivated'
-            : 'Account Set to Pending';
-    onLog({
-      action,
-      details: `${user.name} (${user.email}): ${STATUS_LABELS[before]} → ${STATUS_LABELS[status]}.${reason.trim() && status !== 'active' ? ` Reason: ${reason.trim()}` : ''}`,
-      badge: 'Users',
-      target: user,
-    });
-    setNotice({ tone: authNote ? 'info' : 'success', text: `${action}: ${user.name}.${authNote}` });
-    return null;
   };
 
   const handleEdit = async (user: UserProfile, values: EditUserValues): Promise<string | null> => {
@@ -283,23 +219,6 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
     }
   };
 
-  const toggleApproval = async () => {
-    if (requireApproval === null) return;
-    setApprovalBusy(true);
-    try {
-      await setRequireApproval(!requireApproval);
-      onLog({
-        action: !requireApproval ? 'Registration Approval Enabled' : 'Registration Approval Disabled',
-        details: !requireApproval ? 'New public registrations now wait for administrator approval.' : 'New public registrations are active immediately.',
-        badge: 'Settings',
-      });
-    } catch (err) {
-      setNotice({ tone: 'error', text: errorText(err) });
-    } finally {
-      setApprovalBusy(false);
-    }
-  };
-
   // ----- Render -----
 
   const dialogs = (
@@ -308,18 +227,6 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
       {dialog?.kind === 'edit' && (
         <EditUserModal user={dialog.user} canChangeEmail={serviceAccount === true} onClose={() => setDialog(null)} onSave={(v) => handleEdit(dialog.user, v)} />
       )}
-      {dialog?.kind === 'status' && (
-        <StatusModal
-          user={dialog.user}
-          status={dialog.status}
-          onClose={() => setDialog(null)}
-          onConfirm={async (reason) => {
-            const err = await applyStatus(dialog.user, dialog.status, reason);
-            if (!err) setDialog(null);
-            return err;
-          }}
-        />
-      )}
       {dialog?.kind === 'delete' && (
         <DeleteUserModal
           user={dialog.user}
@@ -327,22 +234,14 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
           canDelete={serviceAccount === true}
           onClose={() => setDialog(null)}
           onConfirm={() => handleDelete(dialog.user)}
-          onDeactivateInstead={() => setDialog({ kind: 'status', user: dialog.user, status: 'inactive' })}
+          onDeactivateInstead={() => {
+            const user = dialog.user;
+            setDialog(null);
+            requestStatus(user, 'inactive');
+          }}
         />
       )}
-      {notice && (
-        <div
-          role={notice.tone === 'error' ? 'alert' : 'status'}
-          className={`fixed z-50 bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md rounded-2xl border px-4 py-3 shadow-2xl text-sm flex items-start gap-3 bg-slate-900/95 backdrop-blur ${
-            notice.tone === 'error' ? 'border-rose-700/60 text-rose-100' : notice.tone === 'info' ? 'border-amber-700/60 text-amber-100' : 'border-emerald-700/60 text-slate-100'
-          }`}
-        >
-          <span className="flex-1 leading-relaxed">{notice.text}</span>
-          <button onClick={() => setNotice(null)} aria-label="Dismiss" className="text-slate-400 hover:text-white">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {statusElements}
     </>
   );
 
@@ -355,7 +254,7 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
           subjects={subjects}
           onBack={() => setSelectedId(null)}
           onEdit={() => setDialog({ kind: 'edit', user: selected })}
-          onChangeStatus={(status) => setDialog({ kind: 'status', user: selected, status })}
+          onChangeStatus={(status) => requestStatus(selected, status)}
           onResendSetup={() => handleResend(selected)}
           resendBusy={resendBusy}
         />
@@ -366,10 +265,11 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
 
   const cards: { id: QuickFilter; label: string; value: number; icon: React.ComponentType<{ className?: string }>; accent: string }[] = [
     { id: 'all', label: 'Total registered', value: stats.total, icon: Users, accent: 'text-indigo-300' },
-    { id: 'active', label: 'Active', value: stats.active, icon: CheckCircle2, accent: 'text-emerald-300' },
-    { id: 'inactive', label: 'Inactive', value: stats.inactive, icon: PauseCircle, accent: 'text-slate-300' },
     { id: 'pending', label: 'Pending approval', value: stats.pending, icon: Hourglass, accent: 'text-amber-300' },
+    { id: 'active', label: 'Approved', value: stats.active, icon: CheckCircle2, accent: 'text-emerald-300' },
+    { id: 'rejected', label: 'Rejected', value: stats.rejected, icon: XCircle, accent: 'text-rose-300' },
     { id: 'suspended', label: 'Suspended', value: stats.suspended, icon: Ban, accent: 'text-rose-300' },
+    { id: 'inactive', label: 'Deactivated', value: stats.inactive, icon: PauseCircle, accent: 'text-slate-300' },
     { id: 'recent', label: 'New (7 days)', value: stats.newlyRegistered, icon: Sparkles, accent: 'text-sky-300' },
   ];
 
@@ -383,24 +283,17 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
             User Management
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Reviewee accounts</h1>
-          <p className="text-xs text-slate-400 max-w-xl">Create, edit, activate, suspend and remove reviewee accounts, assign courses, and follow each reviewee's progress.</p>
+          <p className="text-xs text-slate-400 max-w-xl">Create, edit, approve, suspend and remove reviewee accounts, assign courses, and follow each reviewee's progress.</p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5">
+          {stats.pending > 0 && onOpenApprovals && (
             <button
-              role="switch"
-              aria-checked={requireApproval === true}
-              onClick={toggleApproval}
-              disabled={requireApproval === null || approvalBusy}
-              className={`relative w-9 h-5 rounded-full transition ${requireApproval ? 'bg-amber-500' : 'bg-slate-700'} disabled:opacity-50`}
+              onClick={onOpenApprovals}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-amber-600/50 bg-amber-500/10 hover:bg-amber-500/20 text-amber-100 text-xs font-bold"
             >
-              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${requireApproval ? 'left-[18px]' : 'left-0.5'}`} />
+              <Hourglass className="w-4 h-4" /> {stats.pending} pending approval
             </button>
-            <span>
-              <span className="block font-semibold text-white">Approve new registrations</span>
-              <span className="block text-[10px] text-slate-400">{requireApproval ? 'New accounts wait for you' : 'New accounts are active at once'}</span>
-            </span>
-          </label>
+          )}
           <button
             onClick={() => setDialog({ kind: 'add' })}
             className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30"
@@ -413,13 +306,13 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
       {serviceAccount === false && (
         <div className="rounded-2xl border border-amber-800/60 bg-amber-950/30 px-4 py-3 text-xs text-amber-100 leading-relaxed">
           <strong className="text-amber-50">Limited mode:</strong> changing a reviewee's sign-in email and permanently deleting accounts need Firebase Admin credentials on the server
-          (<code className="font-mono">FIREBASE_SERVICE_ACCOUNT</code>, see <code className="font-mono">.env.example</code>). Everything else works now, and deactivated or
-          suspended accounts are already blocked by the security rules.
+          (<code className="font-mono">FIREBASE_SERVICE_ACCOUNT</code>, see <code className="font-mono">.env.example</code>). Everything else works now, and pending, rejected,
+          suspended and deactivated accounts are already blocked by the security rules.
         </div>
       )}
 
       {/* Statistics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
         {cards.map((card) => {
           const Icon = card.icon;
           const active = query.quick === card.id;
@@ -593,7 +486,7 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
                         {resultCounts.get(user.id) && <span className="text-slate-500"> · avg {Math.round(resultCounts.get(user.id)!.total / resultCounts.get(user.id)!.count)}%</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <RowActions user={user} onOpen={() => setSelectedId(user.id)} onDialog={setDialog} />
+                        <RowActions user={user} onOpen={() => setSelectedId(user.id)} onDialog={setDialog} onStatus={(status) => requestStatus(user, status)} />
                       </td>
                     </tr>
                   ))}
@@ -618,7 +511,7 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
                     <span>Registered {formatDate(user.enrolledAt)}</span>
                     <span>Last login {formatRelative(user.lastLoginAt, now)}</span>
                   </div>
-                  <RowActions user={user} onOpen={() => setSelectedId(user.id)} onDialog={setDialog} />
+                  <RowActions user={user} onOpen={() => setSelectedId(user.id)} onDialog={setDialog} onStatus={(status) => requestStatus(user, status)} />
                 </li>
               ))}
             </ul>
@@ -649,7 +542,12 @@ export const UserManagementView: React.FC<Props> = ({ users: allUsers, loading, 
 // Pieces
 // ---------------------------------------------------------------------------
 
-const RowActions: React.FC<{ user: UserProfile; onOpen: () => void; onDialog: (d: Dialog) => void }> = ({ user, onOpen, onDialog }) => {
+const RowActions: React.FC<{ user: UserProfile; onOpen: () => void; onDialog: (d: Dialog) => void; onStatus: (status: UserStatus) => void }> = ({
+  user,
+  onOpen,
+  onDialog,
+  onStatus,
+}) => {
   const status = statusOf(user);
   const btn = 'p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition';
   return (
@@ -660,27 +558,27 @@ const RowActions: React.FC<{ user: UserProfile; onOpen: () => void; onDialog: (d
       <button onClick={() => onDialog({ kind: 'edit', user })} className={btn} title="Edit" aria-label={`Edit ${user.name}`}>
         <Pencil className="w-3.5 h-3.5" />
       </button>
-      {status === 'pending' && (
-        <button onClick={() => onDialog({ kind: 'status', user, status: 'active' })} className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold">
+      {(status === 'pending' || status === 'rejected') && (
+        <button onClick={() => onStatus('active')} className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold">
           Approve
         </button>
       )}
-      {status === 'suspended' && (
-        <button onClick={() => onDialog({ kind: 'status', user, status: 'active' })} className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold">
-          Restore
+      {status === 'pending' && (
+        <button onClick={() => onStatus('rejected')} className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-white text-[11px] font-semibold">
+          Reject
         </button>
       )}
-      {status === 'inactive' && (
-        <button onClick={() => onDialog({ kind: 'status', user, status: 'active' })} className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold">
-          Activate
+      {(status === 'suspended' || status === 'inactive') && (
+        <button onClick={() => onStatus('active')} className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold">
+          Reactivate
         </button>
       )}
       {status === 'active' && (
         <>
-          <button onClick={() => onDialog({ kind: 'status', user, status: 'suspended' })} className={btn} title="Suspend" aria-label={`Suspend ${user.name}`}>
+          <button onClick={() => onStatus('suspended')} className={btn} title="Suspend" aria-label={`Suspend ${user.name}`}>
             <Ban className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => onDialog({ kind: 'status', user, status: 'inactive' })} className={btn} title="Deactivate" aria-label={`Deactivate ${user.name}`}>
+          <button onClick={() => onStatus('inactive')} className={btn} title="Deactivate" aria-label={`Deactivate ${user.name}`}>
             <PauseCircle className="w-3.5 h-3.5" />
           </button>
         </>
@@ -737,6 +635,7 @@ const StatusSplit: React.FC<{ stats: ReturnType<typeof computeUserStats> }> = ({
   const parts: { key: UserStatus; color: string }[] = [
     { key: 'active', color: 'bg-emerald-400' },
     { key: 'pending', color: 'bg-amber-400' },
+    { key: 'rejected', color: 'bg-fuchsia-400' },
     { key: 'suspended', color: 'bg-rose-400' },
     { key: 'inactive', color: 'bg-slate-500' },
   ];

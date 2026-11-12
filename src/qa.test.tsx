@@ -15,6 +15,8 @@ import { Navbar } from './components/Navbar.tsx';
 import { AuthPage } from './components/auth/AuthPage.tsx';
 import { UserManagementView } from './components/users/UserManagementView.tsx';
 import { UserDetailsPanel } from './components/users/UserDetailsPanel.tsx';
+import { PendingRegistrationsPanel, UserApprovalsView } from './components/users/UserApprovalsView.tsx';
+import { AccountStatusScreen } from './components/auth/AccountStatusScreen.tsx';
 import { AddUserModal, DeleteUserModal, EditUserModal, StatusModal } from './components/users/UserModals.tsx';
 import { PdfImporterView } from './components/PdfImporterView.tsx';
 import { PdfQuizGeneratorView } from './components/PdfQuizGeneratorView.tsx';
@@ -49,6 +51,9 @@ const screens: [string, React.ReactElement][] = [
   ['UserManagementView', <UserManagementView users={[data.DEMO_USERS[1], { ...data.DEMO_USERS[1], id: 'u2', status: 'suspended' }]} loading={false} examResults={examResults} subjects={subjects} admin={data.DEMO_USERS[0]} onLog={noop} />],
   ['UserManagementView (loading)', <UserManagementView users={[]} loading examResults={[]} subjects={subjects} admin={data.DEMO_USERS[0]} onLog={noop} />],
   ['UserDetailsPanel', <UserDetailsPanel user={{ ...data.DEMO_USERS[1], id: examResults[0]!.userId, course: 'REE' }} examResults={examResults} subjects={subjects} onBack={noop} onEdit={noop} onChangeStatus={noop} onResendSetup={noop} />],
+  ['UserApprovalsView', <UserApprovalsView users={[{ ...data.DEMO_USERS[1], status: 'pending' }, { ...data.DEMO_USERS[1], id: 'u3', status: 'rejected' }]} loading={false} admin={data.DEMO_USERS[0]} onLog={noop} />],
+  ['PendingRegistrationsPanel', <PendingRegistrationsPanel users={[{ ...data.DEMO_USERS[1], status: 'pending' }]} onLog={noop} onOpenApprovals={noop} />],
+  ['AccountStatusScreen (suspended)', <AccountStatusScreen profile={{ ...data.DEMO_USERS[1], status: 'suspended' }} onLogout={noop} onCheckStatus={async () => false} />],
   ['AddUserModal', <AddUserModal onClose={noop} onCreate={async () => null} />],
   ['EditUserModal', <EditUserModal user={data.DEMO_USERS[1]} canChangeEmail={false} onClose={noop} onSave={async () => null} />],
   ['StatusModal', <StatusModal user={data.DEMO_USERS[1]} status="suspended" onClose={noop} onConfirm={async () => null} />],

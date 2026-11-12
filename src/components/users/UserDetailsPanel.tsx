@@ -5,7 +5,7 @@
 
 import React, { useMemo } from 'react';
 import { ArrowLeft, Award, BookOpen, Calendar, Clock, Mail, Pencil, Phone, Send, ShieldAlert, TrendingDown, TrendingUp, UserCheck } from 'lucide-react';
-import type { ExamResult, Subject, UserProfile } from '../../types/index.ts';
+import type { ExamResult, Subject, UserProfile, UserStatus } from '../../types/index.ts';
 import { statusOf } from '../../auth/accountStatus.ts';
 import { EXAM_TYPE_LABELS, summarizePerformance } from '../../utils/userAdmin.ts';
 import { Avatar } from '../Avatar.tsx';
@@ -18,7 +18,7 @@ interface Props {
   subjects: Subject[];
   onBack: () => void;
   onEdit: () => void;
-  onChangeStatus: (status: 'active' | 'inactive' | 'suspended') => void;
+  onChangeStatus: (status: UserStatus) => void;
   onResendSetup: () => void;
   resendBusy?: boolean;
 }
@@ -71,10 +71,17 @@ export const UserDetailsPanel: React.FC<Props> = ({ user, examResults, subjects,
               </button>
             </>
           ) : (
-            <button onClick={() => onChangeStatus('active')} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white">
-              <UserCheck className="w-3.5 h-3.5" />
-              {status === 'suspended' ? 'Restore' : status === 'pending' ? 'Approve' : 'Activate'}
-            </button>
+            <>
+              <button onClick={() => onChangeStatus('active')} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white">
+                <UserCheck className="w-3.5 h-3.5" />
+                {status === 'pending' || status === 'rejected' ? 'Approve account' : 'Reactivate account'}
+              </button>
+              {status === 'pending' && (
+                <button onClick={() => onChangeStatus('rejected')} className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-xs font-semibold text-white">
+                  Reject account
+                </button>
+              )}
+            </>
           )}
           {user.authProvider !== 'google.com' && (
             <button onClick={onResendSetup} disabled={resendBusy} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white disabled:opacity-60">

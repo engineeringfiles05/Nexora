@@ -47,7 +47,7 @@ service cloud.firestore {
         data.email is string && data.email.size() <= 254 &&
         data.role in ['reviewee', 'admin'] &&
         (!('course' in data) || data.course in ['REE', 'RME'] || data.course == null) &&
-        data.get('status', 'active') in ['active', 'inactive', 'suspended', 'pending'] &&
+        data.get('status', 'active') in ['active', 'pending', 'rejected', 'suspended', 'inactive'] &&
         optionalString(data, 'statusReason', 300) &&
         optionalString(data, 'statusChangedAt', 40) &&
         optionalString(data, 'lastLoginAt', 40) &&
@@ -71,8 +71,9 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(request.auth.uid);
     }
 
-    // Reviewees use review materials only with an active profile (see src/auth/accountStatus.ts).
-    // Inactive, suspended and pending accounts, and accounts without a profile, are refused.
+    // Reviewees use review materials only with an approved ("active") profile (see
+    // src/auth/accountStatus.ts). Pending, rejected, suspended and deactivated accounts, and
+    // accounts without a profile, are refused.
     function isActiveReviewee() {
       return isSignedIn() && exists(profilePath()) && get(profilePath()).data.get('status', 'active') == 'active';
     }
@@ -82,15 +83,10 @@ service cloud.firestore {
       return get(profilePath()).data.get('course', null);
     }
 
-    function requiresApproval() {
-      return exists(/databases/$(database)/documents/settings/registration) &&
-        get(/databases/$(database)/documents/settings/registration).data.get('requireApproval', false) == true;
-    }
-
-    // A self-created profile starts active, or pending while the administrator approves new accounts.
+    // Every self-created profile waits for the administrator's approval. Only the verified site
+    // owner's own profile starts active, so the administrator can never be locked out.
     function isAllowedNewStatus(data) {
-      return isAdmin() || data.get('status', 'active') == 'pending' ||
-        (data.get('status', 'active') == 'active' && !requiresApproval());
+      return (isAdmin() && data.get('status', 'active') == 'active') || data.get('status', '') == 'pending';
     }
 
     function unchanged(field) {
@@ -133,14 +129,6 @@ service cloud.firestore {
         (request.auth.uid != userId || (incoming().get('status', 'active') == 'active' && incoming().role == 'admin'));
       // Deleting an account: the administrator only, and never their own profile.
       allow delete: if isAdmin() && isValidId(userId) && request.auth.uid != userId;
-    }
-
-    // Registration settings (approval of new accounts).
-    match /settings/{settingId} {
-      allow get: if isSignedIn() && isValidId(settingId);
-      allow write: if isAdmin() && settingId == 'registration' &&
-        incoming().keys().hasOnly(['requireApproval', 'updatedAt']) &&
-        incoming().requireApproval is bool;
     }
 
     // Question Bank Collection

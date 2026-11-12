@@ -8,7 +8,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import type { ExamResult, UserProfile } from '../types/index.ts';
 import { DEFAULT_USER_QUERY, computeUserStats, filterUsers, paginate, summarizePerformance, weeklyRegistrations } from './userAdmin.ts';
-import { blockedMessage, canAccessPlatform, contentCourse, statusOf } from '../auth/accountStatus.ts';
+import { STATUS_LABELS, blockedMessage, canAccessPlatform, contentCourse, statusOf } from '../auth/accountStatus.ts';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { AccountStatusScreen } from '../components/auth/AccountStatusScreen.tsx';
+import { pendingQueue } from '../components/users/UserApprovalsView.tsx';
+import { statusAction } from '../components/users/useAccountActions.tsx';
 import { buildProfile } from '../auth/authService.ts';
 import { publishQuestionsToBank } from './bank.ts';
 import { resolveRoute } from '../auth/routes.ts';
@@ -78,6 +83,7 @@ test('statistics count every status, new registrations and recent sign-ins', () 
     active: 2,
     inactive: 1,
     pending: 1,
+    rejected: 0,
     suspended: 1,
     newlyRegistered: 2,
     recentlyActive: 2,
@@ -176,9 +182,79 @@ test('firestore.rules: blocked accounts lose access, courses restrict materials,
   assert.match(rules, /allow create: if isValidId\(resultId\) && incoming\(\)\.userId == request\.auth\.uid && \(isActiveReviewee\(\) \|\| isAdmin\(\)\)/);
   // The administrator creates reviewees (never admins) for others.
   assert.match(rules, /allow create: if isAdmin\(\) && isValidId\(userId\) && request\.auth\.uid != userId &&\s*isValidProfile\(incoming\(\), userId\) &&\s*incoming\(\)\.role == 'reviewee';/);
-  // Self-registration can't claim to be created by the admin, and starts pending when required.
+  // Self-registration can't claim to be created by the admin.
   assert.match(rules, /isAllowedNewStatus\(incoming\(\)\) &&\s*!\('createdBy' in incoming\(\)\)/);
-  assert.match(rules, /data\.get\('status', 'active'\) == 'pending' \|\|\s*\(data\.get\('status', 'active'\) == 'active' && !requiresApproval\(\)\)/);
-  // Only the admin changes the approval setting.
-  assert.match(rules, /match \/settings\/\{settingId\} \{[\s\S]*?allow write: if isAdmin\(\) && settingId == 'registration'/);
+});
+
+// ---- Approval workflow ----
+
+test('every self-registration must start pending; only the verified owner starts approved', async () => {
+  const rules = await readFile(new URL('../../firestore.rules', import.meta.url), 'utf8');
+  const fn = /function isAllowedNewStatus\(data\) \{([\s\S]*?)\n    \}/.exec(rules)?.[1] ?? '';
+  assert.match(fn, /\(isAdmin\(\) && data\.get\('status', 'active'\) == 'active'\) \|\| data\.get\('status', ''\) == 'pending'/);
+  assert.doesNotMatch(rules, /requiresApproval|match \/settings\//); // no switch can turn approvals off
+  assert.match(rules, /'active', 'pending', 'rejected', 'suspended', 'inactive'/);
+  // A reviewee can never change their own status (so can't approve themselves).
+  assert.match(rules, /request\.auth\.uid == userId && !isAdmin\(\)[\s\S]*?unchanged\('status'\)/);
+  const service = await readFile(new URL('../auth/authService.ts', import.meta.url), 'utf8');
+  assert.match(service, /const status: UserStatus = base\.role === 'admin' \? 'active' : NEW_REGISTRATION_STATUS;/);
+});
+
+test('accounts that are not approved only ever see their status page, whatever address they open', () => {
+  const restricted = { status: 'signed-in', role: 'reviewee', restricted: true } as const;
+  for (const view of ['reviewee-dashboard', 'pdf-quiz-generator', 'exam-history', 'active-exam', 'account', 'admin-dashboard', 'user-approvals'] as const) {
+    assert.equal(resolveRoute(view, restricted).view, 'account-status', view);
+  }
+  assert.equal(resolveRoute(null, restricted).view, 'account-status');
+  assert.equal(resolveRoute('login', restricted).view, 'account-status');
+  assert.equal(resolveRoute('reset-password', restricted).view, 'reset-password');
+  // Once approved, the status page sends them to their dashboard.
+  assert.equal(resolveRoute('account-status', { status: 'signed-in', role: 'reviewee' }).view, 'reviewee-dashboard');
+  // The administrator is never restricted, and the approvals page is admin-only.
+  assert.equal(resolveRoute('user-approvals', { status: 'signed-in', role: 'admin', restricted: true }).view, 'user-approvals');
+  assert.deepEqual(resolveRoute('user-approvals', { status: 'signed-in', role: 'reviewee' }), { view: 'reviewee-dashboard', denied: true });
+});
+
+test('status labels and activity-log names follow the approval workflow', () => {
+  assert.equal(STATUS_LABELS.pending, 'Pending approval');
+  assert.equal(STATUS_LABELS.active, 'Approved');
+  assert.equal(STATUS_LABELS.rejected, 'Rejected');
+  assert.equal(canAccessPlatform({ status: 'rejected' }), false);
+  assert.match(blockedMessage({ status: 'rejected' }), /not approved/);
+  assert.equal(statusAction('pending', 'active'), 'Account Approved');
+  assert.equal(statusAction('rejected', 'active'), 'Account Approved');
+  assert.equal(statusAction('pending', 'rejected'), 'Account Rejected');
+  assert.equal(statusAction('active', 'suspended'), 'Account Suspended');
+  assert.equal(statusAction('suspended', 'active'), 'Account Reactivated');
+  assert.equal(statusAction('inactive', 'active'), 'Account Reactivated');
+});
+
+test('the approval queue lists pending reviewees, oldest first, never the administrator', () => {
+  const queue = pendingQueue([
+    user('new', { status: 'pending', enrolledAt: daysAgo(1) }),
+    user('ok', { status: 'active' }),
+    user('old', { status: 'pending', enrolledAt: daysAgo(5) }),
+    user('adm', { status: 'pending', role: 'admin' }),
+    user('rej', { status: 'rejected' }),
+  ]);
+  assert.deepEqual(queue.map((u) => u.id), ['old', 'new']);
+});
+
+test('the pending page shows the required message, status, registration date and actions', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(AccountStatusScreen, { profile: user('p', { status: 'pending', enrolledAt: '2026-11-12T08:30:00Z' }), onLogout: () => {}, onCheckStatus: async () => false })
+  );
+  assert.match(html, /Your Account Is Pending Approval!/);
+  assert.match(html, /Thank you for registering with NEXORA Academy\. Your account has been successfully created and is currently awaiting verification and approval from our administrator\./);
+  assert.match(html, /Status: Pending approval/);
+  assert.match(html, /Registered/);
+  assert.match(html, /2026/);
+  assert.match(html, /temporarily restricted/);
+  assert.match(html, /Check approval status/);
+  assert.match(html, /Log out/);
+  const rejected = renderToStaticMarkup(
+    React.createElement(AccountStatusScreen, { profile: user('r', { status: 'rejected', statusReason: 'Incomplete details' }), onLogout: () => {}, onCheckStatus: async () => false })
+  );
+  assert.match(rejected, /Your Registration Was Not Approved/);
+  assert.match(rejected, /Incomplete details/);
 });

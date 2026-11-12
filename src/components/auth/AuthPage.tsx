@@ -143,7 +143,7 @@ export const AuthPage: React.FC<Props> = ({ view, onNavigate, notice, onDismissN
 // Layout
 // ---------------------------------------------------------------------------
 
-const Backdrop: React.FC = () => (
+export const Backdrop: React.FC = () => (
   <div aria-hidden className="pointer-events-none absolute inset-0">
     <div className="absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full bg-indigo-600/20 blur-[120px]" />
     <div className="absolute -bottom-48 right-[-10rem] w-[34rem] h-[34rem] rounded-full bg-emerald-500/10 blur-[120px]" />
@@ -159,7 +159,7 @@ const Backdrop: React.FC = () => (
   </div>
 );
 
-const Logo: React.FC<{ size?: 'sm' | 'lg' }> = ({ size = 'lg' }) => (
+export const Logo: React.FC<{ size?: 'sm' | 'lg' }> = ({ size = 'lg' }) => (
   <div className="flex items-center gap-3 select-none">
     <div className={`${size === 'lg' ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-lg shadow-indigo-500/25`}>
       <img src="/logo.png" alt="" className="w-full h-full object-contain p-1" />

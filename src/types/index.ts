@@ -9,10 +9,12 @@ export type UserRole = 'admin' | 'reviewee';
 export type Course = 'REE' | 'RME';
 
 /**
- * Whether an account may use NEXORA Academy. Only "active" accounts can open protected
- * pages; firestore.rules enforces the same. Profiles without a status are active.
+ * Whether an account may use NEXORA Academy. Only "active" (approved) accounts can open
+ * protected pages; firestore.rules enforces the same. New registrations start "pending" until
+ * the administrator approves them. Profiles without a status (created before approvals
+ * existed) are active.
  */
-export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending';
+export type UserStatus = 'active' | 'pending' | 'rejected' | 'suspended' | 'inactive';
 
 export interface UserProfile {
   id: string;

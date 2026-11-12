@@ -20,12 +20,11 @@
 
 import { initializeApp, getApps } from 'firebase/app';
 import { createUserWithEmailAndPassword, getAuth, inMemoryPersistence, sendPasswordResetEmail, setPersistence, signOut } from 'firebase/auth';
-import { collection, deleteDoc, deleteField, doc, getDocs, onSnapshot, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { auth, db } from '../firebase.ts';
 import { sanitizeForFirestore } from '../utils/firebaseSync.ts';
 import type { Course, UserProfile, UserStatus } from '../types/index.ts';
-import { SETTINGS_REGISTRATION_DOC } from './accountStatus.ts';
 import { continueSettings, courseDetails } from './authService.ts';
 import { isAdminEmail } from './roles.ts';
 import { normalizeEmail, sanitizeContact, sanitizeName } from './validation.ts';
@@ -155,14 +154,8 @@ export async function deleteAccountRecords(uid: string): Promise<{ resultsDelete
   return { resultsDeleted: deleted };
 }
 
-export function watchRegistrationSettings(onChange: (settings: { requireApproval: boolean }) => void, onError: (err: unknown) => void) {
-  return onSnapshot(
-    doc(db, 'settings', SETTINGS_REGISTRATION_DOC),
-    (snapshot) => onChange({ requireApproval: snapshot.exists() && snapshot.data()?.requireApproval === true }),
-    onError
-  );
-}
-
-export async function setRequireApproval(requireApproval: boolean): Promise<void> {
-  await setDoc(doc(db, 'settings', SETTINGS_REGISTRATION_DOC), { requireApproval, updatedAt: new Date().toISOString() });
+/** Reads the account's profile again (the "check approval status" button). */
+export async function fetchProfile(uid: string): Promise<Partial<UserProfile> | null> {
+  const snapshot = await getDoc(doc(db, 'users', uid));
+  return snapshot.exists() ? (snapshot.data() as Partial<UserProfile>) : null;
 }
