@@ -16,7 +16,7 @@
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase.ts';
 import type { Course, Question, SubjectId } from '../types/index.ts';
-import { findDuplicates, type DuplicateDecision } from './bank.ts';
+import { applyDuplicateDecision, findDuplicates, type DuplicateDecision } from './bank.ts';
 import { cacheFile, cachedFile, forgetFile } from './fileCache.ts';
 import { classifyQuestionnaireFile, formatFileSize } from './importFile.ts';
 import { deleteSession, listSessions, loadDrafts, saveDrafts, saveSession } from './importPersistence.ts';
@@ -413,6 +413,11 @@ export function updateSession(id: string, fn: (s: ImportSession) => Partial<Impo
 
 export function setDuplicateDecision(id: string, questionId: string, decision: DuplicateDecision) {
   patch(id, (s) => ({ duplicateDecisions: { ...s.duplicateDecisions, [questionId]: decision } }));
+}
+
+/** Sets the same decision for several duplicates at once ("Keep both" for all, say). */
+export function setDuplicateDecisions(id: string, questionIds: string[], decision: DuplicateDecision) {
+  patch(id, (s) => ({ duplicateDecisions: applyDuplicateDecision(s.duplicateDecisions, questionIds, decision) }));
 }
 
 // ---------------------------------------------------------------------------

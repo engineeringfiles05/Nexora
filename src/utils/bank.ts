@@ -261,6 +261,24 @@ export function findDuplicates(bank: Question[], incoming: Question[], threshold
 /** What to do with an imported question that is already in the bank. Default: skip. */
 export type DuplicateDecision = 'skip' | 'replace' | 'keep';
 
+/** The decisions with `decision` set for every one of `questionIds`; other entries are kept. */
+export function applyDuplicateDecision(
+  decisions: Record<string, DuplicateDecision>,
+  questionIds: string[],
+  decision: DuplicateDecision
+): Record<string, DuplicateDecision> {
+  const next = { ...decisions };
+  for (const id of questionIds) next[id] = decision;
+  return next;
+}
+
+/** How many of `questionIds` have each decision; a question with none set is skipped by default. */
+export function countDuplicateDecisions(decisions: Record<string, DuplicateDecision>, questionIds: string[]): Record<DuplicateDecision, number> {
+  const counts: Record<DuplicateDecision, number> = { skip: 0, replace: 0, keep: 0 };
+  for (const id of questionIds) counts[decisions[id] ?? 'skip']++;
+  return counts;
+}
+
 /**
  * Publishes staged questions. Reimporting a filename or the same file under another name
  * keeps that source's ID and settings, and counts are derived from the bank so partial
