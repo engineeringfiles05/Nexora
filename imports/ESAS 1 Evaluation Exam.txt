@@ -1,0 +1,876 @@
+ESAS 1 Evaluation Exam
+Coverage: Engineering Mechanics, Hydraulics & Strength of Materials
+
+1. A collision in which the total kinetic energy after collision is less than before collision is?
+A. Inelastic Collision
+B. Elastic Collision
+C. Perfectly Elastic Collision
+D. Out of Center Collision
+Answer: A
+Solution: In an inelastic collision momentum is conserved but some kinetic energy is lost (to heat, sound or deformation), so the kinetic energy after the collision is less than before.
+
+2. It is a branch of physics which concerned with the study of forces and torques and their effect on motion.
+A. Dynamics
+B. Kinematics
+C. Kinetic Energy
+D. Continuum
+Answer: A
+Solution: Dynamics studies forces and torques and the motion they produce. Kinematics describes motion without regard to its causes.
+
+3. A vertically loaded beam, fixed at one end and simply supported at the other is indeterminate to what degree?
+A. Third
+B. First
+C. Second
+D. Statically Determinate
+Answer: B
+Solution: A propped cantilever has 4 reactions (fixed end: V and M; simple support: V; plus H) against 3 equations of equilibrium; for vertical loading it has 3 unknowns (V1, M1, V2) against 2 equations.
+• Either way there is one redundant: indeterminate to the first degree.
+
+4. A block is dragged up an inclined plane of slope angle of 20 deg. by force of F= 18.4 lbs, 30 degrees with the plane. How large will the component Fy in lbs be?
+A. 14
+B. 12
+C. 11
+D. 9.2
+Answer: A
+Solution: The force makes 20° + 30° = 50° with the horizontal.
+• Fy (vertical) = 18.4 sin 50° = 14.1 lb ≈ 14 lb
+• Fx (horizontal) = 18.4 cos 50° = 11.8 lb
+• Review note: if x and y are taken along and normal to the incline, Fy = 18.4 sin 30° = 9.2 lb (choice D). The choices 14 and 12 fit horizontal/vertical axes.
+
+5. Two boys B1 and B2, the effort of B11 and B2 acts at a point. The effort of B1 is 8 lbs and his direction is 60 deg above horizontal on the first quadrant. The magnitude of B2 is 5lbs and his direction is 53 deg below horizontal on the fourth quadrant. What is the resultant effort of the two boys?
+A. R = 8.6 lbs
+B. R = 14 lbs
+C. R = 7.6 lbs
+D. R = 11 lbs
+Answer: C
+Solution: B1 = 8∠60°: x = 4.000, y = 6.928
+• B2 = 5∠−53°: x = 3.009, y = −3.993
+• ΣX = 7.009, ΣY = 2.935
+• R = √(7.009² + 2.935²) = 7.60 lb
+
+6. A man standing at a window 5 meters tall, a falling ball passes by the window 0.3 sec. from how high above the top of the window was the ball released?
+A. 8.18 m
+B. 9.63 m
+C. 11.8 m
+D. 21.3 m
+Answer: C
+Solution: Let v be the ball's speed at the top of the window: 5 = v(0.3) + ½(9.81)(0.3)²
+• 5 = 0.3v + 0.441, so v = 15.20 m/s
+• Height above the top of the window: h = v²/(2g) = 15.20²/(2 × 9.81) = 11.8 m
+
+7. A balloon is rising uniformly with a velocity of 10fps when a stone is dropped from it. The stone then reaches the ground in 3 sec. find the height of the balloon when the stone hits the ground?
+A. 145 ft
+B. 148 ft
+C. 156 ft
+D. 180 ft
+Answer: A
+Solution: The stone starts with the balloon's upward velocity, 10 ft/s.
+• Height at release: h₀ = −(10)(3) + ½(32.2)(3)² = −30 + 144.9 = 114.9 ft
+• The balloon rises another 10 × 3 = 30 ft, so its height = 114.9 + 30 = 144.9 ≈ 145 ft
+
+8. A projectile with muzzle velocity of 550 m/sec is fired from a gun on a top of a cliff 450 m above sea level. If the projectile hits the water surface 50 sec after being fired. Determine the horizontal range of the projectile.
+A. 24.858 km
+B. 28.433 km
+C. 23.933 km
+D. 25.533 km
+Answer: A
+Solution: Vertical: −450 = (550 sin θ)(50) − ½(9.81)(50)², so 550 sin θ = (12,262.5 − 450)/50 = 236.25 m/s
+• sin θ = 0.4295, cos θ = 0.9030
+• Range = (550 cos θ)(50) = 24,834 m ≈ 24.8 km, nearest choice 24.858 km
+• Note: the PDF prints the muzzle velocity as "55o m/sec"; it is 550 m/s.
+
+9. A ball is dropped onto a solid floor from an initial height, ho. If the coefficient of restitution, e is 0.90. How high will the ball rebound?
+A. 0.45 ho
+B. 0.85 ho
+C. 0.81 ho
+D. 0.90 ho
+Answer: C
+Solution: e = √(h/h₀), so h = e²h₀ = (0.90)²h₀ = 0.81h₀
+
+10. The center of gravity of a log 10 ft long and weighing 100lbs is 4 ft from one end of the log. It is to be carried by two men, one at the heavy end. Where should the other man hold the log if each is to carry half of the load?
+A. 9ft
+B. 6ft
+C. 4ft
+D. 8ft
+Answer: D
+Solution: With equal loads the two supports must be equally far from the center of gravity.
+• One man is at the heavy end, 4 ft from the CG, so the other must be 4 ft beyond it: 4 + 4 = 8 ft from the heavy end.
+
+11. A block is pulled to the right at a constant velocity by a 10lb force acting 30deg above the horizontal. The coefficient of sliding friction between the block and surfaces is 0.5. What is the weight of the block? Assume all of the forces on the block to act at its center.
+A. 22.32 lbs
+B. 17.32 lbs
+C. 10 lbs
+D. 7.5 lbs
+Answer: A
+Solution: Constant velocity: 10 cos 30° = μN, so N = 8.660/0.5 = 17.32 lb
+• Vertical: N = W − 10 sin 30°, so W = 17.32 + 5 = 22.32 lb
+
+12. A steel ball is dropped from 2 meter height onto a smooth floor, if the coefficient of restitution between the ball and floor is 0.87, the ball will bound to height h1 near to
+A. 1.0 meter
+B. 1.25 meter
+C. 1.5 meter
+D. 1.75 meter
+Answer: C
+Solution: h₁ = e²h = (0.87)²(2) = 1.51 m ≈ 1.5 m
+
+13. A 5-gram bullet is fired horizontally with a speed of 320 m/sec into a 1.0 kg wooden block at rest on a table. If the coefficient of friction between bock and the table is 0.25, how far will the block slide?
+A. 0.515m
+B. 0.615m
+C. 0.315m
+D. 0.715m
+Answer: A
+Solution: Momentum: V = (0.005)(320)/(1.005) = 1.592 m/s
+• Friction deceleration a = μg = 0.25 × 9.81 = 2.4525 m/s²
+• s = V²/(2a) = 1.592²/(2 × 2.4525) = 0.517 m ≈ 0.515 m
+
+14. An object weighing 425 lbs is held by a rope that passes over a horizontal drum. The coefficient of friction between the rope and the drop is 0.27. If the angle of contact is 160 deg. determine the force that will raise the object.
+A. 1000 lbs
+B. 800 lbs
+C. 700 lbs
+D. 900 lbs
+Answer: D
+Solution: Belt friction: T₂ = T₁e^(μθ), θ = 160° = 2.793 rad
+• μθ = 0.27 × 2.793 = 0.754, e^0.754 = 2.125
+• T₂ = 425 × 2.125 = 903 lb ≈ 900 lb
+
+15. A flywheel whose angular acceleration is constant and equal to 2 rads/sec square rotates through an angle of 100 radians in 5 sec. how long had it been in motion at the beginning of the 5 sec interval if it stated from rest?
+A. 7.5 sec
+B. 5.5 sec
+C. 10.5 sec
+D. 9.5 sec
+Answer: A
+Solution: θ = ω₀t + ½αt²: 100 = 5ω₀ + ½(2)(25), so ω₀ = 15 rad/s at the start of the interval
+• From rest: t = ω₀/α = 15/2 = 7.5 s
+
+16. A pendulum clock which keeps correct time at a point where g=980.0cm/sec² is found to lose 10 sec per day at a higher altitude. Find the value of “g” at the new location.
+A. 977.78 cm/sec²
+B. 980.00 cm/sec²
+C. 979.78 cm/sec²
+D. 978.78 cm/sec²
+Answer: C
+Solution: The clock's rate ∝ 1/T ∝ √g, so √(g₂/g₁) = (86,400 − 10)/86,400
+• g₂ = 980.0 × (86,390/86,400)² = 980.0 × 0.99977 = 979.77 ≈ 979.78 cm/s²
+
+17. The straight line portion of the stress-strain diagram has a slope equal to the _____ of the material.
+A. Shear Modulus
+B. Modulus of Resilience
+C. Compressibility
+D. Modulus of Elasticity
+Answer: D
+Solution: In the linear (proportional) region σ = Eε, so the slope is the modulus of elasticity E.
+
+18. What is the reciprocal of bulk modulus?
+A. Young’s Modulus
+B. Tensile Modulus
+C. Compressibility
+D. Shear Modulus
+Answer: C
+Solution: Compressibility β = 1/K, the fractional volume change per unit pressure.
+
+19. What is the ratio of the stress to strain below the proportional limit?
+A. Poisson Ratio
+B. Young’s Modulus
+C. Hooke’s Constant
+D. Modulus of Rigidity
+Answer: B
+Solution: Below the proportional limit, stress/strain = E, Young's modulus (Hooke's law).
+
+20. In bending of a rectangular beam due to axial loading, where is the location of maximum shear stress?
+A. At the top edge
+B. At the neutral axis
+C. At the bottom edge
+D. At the between the top edge and the neutral axis
+Answer: B
+Solution: τ = VQ/(Ib). Q is largest at the neutral axis and zero at the edges, so the maximum shear stress (1.5V/A for a rectangle) occurs at the neutral axis.
+
+21. What force is required to punch a 0.75 inch circular hole through a piece of 5/8 inch thick steel plate? The ultimate shear strength is 42ksi.
+A. 65,250 lbs
+B. 62,850 lbs
+C. 68,250 lbs
+D. 61,850 lbs
+Answer: D
+Solution: Sheared area = πdt = π(0.75)(0.625) = 1.4726 in²
+• F = τA = 42,000 × 1.4726 = 61,850 lb
+
+22. A steel support must connect two 30,000lb tensile loads separated by 200 inch. The maximum allowable stress is 10,000 lbf/in² and the maximum allowable elongation is 0.02 inch. What is the required area?
+A. 10 in²
+B. 14.1 m²
+C. 56 cm²
+D. 30.5 mm²
+Answer: A
+Solution: By stress: A = P/σ = 30,000/10,000 = 3 in²
+• By elongation (E = 30 × 10⁶ psi): A = PL/(Eδ) = 30,000 × 200/(30 × 10⁶ × 0.02) = 10 in²
+• The larger area governs: A = 10 in²
+
+23. Which of the following may be the Poisson of a material?
+A. 0.45
+B. 0.50
+C. 0.55
+D. 0.85
+Answer: A
+Solution: For isotropic materials Poisson's ratio lies between 0 and 0.5; most engineering materials are 0.25–0.45. 0.45 is a realistic value.
+• Note: 0.50 is the theoretical upper limit (a perfectly incompressible material); 0.55 and 0.85 are impossible.
+
+24. At a yield stress of 250 MPa the corresponding strain is 0.025 mm/mm. what is its modulus of resilience?
+A. 1.563 MPa
+B. 6.25 MPa
+C. 3.125 MPa
+D. 12.5 MPa
+Answer: C
+Solution: Modulus of resilience = ½σε = ½(250)(0.025) = 3.125 MPa (MJ/m³)
+
+25. A welded steel cylindrical drum made of a 100-mm plate has an internal diameter of 1.20 m. compute change in diameter that would be caused by an internal pressure of 1.4 MPa. Assume that Poisson’s ratio is 0.30 and E=200 GPa.
+A. 0.428 mm
+B. 0.549 mm
+C. 1.549 mm
+D. 1.495 mm
+Answer: A
+Solution: With a 10-mm plate: hoop stress σh = pD/(2t) = 1.4(1200)/(2 × 10) = 84 MPa; longitudinal stress σL = 42 MPa
+• Hoop strain εh = (σh − νσL)/E = (84 − 0.3 × 42)/200,000 = 3.57 × 10⁻⁴
+• ΔD = εhD = 3.57 × 10⁻⁴ × 1200 = 0.428 mm
+• Review note: the PDF prints a "100-mm plate"; the choices fit a 10-mm plate (with 100 mm, ΔD = 0.043 mm).
+
+26. A simply supported 6m long steel beam with a 5cm x 5cm cross section has load of 2,500 N at the midpoint. What is the maximum deflection in cm? E=210 GPa
+A. 0.31
+B. 1.03
+C. 3.01
+D. 10.3
+Answer: D
+Solution: I = bh³/12 = (0.05)⁴/12 = 5.208 × 10⁻⁷ m⁴
+• δ = PL³/(48EI) = 2500 × 6³/(48 × 210 × 10⁹ × 5.208 × 10⁻⁷) = 0.103 m = 10.3 cm
+
+27. What is the maximum HP of a solid steel shaft 2 inches in diameter can transmit at 300 rpm if maximum allowable shearing stress is 10,000 psi?
+A. 74.8
+B. 648
+C. 47.8
+D. 87.4
+Answer: A
+Solution: T = τπd³/16 = 10,000 × π × 2³/16 = 15,708 in-lb
+• HP = TN/63,025 = 15,708 × 300/63,025 = 74.8 hp
+
+28. A flagged bolt coupling consists of eight steel 20 mm diameter bolt spread evenly around bolt circle 300 mm in diameter. Determine the torque capacity of the coupling if the allowable shearing stress in the bolts is 40 MN/m².
+A. 5.75 MN-mm
+B. 500kN-cm
+C. 15.08 kN-m
+D. 83 GN-inch
+Answer: C
+Solution: Force per bolt = τA = 40 × 10⁶ × π(0.020)²/4 = 12,566 N
+• T = nFr = 8 × 12,566 × 0.150 = 15,080 N·m = 15.08 kN·m
+
+29. What is the SI unit of pressure?
+A. Pascal
+B. pounds/sq.ft
+C. pound/sq. inch
+D. inches of Hg
+Answer: A
+Solution: The SI unit of pressure is the pascal, 1 Pa = 1 N/m².
+
+30. Kinematic viscosity may be expressed as:
+A. slug-sec²/ft
+B. sec²/ft
+C. ft²/sec
+D. slugs/sec²
+Answer: C
+Solution: Kinematic viscosity ν = μ/ρ, with units of area per time: ft²/s (m²/s in SI).
+
+31. Absolute viscosity of a fluid varies with pressure and temperature and is defined as a function of ______.
+A. Shear Stress and Angular Deformation Rate
+B. Density, Shear Stress and Angular Deformation Rate
+C. Density and Angular Deformation Rate
+D. Density and Shear Stress
+Answer: A
+Solution: Newton's law of viscosity: τ = μ(du/dy), so μ = shear stress/rate of angular deformation. Density does not enter.
+
+32. What is the dimensionless number that is used to describe by viscosity of fluid?
+A. Reynolds Number
+B. Kinematic Viscosity
+C. Coefficient of Viscosity
+D. Mach Number
+Answer: A
+Solution: The Reynolds number Re = ρVD/μ is the dimensionless ratio of inertial to viscous forces.
+
+33. What refers to the formation and collapse of minute bubbles of vapour in liquid which caused by a combination of reduced pressure and increased velocity in the fluid?
+A. Cavitation
+B. Stress Corrosion
+C. Fatigue Flow
+D. Precipitation
+Answer: A
+Solution: Cavitation: where velocity rises and pressure falls below the vapour pressure, vapour bubbles form and then collapse violently.
+
+34. What is the term which defines the combination of Laminar and turbulent flow?
+A. Reynold’s Flow
+B. Hydraulic Jump
+C. Undefined
+Answer: C
+Solution: Between laminar flow (Re < 2000) and turbulent flow (Re > 4000) is the transition (critical) zone, where the flow is not clearly either; it is described as undefined (transitional) flow.
+• Note: the PDF gives only three choices for this item.
+
+35. In the design of waterways, the “hydraulic jump” is sometimes used for _______.
+A. Elimination of Turbulence
+B. Energy Dissipation
+C. Prevention of Sedimentation
+D. Measurement of Flow
+Answer: B
+Solution: A hydraulic jump turns fast supercritical flow into slow subcritical flow with a large loss of energy, so it is used to dissipate energy below spillways and gates.
+
+36. On doubling the speed, N, of the a centrifugal pump, all of the following are true, except:
+A. volume flow rate, Q is increased by a factor 2
+B. head, H is increased by a factor of 4
+C. horsepower, P is increased by a factor of 8
+D. head, horsepower and volume flow rate are independently variable
+Answer: D
+Solution: Affinity laws: Q ∝ N, H ∝ N², P ∝ N³. Doubling N gives 2Q, 4H and 8P, so A, B and C are true. They are tied to speed, not independently variable.
+
+37. The static level of water in the wells penetrating the zone saturation is ________.
+A. Artesian Table
+B. Hydrostatic Level
+C. Aquifer Level
+D. Water Table
+Answer: D
+Solution: The water table is the upper surface of the zone of saturation, the level at which water stands in wells that penetrate it.
+
+38. In a system of pipes in series, which is true?
+A. Flow Are Equal
+B. Head Losses Are Equal
+C. Velocities Are Equal
+D. Friction Coefficients Are Equal
+Answer: A
+Solution: Pipes in series carry the same discharge (continuity); the head losses add. (In parallel, head losses are equal and flows add.)
+
+39. At or below critical velocity in small pipes or at very low velocities, the loss of head due to friction …
+A. Varies Directly As Velocity
+B. Can Be Ignored
+C. Is Infinitely Large
+D. Varies As The Velocity Squared
+Answer: A
+Solution: Below the critical velocity the flow is laminar: hf = 32μLV/(γD²) (Hagen–Poiseuille), so the loss varies directly with velocity.
+
+40. The losses in open channel flow generally varies as the ________.
+A. Square of velocity
+B. First power of the roughness coefficient
+C. Inverse square of hydraulic radius
+D. Inverse of the roughness coefficient
+Answer: A
+Solution: Open channel flow is normally fully turbulent; by Manning, hf = n²V²L/R^(4/3), so the loss varies as the square of the velocity.
+
+41. The hydraulic radius is given by _______.
+A. Area divided by wetted perimeter
+B. Square root of area
+C. Wetted perimeter divided by area
+D. Area divided by square of the wetted perimeter
+Answer: A
+Solution: Hydraulic radius R = A/P, the flow area divided by the wetted perimeter.
+
+42. The ratio of the unit weight of the fluid to the unit weight of water at 4 °C is known as ________.
+A. Weight Density
+B. Specific Gravity
+C. Specific Weight
+D. Weight Ratio
+Answer: B
+Solution: Specific gravity = γ(fluid)/γ(water at 4 °C), a dimensionless ratio.
+
+43. An iceberg has a density 950 kg/m³. If it floats in fresh water, what percent of the iceberg’s volume submerged?
+A. 85%
+B. 90%
+C. 93%
+D. 95%
+Answer: D
+Solution: Floating: weight = buoyancy, so V(sub)/V = ρ(ice)/ρ(water) = 950/1000 = 95%
+
+44. A reservoir dam holds an 8 sq. km lake behind it. Just behind the dam, the lake is 12 m deep. What is the water pressure at the base of the dam?
+A. 118 kPa
+B. 218 kPa
+C. 108 kPa
+D. 208kPa
+Answer: A
+Solution: Pressure depends only on depth, not on the lake's area: p = γh = 9.81 × 12 = 117.7 kPa ≈ 118 kPa (gauge).
+
+45. Convert a pressure head of 24 inches of mercury to feet of oil sp.gr. of 0.75.
+A. 36.2
+B. 27.2
+C. 48.3
+D. 20.4
+Answer: A
+Solution: 24 in Hg = 2 ft × 13.6 = 27.2 ft of water
+• In oil: h = 27.2/0.75 = 36.3 ft ≈ 36.2 ft
+
+46. A block of wood floats in water with 15 cm projecting above fresh water surface. If the same block were placed in alcohol of specific gravity of 0.82, the block would project 10 cm above the surface of the alcohol. Determine the specific gravity of the wood block.
+A. 0.7033
+B. 0.503
+C. 0.603
+D. 0.803
+Answer: C
+Solution: Let h be the block's height (constant cross-section). Weight = buoyancy in each liquid:
+• s·h = 1.0(h − 0.15) and s·h = 0.82(h − 0.10)
+• h − 0.15 = 0.82h − 0.082, so h = 0.3778 m
+• s = (0.3778 − 0.15)/0.3778 = 0.603
+
+47. A hemispherical shell with base horizontal and uppermost is filled with water. If the radius is 8 ft. determine the time required to empty through a sharp edge orifice of 6 inches in diameter with Cd = 0.6 and located at the lowest point?
+A. 8.90 min
+B. 11.1 min
+C. 9.35 min
+D. 10.2 min
+Answer: C
+Solution: At height y above the orifice the surface area is A = π(2Ry − y²).
+• t = ∫ A dy/(Cd·a·√(2gy)) from 0 to R = (14/15)πR^(5/2)/(Cd·a·√(2g))
+• a = π(0.25)² = 0.19635 ft², Cd·a·√(2g) = 0.6 × 0.19635 × 8.025 = 0.9454
+• t = (14/15)π(8)^2.5/0.9454 = 530.8/0.9454 = 561 s = 9.35 min
+
+48. An absolute pressure is 50 kPa and atmospheric pressure is 101 kPa. What is the gauge pressure?
+A. 52,000 Pa
+B. 55,000 Pa
+C. 53,000 Pa
+D. 51,000 Pa
+Answer: D
+Solution: p(gauge) = p(abs) − p(atm) = 50 − 101 = −51 kPa, i.e. 51,000 Pa below atmospheric (a vacuum of 51 kPa).
+
+49. A barrel will rupture when the gauge pressure within it reaches 50 psi. it is attached to the lower end of a vertical pipe, with the pipe and barrel filled with oil which weighs 47 lbs per cu. Ft. How long can the pipe be if the barrel is not to rupture?
+A. 135 ft
+B. 153 ft
+C. 163 ft
+D. 173 ft
+Answer: B
+Solution: h = p/γ = (50 × 144 lb/ft²)/(47 lb/ft³) = 153 ft
+
+50. A hydraulic press has an input cylinder 1 inch in diameter and an output cylinder of 6 inches in diameter. Assuming 100% efficiency, find the force exerted by the output piston when a force of 10 lbs is applied to the input piston.
+A. 60 lbs
+B. 360 lbs
+C. 630 lbs
+D. 600 lbs
+Answer: B
+Solution: Equal pressure (Pascal): F₂ = F₁(D₂/D₁)² = 10 × (6/1)² = 360 lb
+
+51. A rope is stretched between two rigid walls 40 feet apart. At the midpoint, a load of 100 lbs was placed that caused it to sag 5 feet. Compute the approximate tension in the rope.
+A. 206 lbs
+B. 150 lbs
+C. 280 lbs
+D. 240 lbs
+Answer: A
+Solution: Each half of the rope makes an angle θ with tan θ = 5/20, so sin θ = 5/√425 = 0.2425.
+• 2T sin θ = 100, so T = 100/(2 × 0.2425) = 206 lb
+
+52. What is the effective component applied on the box that is being pulled by a 30N force inclined at 30 deg with horizontal?
+A. 36.21 N
+B. 2598 N
+C. 15.32 N
+D. 20.62 N
+Answer: B
+Solution: The effective (horizontal) component = 30 cos 30° = 25.98 N.
+• Note: the PDF prints choice B as "2598 N"; the intended value is 25.98 N.
+
+53. A post is supported by a guy wire which exerts a pull of 100 N on the top of the post. If the angle between the wire and the ground is 60deg, what is the horizontal component of the force supporting the pole?
+A. 86.6 N
+B. 50.0 N
+C. 76.6 N
+D. 98.5 N
+Answer: B
+Solution: Horizontal component = 100 cos 60° = 50.0 N
+
+54. A collar, which may slide on a vertical rod is subjected three forces. Force A is 1200N vertically upward, Force B is 800 N at an angle of 60 deg from the vertical and a force F which is vertically downward to the right. Find the direction of F if its magnitude is 2400N and the resultant is horizontal.
+A. 41.61 deg
+B. 43.52 deg
+C. 40.13 deg
+D. 45.52 deg
+Answer: A
+Solution: Resultant horizontal means ΣFy = 0. Force B (upward, 60° from vertical) has vertical component 800 cos 60° = 400 N.
+• 1200 + 400 − 2400 sin θ = 0, so sin θ = 0.6667 and θ = 41.8° below the horizontal
+• Nearest choice: 41.61°
+• Review note: the exact angle is 41.81°; confirm the intended key.
+
+55. A man can exert a maximum pull of 1,000 N but wishes to lift a new stone door for his cave weighing 20,000 N. If he uses a lever how much closer must the fulcrum be to the stone than his hand?
+A. 10 Time Nearer
+B. 20 Times Farther
+C. 10 Times Farther
+D. 20 Time Nearer
+Answer: D
+Solution: Moments about the fulcrum: 1000 × (hand arm) = 20,000 × (stone arm)
+• Hand arm/stone arm = 20, so the fulcrum must be 20 times nearer to the stone than to his hand.
+
+56. A certain cable is suspended between two supports at the same elevation and 500 ft. apart. The load is 500 lbs per horizontal foot including the weight of the cable. The sag of the cable is 30 ft.. Calculate the total length of the cable.
+A. 503.21 ft
+B. 504.76 ft
+C. 505.12 ft
+D. 506.03 ft
+Answer: B
+Solution: Load per horizontal foot, so the cable is parabolic: L = S + 8d²/(3S) − 32d⁴/(5S³)
+• L = 500 + 8(30²)/(3 × 500) − 32(30⁴)/(5 × 500³) = 500 + 4.800 − 0.041 = 504.76 ft
+
+57. A cable weighing 0.4 pound per foot and 80 feet long is to be suspended with sag of 80 feet. Determine the maximum tension of the cable.
+A. 403 kg
+B. 456 kg
+C. 416 kg
+D. 425 kg
+Answer: C
+Solution: Catenary with half-length s = 400 ft and sag d = 80 ft: y = c + d and y² = c² + s²
+• (c + 80)² = c² + 400², so 160c = 160,000 − 6,400 and c = 960 ft
+• Tmax = wy = 0.4 × (960 + 80) = 416 lb
+• Review note: as printed (80 ft long with an 80 ft sag) the problem is impossible; the choices fit an 800-ft cable, and the answer's unit is lb, not kg.
+
+58. A cable 200 m long weighs 50 N/m and is supported from two points at the same elevation. Determine the required sag if the maximum tension that the cable can carry shall not exceed 8000N.
+A. 35.1 m
+B. 28.2 m
+C. 40.3 m
+D. 31.3 m
+Answer: A
+Solution: Catenary: Tmax = wy, so y = 8000/50 = 160 m; half-length s = 100 m
+• c = √(y² − s²) = √(160² − 100²) = 124.9 m
+• Sag d = y − c = 160 − 124.9 = 35.1 m
+
+59. A transmission cable 300 m long, weighs 600 kg. The tensions at the ends of the cable are 400 kg and 450 kg. Find the distance of its point to the ground.
+A. 145 m
+B. 148 m
+C. 150 m
+D. 153 m
+Answer: C
+Solution: w = 600/300 = 2 kg/m. At the ends y = T/w: y₁ = 200 m, y₂ = 225 m.
+• s₁ + s₂ = 300 with s = √(y² − c²): √(200² − c²) + √(225² − c²) = 300
+• c = 150 m satisfies it (132.3 + 167.7 = 300), so the lowest point is 150 m above the catenary's directrix (the "ground" in this problem).
+
+60. What is the branch of engineering mechanics which refers to the study of rigid body in motion without reference to the force that causes the motion?
+A. Statics
+B. Kinetics
+C. Kinematics
+D. Dynamics
+Answer: C
+Solution: Kinematics describes motion (displacement, velocity, acceleration) without considering the forces that cause it. Kinetics relates forces to motion.
+
+61. What refers to the force that holds part of the rigid body together?
+A. Natural Force
+B. External Force
+C. Internal Force
+D. Concentrated Force
+Answer: C
+Solution: Internal forces act between the particles of a body and hold its parts together; external forces act on the body from outside.
+
+62. What refers to a pair of equal, opposite and parallel forces?
+A. Couple
+B. Moment
+C. Torque
+D. All of The Above
+Answer: A
+Solution: A couple is two equal, opposite, parallel forces with different lines of action; it produces pure rotation (a moment).
+
+63. What is the concurrent force system?
+A. All force act at the same point.
+B. All forces are parallel with one another.
+C. All forces have the same line of action.
+D. All forces are in the same place.
+Answer: A
+Solution: In a concurrent force system the lines of action of all forces pass through (act at) the same point.
+
+64. When will a three-force member be considered in equilibrium?
+A. When the sum of the two forces is equal to the third force.
+B. When they are concurrent or parallel.
+C. When they are coplanar.
+D. All of the above
+Answer: B
+Solution: A body in equilibrium under three forces must have them coplanar and either concurrent (meeting at one point) or parallel.
+
+65. What is the science that describes and predicts the effect on bodies at rest or in motion by forces acting on it?
+A. Engineering Mechanics
+B. Theory of Structures
+C. Mechanics of Materials
+D. Strength of Materials
+Answer: A
+Solution: Engineering mechanics describes and predicts the conditions of rest or motion of bodies under the action of forces.
+
+66. What refers to a negligible body when compared to the distances involved regarding its motion?
+A. Particle
+B. Atomic Substance
+C. Element
+D. Quarks
+Answer: A
+Solution: A particle is a body whose size is negligible compared with the distances in its motion, so it is treated as a point mass.
+
+67. What is the ratio of the transverse strain to the corresponding axial strain in a body subjected to uniaxial stress?
+A. Poisson’s Ratio
+B. Euler’s Ratio
+C. Refractive Index
+D. Dielectric Index
+Answer: A
+Solution: Poisson's ratio ν = −(lateral strain)/(axial strain).
+
+68. What are the four basic forms of deformation of solid bodies?
+A. Tension, compression, bending and twisting
+B. Tension, compression, elongation and bending
+C. Tension, compression, plastic and elastic
+D. Tension, compression, elongation and torsion
+Answer: A
+Solution: The basic deformations are tension, compression, bending and twisting (torsion). Elongation is the result of tension, and elastic/plastic describe behaviour, not forms.
+
+69. What is a structural member supported horizontally and carries transverse loading?
+A. Beam
+B. Column
+C. Arch
+D. Shaft
+Answer: A
+Solution: A beam is a (usually horizontal) member loaded transversely to its axis, resisting it by bending.
+
+70. What refers to a slender member which prevents parts of a structure moving towards each other under compressive force?
+A. Tie
+B. Column
+C. Panel
+D. Strut
+Answer: D
+Solution: A strut is a compression member that keeps parts of a structure apart. A tie is a tension member that keeps them from moving apart.
+
+71. What refers to the point in which the bending moment changes sigh through a zero value?
+A. Critical Point
+B. Point Of Inflection
+C. Point Of Contra Flexure
+D. Point Of Zero Stress
+Answer: C
+Solution: The point of contraflexure is where the bending moment changes sign, passing through zero. (It coincides with the inflection point of the elastic curve.)
+
+72. What is the unit of strain?
+A. Pascal
+B. Unitless
+C. N-m
+D. N-m/s
+Answer: B
+Solution: Strain = change in length/original length, a ratio of lengths, so it has no units.
+
+73. What refers to the stress in the material at the elastic limit?
+A. Working Stress
+B. Yield Stress
+C. Ultimate Stress
+D. Maximum Stress
+Answer: B
+Solution: Beyond the elastic limit the material yields and takes a permanent set; the stress at this point is the yield stress.
+
+74. Which of the following materials has the least modulus of elasticity?
+A. Steel
+B. Glass
+C. Copper
+D. Aluminium
+Answer: B
+Solution: Typical E values: steel ≈ 200 GPa, copper ≈ 110–120 GPa, aluminium ≈ 69–70 GPa, glass ≈ 50–70 GPa. Glass has the least.
+• Review note: glass and aluminium are close (some glasses reach 70–90 GPa); confirm against your review center's key.
+
+75. Within elastic limit, the shear stress is proportional to shear strain. What is the constant of proportionality of this statement called?
+A. Modulus Of Rigidity
+B. Modulus Of Elasticity
+C. Young’s Modulus
+D. Bulk Modulus
+Answer: A
+Solution: τ = Gγ; the constant G is the modulus of rigidity (shear modulus).
+
+76. Determine the force required to punch a ½ inch hole on a 3/8 thick plate if the ultimate shearing strength of the plate is 50,000 Psi.
+A. 23,562 lbs
+B. 19,450 lbs
+C. 20,550 lbs
+D. 15,422 lbs
+Answer: A
+Solution: Sheared area = πdt = π(0.5)(0.375) = 0.5890 in²
+• With τu = 40,000 psi: F = 0.5890 × 40,000 = 23,562 lb
+• Review note: with 50,000 psi as printed, F = 29,452 lb, which is not a choice. The choices fit 40,000 psi.
+
+77. A simply supported beam, 10 m long carries a uniform distributed load of 20 kN/m. What is the value of the maximum moment of the beam due to the load?
+A. 10,000 kN-m
+B. 5,000 kN-m
+C. 2,000 kN-m
+D. 250 kN-m
+Answer: D
+Solution: Mmax = wL²/8 = 20 × 10²/8 = 250 kN·m (at midspan)
+
+78. A cylindrical water tank is 8m in diameter and 12m high. If the tank is to be completely filled, determine the minimum thickness of the tank plating if the stress is limited to 40 MPa.
+A. 11.77 mm
+B. 13.18 mm
+C. 10.25 mm
+D. 12.60 mm
+Answer: A
+Solution: Maximum pressure at the bottom: p = γh = 9.81 × 12 = 117.7 kPa
+• Hoop stress governs: t = pD/(2σ) = 117.72 × 10³ × 8/(2 × 40 × 10⁶) = 0.01177 m = 11.77 mm
+
+79. The stress in a 90-cm diameter ppe having a wall thickness of 9.5 cm and under a static head of 70m of water is
+A. 325 kPa
+B. 32.5 kPa
+C. 32.5 MPa
+D. 3.25 MPa
+Answer: D
+Solution: p = γh = 9.81 × 70 = 686.7 kPa
+• Hoop stress σ = pD/(2t) = 686.7 × 0.90/(2 × 0.095) = 3,253 kPa = 3.25 MPa
+
+80. A 30m long aluminium bar is subjected to a tensile stress of 175 MPa. Determine the elongation if E = 69116 MPa.
+A. 78 mm
+B. 76 mm
+C. 74 mm
+D. 72 mm
+Answer: B
+Solution: δ = σL/E = 175 × 30,000/69,116 = 76.0 mm
+
+81. Determine the load capacity in kN on a 25 mm diameter x 1200 mm long steel shaft if its maximum elongation shall not exceed 1mm. Assume E= 200, 000 MPa.
+A. 88.2 kN
+B. 78.3 kN
+C. 83.2 kN
+D. 81.8 kN
+Answer: D
+Solution: A = π(25)²/4 = 490.9 mm²
+• P = δAE/L = 1 × 490.9 × 200,000/1200 = 81,812 N = 81.8 kN
+
+82. An iron steam pipe is 200 ft long at 0°C. What will be its increase in length when heated to 100°C? Coefficient of linear expansion is 300 x 10⁶ per °C.
+A. 0.18 ft
+B. 0.12ft
+C. 0.20ft
+D. 0.28ft
+Answer: C
+Solution: ΔL = αLΔT. With α = 10 × 10⁻⁶ /°C: ΔL = 10 × 10⁻⁶ × 200 × 100 = 0.20 ft
+• Review note: the printed coefficient "300 x 10⁶" cannot be right (iron is about 10–12 × 10⁻⁶ /°C). 0.20 ft assumes 10 × 10⁻⁶; please confirm the intended value and key.
+
+83. The region of the stress-strain curve extending from the proportional limit to the point of rupture is called
+A. Rigid Range
+B. Malleable Range
+C. Elastic Range
+D. Plastic Range
+Answer: D
+Solution: Up to the proportional (elastic) limit is the elastic range; from there to rupture, where permanent deformation occurs, is the plastic range.
+
+84. The ordinate of the point at which there is an increase in strain with no increases in stress is known as
+A. Elastic Limit
+B. Proportional Limit
+C. Yield Point
+D. Rupture Point
+Answer: C
+Solution: At the yield point the material keeps stretching with no increase in stress.
+
+85. The maximum ordinate to the curve
+A. Yield Strength
+B. Tensile Strength
+C. Ultimate Strength
+D. Both B and C Are Correct
+Answer: D
+Solution: The highest point of the stress-strain curve is the ultimate strength, also called the (ultimate) tensile strength, so B and C are both correct.
+
+86. A 2m square plane surface is immersed vertically below the water surface. The immersion is such that the two edge of the square are horizontal. If the top of the square is 1m below the top of water, what is the total pressure exerted on the plane surface.
+A. 48.78 kN
+B. 84.78 kN
+C. 78.48 kN
+D. 47.78 kN
+Answer: C
+Solution: Depth of the centroid h̄ = 1 + 2/2 = 2 m; area A = 2 × 2 = 4 m²
+• F = γh̄A = 9.81 × 2 × 4 = 78.48 kN
+
+87. Find the total pressure acting on one face of a parabolic segment with base 4m and altitude of 4m which is fully submerged vertically in water and with its base horizontal and 1m below the water surface.
+A. 272,064 N
+B. 227,064 N
+C. 722,064 N
+D. 272,604 N
+Answer: A
+Solution: Area of the parabolic segment A = (2/3)bh = (2/3)(4)(4) = 10.667 m²
+• Its centroid is 2h/5 = 1.6 m below the base, so h̄ = 1 + 1.6 = 2.6 m
+• F = γh̄A = 9810 × 2.6 × 10.667 = 272,064 N
+
+88. An orifice 2 inches in diameter discharges fluid from tank with a head of 15 feet. Discharge rate (Qa) measured at 0.5 cfs. Actual velocity t the vena contracta is 29 fps. The coefficient of Discharge (Cd) is nearest to ________.
+A. 0.94
+B. 0.74
+C. 0.79
+D. 0.86
+Answer: B
+Solution: a = π(2/12)²/4 = 0.02182 ft²; theoretical velocity √(2gh) = √(2 × 32.2 × 15) = 31.08 ft/s
+• Qt = 0.02182 × 31.08 = 0.678 cfs
+• Cd = Qa/Qt = 0.5/0.678 = 0.74
+
+89. Calculate the discharge in liters per second through a 5in diameter orifice under a head of 7.6m water. Assume a coefficient of discharge of 0.65.
+A. 90
+B. 100
+C. 200
+D. 80
+Answer: B
+Solution: d = 5 in = 0.127 m, a = π(0.127)²/4 = 0.01267 m²; √(2gh) = √(2 × 9.81 × 7.6) = 12.21 m/s
+• Q = Cd·a·√(2gh) = 0.65 × 0.01267 × 12.21 = 0.1005 m³/s ≈ 100 L/s
+
+90. Water is flowing in a cast iron pipe at a rate of 3500 GPM. The inside diameter of the pipe is 8 in. Find the flow velocity in m/s.
+A. 6.81
+B. 6.23
+C. 8.32
+D. 3.24
+Answer: A
+Solution: Q = 3500 × 3.785 × 10⁻³/60 = 0.2208 m³/s; A = π(0.2032)²/4 = 0.03243 m²
+• V = Q/A = 0.2208/0.03243 = 6.81 m/s
+
+91. Water flows through a horizontal pipe with cross sectional area of 10 cm² and 5 cm² measured from both end. The pressure difference the two section is 300 Pa. How many cubic of water flow out in the pipe in 1 minute?
+A. 0.0268 m³
+B. 0.0628 m³
+C. 0.0862 m³
+D. 0.0682 m³
+Answer: A
+Solution: Continuity: V₂ = (10/5)V₁ = 2V₁
+• Bernoulli (horizontal): Δp = ½ρ(V₂² − V₁²) = ½(1000)(3V₁²) = 300, so V₁ = 0.447 m/s
+• Q = A₁V₁ = 10 × 10⁻⁴ × 0.447 = 4.47 × 10⁻⁴ m³/s; in 1 minute: 0.0268 m³
+
+92. The diameter of a pipe carrying water changes gradually from 0.15 m at A to 0.45 m at B. A is 4.5 m lower than B. What will be the difference in pressure in kPa between A and B, when 0.025 cms is flowing, loss of energy is being neglected?
+A. 41.36
+B. 36.14
+C. 64.41
+D. 43.16
+Answer: D
+Solution: VA = 0.025/(π(0.15)²/4) = 1.415 m/s; VB = 0.025/(π(0.45)²/4) = 0.157 m/s
+• Bernoulli: pA − pB = γ(zB − zA) + ρ(VB² − VA²)/2 = 9.81(4.5) + (0.0247 − 2.0014)/2
+• pA − pB = 44.15 − 0.99 = 43.16 kPa
+
+93. The static head corresponding to a flow velocity of 10 m/s is:
+A. 6.10 m
+B. 1.67 m
+C. 5.09m
+D. 8.76 m
+Answer: C
+Solution: Head equivalent to the velocity: h = V²/(2g) = 10²/(2 × 9.81) = 5.10 m ≈ 5.09 m
+
+94. The theoretical velocity generated by a 10ft hydraulic head is ______.
+A. 12.2 fps
+B. 25.4 fps
+C. 17.9 fps
+D. 29.2 fps
+Answer: B
+Solution: Torricelli: V = √(2gh) = √(2 × 32.2 × 10) = 25.4 ft/s
+
+95. A hemispherical tank of 8ft diameter is full of liquid weighing 60 lb/ft³. Determine the work required in pumping the liquid out the top of the tank.
+A. 3840π lb-ft
+B. 3480π lb-ft
+C. 8340π lb-ft
+D. 4830π lb-ft
+Answer: A
+Solution: R = 4 ft. A slice at depth y below the top has area π(R² − y²) and is lifted y.
+• W = γπ∫(R² − y²)y dy from 0 to R = γπR⁴/4 = 60π(4⁴)/4 = 3840π lb-ft
+
+96. A container in the form of inverted right circular cone is 20 m deep and 12 m diameter at the top. If the water is 16m deep in the container, find the work done in pumping out the water. The water is raised to a point of discharge 10 m above the top of the container.
+A. 68.167 kJ
+B. 68.167 MJ
+C. 68.167 J
+D. 68.167 GJ
+Answer: B
+Solution: With z measured up from the vertex, the radius is r = 0.3z and a slice is lifted (20 − z) + 10 = 30 − z.
+• W = γπ∫(0.3z)²(30 − z) dz from 0 to 16 = 9810π(0.09)[10z³ − z⁴/4] from 0 to 16
+• W = 9810π(0.09)(40,960 − 16,384) = 68.167 × 10⁶ J = 68.167 MJ
+
+97. The specific gravity of a substance is the ratio of its density to that of _____
+A. Air
+B. Liquid
+C. Water
+D. Ice
+Answer: C
+Solution: Specific gravity of solids and liquids is referred to water (at 4 °C).
+
+98. Is a device for measuring intensities of pressure exerted by the atmosphere?
+A. Siphon
+B. Barometer
+C. Hygrometer
+D. Pluviometer
+Answer: B
+Solution: A barometer measures atmospheric pressure. A hygrometer measures humidity and a pluviometer measures rainfall.
+
+99. A law that states “In equal volume of gases with the same temperature and pressure the number of molecules are the same.”
+A. Boyle’s Law
+B. Dalton’s Law
+C. Avogadro’s Law
+D. Bernoulli’s Law
+Answer: C
+Solution: This is Avogadro's law (hypothesis).
+
+100. A law in fluids which states “At any point in a liquid at rest, the pressure is the same in all directions.”
+A. Newton’s Law
+B. Torricelli’s Law
+C. Poisson’s Theorem
+D. Pascal’s Law
+Answer: D
+Solution: Pascal's law: pressure at a point in a fluid at rest acts equally in all directions.
