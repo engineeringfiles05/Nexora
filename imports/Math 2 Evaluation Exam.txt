@@ -1,0 +1,974 @@
+Math 2 Evaluation Exam
+Coverage: Differential Calculus & Integral Calculus
+
+1. Two houses A and B are to be connected to a water main 1200 m long and it is desired to tap the main in one place only. If A and B are 300 m and 900 m from the main pipe respectively, where must the pipe be tapped to use the least pipe?
+A. 300 m
+B. 400 m
+C. 500 m
+D. 600 m
+Answer: A
+Solution: Let the tap be x m from the foot of A's perpendicular. Pipe length L = √(x² + 300²) + √((1200 − x)² + 900²).
+• dL/dx = 0 gives x/√(x² + 300²) = (1200 − x)/√((1200 − x)² + 900²), i.e. similar triangles: x/300 = (1200 − x)/900
+• 900x = 360,000 − 300x, so x = 300 m (from A's end of the main)
+
+2. Find the area enclosed by the curve r² = 4 cos θ.
+A. 4
+B. 8
+C. 16
+D. 2
+Answer: B
+Solution: r² = 4 cos θ is real for −π/2 ≤ θ ≤ π/2. r = +√(4 cos θ) traces one loop and r = −√(4 cos θ) traces its mirror loop.
+• One loop: A₁ = ½∫ from −π/2 to π/2 of 4 cos θ dθ = ½(8) = 4
+• Both loops: A = 2(4) = 8 square units
+• Review note: if the curve was meant to be the lemniscate r² = 4 cos 2θ, the area would be 4 (choice A).
+
+3. A ladder 10 ft long rests against a vertical wall. If the foot of the ladder slips away from the wall at a rate of 2 ft/min, how fast is the angle between the ladder and the building changing when the foot of the ladder is 6 ft away from the building?
+A. 1/2 rad/min
+B. 1/4 rad/min
+C. 18 rad/min
+D. 1 rad/min
+Answer: B
+Solution: Let θ be the angle between the ladder and the wall: sin θ = x/10.
+• cos θ (dθ/dt) = (1/10)(dx/dt)
+• At x = 6 the height is 8, so cos θ = 8/10
+• dθ/dt = 2/(10 × 0.8) = 1/4 rad/min
+
+4. A mercury light hangs 12 ft above the island at the center of Ayala Avenue, which is 24 ft wide. A cigarette vendor 5 ft tall walks along the curb of the street at a speed of 420 fpm. How fast is the shadow lengthening when he is 16 ft up the street?
+A. 8 fps
+B. 4 fps
+C. 6 fps
+D. 10 fps
+Answer: B
+Solution: The curb is 12 ft from the point under the light. Let y = distance walked along the curb from the nearest point, D = √(12² + y²) = ground distance from the foot of the light.
+• Similar triangles: s/5 = (D + s)/12, so s = 5D/7
+• At y = 16: D = √(144 + 256) = 20 ft; dy/dt = 420 fpm = 7 fps
+• dD/dt = (y/D)(dy/dt) = (16/20)(7) = 5.6 fps
+• ds/dt = (5/7)(5.6) = 4 fps
+
+5. Find a point of inflection for the curve y = 3x⁴ − 8x³ + 6x².
+A. (1/4, 1/2)
+B. (1/2, 11/24)
+C. (1/5, 1/8)
+D. (1/3, 11/27)
+Answer: D
+Solution: y' = 12x³ − 24x² + 12x; y'' = 36x² − 48x + 12 = 12(3x − 1)(x − 1)
+• y'' = 0 at x = 1/3 and x = 1 (y'' changes sign at both)
+• At x = 1/3: y = 3/81 − 8/27 + 6/9 = 1/27 − 8/27 + 18/27 = 11/27
+• Point of inflection: (1/3, 11/27)
+
+6. Point on the curve where it starts to change concavity:
+A. critical point
+B. point of inflection
+C. maximum point
+D. minimum point
+Answer: B
+Solution: A point of inflection is where the curve changes from concave up to concave down (or vice versa); there y'' changes sign.
+
+7. A lot has the form of a triangle, with perpendicular sides 90 m and 120 m long. Find the length and width of the largest rectangular building that can be erected, facing the hypotenuse of the triangle.
+A. 60 m, 45 m
+B. 90 m, 40 m
+C. 80 m, 60 m
+D. 75 m, 36 m
+Answer: D
+Solution: Hypotenuse c = √(90² + 120²) = 150 m; altitude to the hypotenuse h = (90)(120)/150 = 72 m.
+• A rectangle with one side on the base of a triangle has width w = c(1 − y/h) at height y, so A = c·y(1 − y/h), maximum at y = h/2
+• Width = 72/2 = 36 m, length = 150/2 = 75 m
+
+8. Evaluate the integral of e^(x³) x² dx from 0 to 2.
+A. 999.40
+B. 993.32
+C. 876.56
+D. 973.10
+Answer: B
+Solution: Let u = x³, du = 3x² dx.
+• ∫ e^(x³) x² dx = (1/3)e^(x³)
+• From 0 to 2: (1/3)(e⁸ − 1) = (1/3)(2980.958 − 1) = 993.32
+
+9. When the second derivative of the equation of the curve is negative, the curve at that point is concave in what direction?
+A. downward
+B. to the left
+C. upward
+D. to the right
+Answer: A
+Solution: y'' < 0 means the slope is decreasing, so the curve is concave downward.
+
+10. Find the average rate of change of the area of a square with respect to its side x as x changes from 4 to 7.
+A. 10
+B. 11
+C. 12
+D. 13
+Answer: B
+Solution: A = x²
+• Average rate = [A(7) − A(4)]/(7 − 4) = (49 − 16)/3 = 11
+• Review note: the PDF reads "the rate of a square"; "area" is meant.
+
+11. Determine the diameter of a closed cylindrical tank having a volume of 11.3 cu m to obtain minimum surface area.
+A. 1.22
+B. 1.64
+C. 2.44
+D. 2.68
+Answer: C
+Solution: For a closed cylinder of fixed volume, minimum surface area occurs when h = D = 2r.
+• V = πr²(2r) = 2πr³ = 11.3, so r³ = 1.7985 and r = 1.216 m
+• D = 2r = 2.43 m ≈ 2.44 m
+
+12. Find the change in the volume of a sphere when the radius is increased from 2 to 2.05 inches.
+A. 2.5133
+B. 2.5766
+C. 2.6282
+D. 2.4967
+Answer: B
+Solution: Exact change: ΔV = (4/3)π(2.05³ − 2³) = (4/3)π(8.615125 − 8) = (4/3)π(0.615125) = 2.5766 in³
+• Review note: the differential approximation dV = 4πr² dr = 4π(4)(0.05) = 2.5133 in³ is choice A. If your key asks for the approximate change using differentials, the answer is A.
+
+13. Suppose you make napkin rings by drilling holes with different diameters through two wooden balls (which also have different diameters). You discover that both napkin rings have the same height h. Using cylindrical shells to compute the volume of a napkin ring created by drilling a hole with radius r through the center of a sphere of radius R, express the answer in terms of h.
+A. (1/6)πh³
+B. (1/4)πh³
+C. (1/6)πh²
+D. (1/3)πh³
+Answer: A
+Solution: Shells about the hole's axis: V = ∫ from r to R of 2πx · 2√(R² − x²) dx = (4π/3)(R² − r²)^(3/2)
+• The ring height is h = 2√(R² − r²), so R² − r² = h²/4
+• V = (4π/3)(h/2)³ = πh³/6
+
+14. Find the slope of the line whose parametric equations are x = 2 − t and y = 5 − 3t.
+A. −1/3
+B. 3
+C. −3
+D. 1/3
+Answer: B
+Solution: dy/dx = (dy/dt)/(dx/dt) = (−3)/(−1) = 3
+
+15. A box is to be constructed from a piece of zinc 20 inches square by cutting equal squares from each corner and turning up the zinc to form the sides. What is the volume of the largest box that can be constructed?
+A. 592.59 cu in
+B. 29.592 cu in
+C. 959.25 cu in
+D. 529.92 cu in
+Answer: A
+Solution: V = x(20 − 2x)²
+• dV/dx = (20 − 2x)(20 − 6x) = 0, so x = 10/3 in
+• V = (10/3)(40/3)² = 16,000/27 = 592.59 cu in
+
+16. A triangular corner lot has perpendicular sides of length 90 m and 60 m. Find the dimensions of the largest rectangular building that can be constructed on the lot with one side along the street.
+A. 45 m × 30 m
+B. 75 m × 25 m
+C. 45 m × 75 m
+D. 18 m × 75 m
+Answer: A
+Solution: Put the right angle at the origin with legs on the axes; the hypotenuse is x/90 + y/60 = 1.
+• Rectangle with sides along the two streets: A = xy = x·60(1 − x/90)
+• dA/dx = 60 − (4/3)x = 0, so x = 45 m and y = 30 m
+
+17. In conic sections, if the discriminant B² − 4AC = 1, the locus is a:
+A. circle
+B. ellipse
+C. parabola
+D. hyperbola
+Answer: D
+Solution: B² − 4AC > 0 → hyperbola; = 0 → parabola; < 0 → ellipse (circle when B = 0 and A = C). Here it equals 1 > 0, so hyperbola.
+
+18. At maximum values, the first derivative of a function is _____, while at minimum values the first derivative is _____.
+A. zero, also zero
+B. positive, negative
+C. negative, positive
+D. zero, positive
+Answer: A
+Solution: At both a maximum and a minimum of a smooth function, the tangent is horizontal, so the first derivative is zero at both.
+
+19. Find ∫ 2⁴ tan⁴z dz.
+A. 4tan⁴z − 8tan²z + 16z + c
+B. 16tan³z/3 − 16tan z + 16z + c
+C. 16z − 8tan²z + c
+D. 2tan⁴z − 8tan²z + 16tan z + c
+Answer: B
+Solution: tan⁴z = tan²z(sec²z − 1) = tan²z sec²z − sec²z + 1
+• ∫ tan⁴z dz = tan³z/3 − tan z + z
+• Multiply by 2⁴ = 16: 16tan³z/3 − 16tan z + 16z + c
+
+20. Find the volume of the solid formed when we rotate the ellipse x²/9 + y²/4 = 1 about the line 4x + 3y = 20.
+A. 48π²
+B. 58π²
+C. 38π²
+D. 68π²
+Answer: A
+Solution: Pappus: V = 2π·d·A.
+• Area of the ellipse: A = πab = π(3)(2) = 6π
+• Distance from the centroid (0, 0) to 4x + 3y − 20 = 0: d = 20/√(16 + 9) = 4 (the line does not cut the ellipse)
+• V = 2π(4)(6π) = 48π²
+
+21. Two legs of a right triangle are each 70 cm. If one leg grows at the rate of 5 cm/min and the other shrinks at the rate of 5 cm/min, how fast is the hypotenuse of the triangle changing 2 minutes later?
+A. 1 cm/min
+B. 2 cm/min
+C. 3 cm/min
+D. 4 cm/min
+Answer: A
+Solution: After 2 min the legs are 80 cm and 60 cm, so c = 100 cm.
+• c² = a² + b², so c(dc/dt) = a(da/dt) + b(db/dt)
+• dc/dt = [80(5) + 60(−5)]/100 = 1 cm/min
+
+22. A television camera is positioned 5000 ft from the base of a rocket launching pad. The camera is designed to follow the vertical path of the rocket. If the rocket's speed is 500 ft/sec when it has risen 2000 ft, how fast is the camera's angle of elevation changing at this instant?
+A. 3 deg/sec
+B. 4 deg/sec
+C. 4.94 deg/sec
+D. 5 deg/sec
+Answer: C
+Solution: tan θ = h/5000, so sec²θ (dθ/dt) = (1/5000)(dh/dt)
+• At h = 2000: tan θ = 0.4, sec²θ = 1.16
+• dθ/dt = (500/5000)/1.16 = 0.08621 rad/s = 4.94 deg/s
+
+23. Express the center of curvature of the given curve in rectangular coordinates: the curve x² = 8y at (4, 2).
+A. (−4, 10)
+B. (3, 6)
+C. (4, 10)
+D. (0, 0)
+Answer: A
+Solution: y = x²/8, y' = x/4 = 1, y'' = 1/4 at (4, 2).
+• h = x − y'(1 + y'²)/y'' = 4 − (1)(2)/(1/4) = −4
+• k = y + (1 + y'²)/y'' = 2 + 2/(1/4) = 10
+• Center of curvature: (−4, 10)
+• Review note: the PDF prints the equation as "x² + 8y"; the parabola x² = 8y (which passes through (4, 2)) is meant.
+
+24. Gas is escaping from a spherical balloon at the rate of 2 ft³/min. How fast is the outer surface area of the balloon shrinking when the radius of the balloon is 12 ft?
+A. 2
+B. 3
+C. 1/3
+D. 1/2
+Answer: C
+Solution: V = (4/3)πr³, dV/dt = 4πr²(dr/dt); S = 4πr², dS/dt = 8πr(dr/dt)
+• So dS/dt = (2/r)(dV/dt) = (2/12)(2) = 1/3 ft²/min
+• Review note: the PDF gives the rate in ft³/min; surface area changes in ft²/min.
+
+25. Two vertices of a rectangle are on the x-axis. The other two vertices are on the lines whose equations are y = 2x and 3x + y = 30. If the area of the rectangle is maximum, find the value of y.
+A. 4
+B. 8
+C. 6
+D. 5
+Answer: C
+Solution: At height y the upper vertices are at x = y/2 (on y = 2x) and x = (30 − y)/3 (on 3x + y = 30).
+• Width = (30 − y)/3 − y/2 = 10 − 5y/6
+• A = y(10 − 5y/6); dA/dy = 10 − 5y/3 = 0, so y = 6
+
+26. Two posts, one 10 m high and the other 15 m high, stand 30 m apart. They are to be stayed by transmission wires attached to a single stake at ground level, the wires running to the tops of the posts. How far from the 10 m post should the stake be placed to use the least amount of wire?
+A. 9
+B. 10
+C. 11
+D. 12
+Answer: D
+Solution: L = √(x² + 10²) + √((30 − x)² + 15²)
+• dL/dx = 0 gives similar triangles: x/10 = (30 − x)/15
+• 15x = 300 − 10x, so x = 12 m
+
+27. The area enclosed by the ellipse 4x² + 9y² = 36 is revolved about the line x = 3. What is the volume generated?
+A. 355.3 cu. units
+B. 443.3 cu. units
+C. 335.3 cu. units
+D. 223.3 cu. units
+Answer: A
+Solution: x²/9 + y²/4 = 1: a = 3, b = 2, area = 6π, centroid at (0, 0).
+• Distance from the centroid to x = 3 is 3
+• Pappus: V = 2π(3)(6π) = 36π² = 355.3 cubic units
+
+28. Find the area bounded by the curve y² = 9x and its latus rectum.
+A. 10.5
+B. 13.5
+C. 11.5
+D. 12.5
+Answer: B
+Solution: y² = 4ax with 4a = 9, so a = 9/4; the latus rectum is x = 9/4 with length 9.
+• Parabolic segment: A = (2/3)(base)(height) = (2/3)(9)(9/4) = 13.5 square units
+
+29. A hemispherical shaped tank of radius 10 ft is full of water. Find the work done in pumping the water to the top of the tank.
+A. 234 ft-tons
+B. 432 ft-tons
+C. 245 ft-tons
+D. 135 ft-tons
+Answer: C
+Solution: A slice at depth y below the top has radius² = 100 − y² and must be lifted y ft.
+• W = ∫ from 0 to 10 of 62.4π(100 − y²)y dy = 62.4π[50y² − y⁴/4] from 0 to 10 = 62.4π(2500)
+• W = 490,088 ft-lb = 245 ft-tons (1 ton = 2000 lb)
+
+30. Suppose the dimensions (in inches) of a rectangular box change from 9, 6, and 4 to 9.02, 5.97, and 4.01 respectively. Find the exact change in volume.
+A. −0.063904
+B. −0.063906
+C. −0.063886
+D. −0.063912
+Answer: B
+Solution: V₁ = 9 × 6 × 4 = 216 in³
+• V₂ = 9.02 × 5.97 × 4.01 = 215.936094 in³
+• ΔV = 215.936094 − 216 = −0.063906 in³
+• Review note: the PDF prints the second dimension as 5.92, which gives ΔV = −1.872416 and matches no choice; 5.97 is the value the choices were built from.
+
+31. Find the centroid in the first quadrant of the area bounded by the curve y² = 4x, x = 4, and the x-axis.
+A. (1.50, 2.40)
+B. (1.75, 2)
+C. (2, 1.75)
+D. (2.40, 1.50)
+Answer: D
+Solution: y = 2√x; A = ∫ from 0 to 4 of 2√x dx = 32/3
+• x̄ = (1/A)∫ x·2√x dx = (3/32)(4/5)(4^(5/2)) = (3/32)(128/5) = 2.40
+• ȳ = (1/A)∫ ½y² dx = (3/32)∫ from 0 to 4 of ½(4x) dx = (3/32)(16) = 1.50
+• Centroid: (2.40, 1.50)
+
+32. Find the area bounded by the curve y² = 9x and its latus rectum.
+A. 10.5
+B. 13.5
+C. 11.5
+D. 12.5
+Answer: B
+Solution: Same as item 28: a = 9/4, latus rectum length = 9.
+• A = (2/3)(9)(9/4) = 13.5 square units
+
+33. A picture 7 feet in height is hung on a wall with the lower edge 9 feet above the level of the observer's eye. How far from the wall should the observer stand in order to obtain the most favorable view?
+A. 12 ft
+B. 16 ft
+C. 13 ft
+D. 15 ft
+Answer: A
+Solution: The viewing angle θ = arctan(16/x) − arctan(9/x) is greatest when x = √(9 × 16)
+• x = √144 = 12 ft
+
+34. Evaluate the integral of x³ dx/(eˣ − 1) with limits from zero to infinity.
+A. 2(4π − e)/3
+B. 19 − 4π
+C. π⁴/15
+D. π²/6
+Answer: C
+Solution: ∫ from 0 to ∞ of x^(s−1)/(eˣ − 1) dx = Γ(s)ζ(s). With s = 4:
+• Γ(4)ζ(4) = 3! × π⁴/90 = 6π⁴/90 = π⁴/15
+
+35. It costs a bus company P125 to run a bus on a certain tour, plus P15 per passenger. The capacity of the bus is 20 persons and the company charges P35 per ticket if the bus is full. For each empty seat, however, the company increases the ticket price by P2.00. For maximum profit, how many empty seats would the company like to see?
+A. 5
+B. 12
+C. 15
+D. 8
+Answer: A
+Solution: With n empty seats: passengers = 20 − n, ticket = 35 + 2n.
+• Profit P = (20 − n)(35 + 2n) − 125 − 15(20 − n) = (20 − n)(20 + 2n) − 125
+• dP/dn = −(20 + 2n) + 2(20 − n) = 20 − 4n = 0, so n = 5
+
+36. Find the volume generated by revolving the area bounded by y = x³, y = 8, x = 0 about the y-axis.
+A. 64π/7
+B. 512π/5
+C. 768π/7
+D. 96π/5
+Answer: D
+Solution: Disks along y: x = y^(1/3)
+• V = π∫ from 0 to 8 of y^(2/3) dy = π(3/5)(8^(5/3)) = π(3/5)(32) = 96π/5
+
+37. Find the area enclosed by y = sin(πx/2) and y = x.
+A. 0.157
+B. 0.150
+C. 0.143
+D. 0.137
+Answer: D
+Solution: The curves meet at x = 0 and x = 1 (in the first quadrant); sin(πx/2) ≥ x between them.
+• A = ∫ from 0 to 1 of [sin(πx/2) − x] dx = 2/π − 1/2 = 0.6366 − 0.5 = 0.137
+• (By symmetry an equal piece lies between x = −1 and 0; the enclosed area on one side is 0.137.)
+
+38. The maximum volume of the cylinder inscribed in a cone is ___% of the volume of the cone.
+A. 24%
+B. 44%
+C. 34%
+D. 54%
+Answer: B
+Solution: The largest inscribed cylinder has radius (2/3)R and height (1/3)H.
+• V_cyl = π(4R²/9)(H/3) = 4πR²H/27; V_cone = πR²H/3
+• Ratio = (4/27)/(1/3) = 4/9 = 44.4% ≈ 44%
+
+39. Find the maximum point of the curve y = 4 + 3x − x³.
+A. (−3, 22)
+B. (−1, 2)
+C. (2, 6)
+D. (1, 6)
+Answer: D
+Solution: y' = 3 − 3x² = 0, so x = ±1; y'' = −6x.
+• At x = 1: y'' = −6 < 0 (maximum), y = 4 + 3 − 1 = 6
+• Maximum point: (1, 6)
+
+40. Find the volume formed by revolving the hyperbola xy = 6 from x = 4 about the x-axis.
+A. 25.53
+B. 23.23
+C. 30.43
+D. 28.27
+Answer: D
+Solution: Taking the region under y = 6/x from x = 4 to infinity:
+• V = π∫ from 4 to ∞ of (36/x²) dx = π(36/4) = 9π = 28.27 cubic units
+
+41. A closed cylindrical tank of circular cross section has a radius of 4 ft and a height of 8 ft. Find the approximate volume of asbestos required to cover the tank completely with one inch thick.
+A. 8.687 cu ft
+B. 8.378 cu ft
+C. 8.235 cu ft
+D. 8.216 cu ft
+Solution: Approximate volume = total surface area × thickness.
+• S = 2πrh + 2πr² = 2π(4)(8) + 2π(16) = 96π ft²; t = 1/12 ft
+• V ≈ 96π/12 = 8π = 25.13 ft³ (the exact shell volume is 25.66 ft³)
+• Review note: none of the printed choices fits the problem as stated. 8.378 ft³ (choice B) equals 8π/3, which would need, for example, a 1/3-inch layer. No answer is set; check the source or key, then set the answer or reject this item.
+
+42. Find the volume generated by revolving the area bounded by y = x³, y = 8, x = 0 about the y-axis.
+A. 64π/7
+B. 512π/5
+C. 768π/7
+D. 96π/5
+Answer: D
+Solution: Same as item 36.
+• V = π∫ from 0 to 8 of y^(2/3) dy = (3π/5)(32) = 96π/5
+
+43. A boat is at A, which is 4.5 km from the nearest point B on a straight shore BC. He wishes to reach, in minimum time, a point C situated on the shore 9 km from B. How far from C should he land if he can row at the rate of 6 kph and can walk at the rate of 7.5 kph?
+A. 2 km
+B. 3 km
+C. 4 km
+D. 5 km
+Answer: B
+Solution: Land at P, x km from B: T = √(x² + 4.5²)/6 + (9 − x)/7.5
+• dT/dx = x/(6√(x² + 20.25)) − 1/7.5 = 0, so x/√(x² + 20.25) = 0.8
+• x² = 0.64(x² + 20.25), 0.36x² = 12.96, x = 6 km from B
+• Distance from C = 9 − 6 = 3 km
+• Review note: the PDF prints the walking rate as 75 kph; 7.5 kph is the value that gives one of the choices.
+
+44. Jodi wishes to use 100 feet of fencing to enclose a rectangular garden. Determine the maximum possible area of her garden.
+A. 610 ft²
+B. 615 ft²
+C. 620 ft²
+D. 625 ft²
+Answer: D
+Solution: For a fixed perimeter the largest rectangle is a square: side = 100/4 = 25 ft.
+• A = 25² = 625 ft²
+
+45. The function y = f(x) has a maximum value at x = 2 if f'(2) = 0 and f''(2) is:
+A. less than zero
+B. equal to zero
+C. unity
+D. greater than zero
+Answer: A
+Solution: Second-derivative test: f'(2) = 0 and f''(2) < 0 means the curve is concave down there, so x = 2 is a maximum.
+
+46. The number of newspaper copies distributed is given by C = 50t² − 200t + 1000, where t is in years. Find the minimum number of copies distributed from 1995 to 2002.
+A. 300
+B. 1000
+C. 800
+D. 450
+Answer: C
+Solution: dC/dt = 100t − 200 = 0, so t = 2 (within 0 ≤ t ≤ 7, counting from 1995).
+• C(2) = 50(4) − 400 + 1000 = 800 copies
+
+47. Three sides of a trapezoid are each 8 cm long. How long is the 4th side when the area of the trapezoid has the greatest value?
+A. 10 cm
+B. 15 cm
+C. 12 cm
+D. 16 cm
+Answer: D
+Solution: Let the legs make angle θ with the long base: height = 8 sin θ, long base = 8 + 16 cos θ.
+• A = ½(8 + 8 + 16 cos θ)(8 sin θ) = 64 sin θ(1 + cos θ)
+• dA/dθ = 64(cos θ + cos 2θ) = 0 gives cos θ = 1/2, θ = 60°
+• Fourth side = 8 + 16(1/2) = 16 cm (half of a regular hexagon)
+
+48. Compute the horizontal asymptote of the curve y = (2x − 1)/(x + 2).
+A. y = 2
+B. y = 0
+C. y − 1 = 0
+D. y − 3 = 0
+Answer: A
+Solution: Degrees of numerator and denominator are equal, so the asymptote is the ratio of leading coefficients: y = 2/1 = 2.
+
+49. A wire 60 inches long is to be used to construct a circle and an equilateral triangle. How much is the maximum sum of areas possible?
+A. 173.21
+B. 247.37
+C. 286.48
+D. 293.73
+Answer: C
+Solution: With x inches for the circle: A = x²/(4π) + (√3/36)(60 − x)². A is a concave-up quadratic, so its maximum on 0 ≤ x ≤ 60 is at an endpoint.
+• All wire to the circle: A = 60²/(4π) = 286.48 in²
+• All wire to the triangle: A = (√3/4)(20²) = 173.21 in²
+• Maximum = 286.48 in² (the circle gets all the wire)
+
+50. If the natural length of a spring is 10 inches and it stretches 0.5 inch when a force of 50 lb is applied, find the work done on the spring in stretching it from 12 to 16 inches.
+A. 1200 lb-in
+B. 1800 lb-in
+C. 1600 lb-in
+D. 1250 lb-in
+Answer: C
+Solution: k = 50/0.5 = 100 lb/in. Stretch goes from 2 in to 6 in beyond natural length.
+• W = ½k(x₂² − x₁²) = ½(100)(36 − 4) = 1600 lb-in
+
+51. Find the centroid of the area bounded by the curve y = 4 − x², the line x = 1, and the coordinate axes.
+A. 1.85
+B. 0.46
+C. 1.57
+D. 2.16
+Answer: A
+Solution: A = ∫ from 0 to 1 of (4 − x²) dx = 11/3
+• ȳ = (1/A)∫ ½(4 − x²)² dx = (3/11)(½)(16 − 8/3 + 1/5) = (3/11)(203/30) = 1.85
+• x̄ = (1/A)∫ x(4 − x²) dx = (3/11)(7/4) = 0.477
+• Review note: only one coordinate is asked for; ȳ = 1.85 matches choice A exactly. (x̄ = 0.477, which is close to but not equal to choice B.)
+
+52. The sum of three positive integers is 51. Find the greatest possible product of these 3 numbers.
+A. 7362
+B. 5624
+C. 4913
+D. 9625
+Answer: C
+Solution: For a fixed sum the product is greatest when the numbers are equal: 51/3 = 17.
+• Product = 17³ = 4913
+
+53. Find y = f(x) if dy/dx = 8.60x^1.15.
+A. 7x^2.15 + C
+B. 6x^2.15 + C
+C. 5x^2.15 + C
+D. 4x^2.15 + C
+Answer: D
+Solution: y = ∫ 8.60x^1.15 dx = 8.60x^2.15/2.15 + C = 4x^2.15 + C
+• Review note: the PDF prints the exponent as 1.5, which gives y = 3.44x^2.5 + C and matches no choice; every choice has x^2.15, so the exponent is 1.15.
+
+54. Find the moment of inertia with respect to the x-axis of the area bounded by the parabola y² = 4x and the line x = 1.
+A. 2.13
+B. 1.23
+C. 2.31
+D. 1.32
+Answer: A
+Solution: Horizontal strips from x = y²/4 to x = 1, y from −2 to 2.
+• Iₓ = ∫ y²(1 − y²/4) dy from −2 to 2 = 2[y³/3 − y⁵/20] from 0 to 2 = 2(8/3 − 8/5) = 32/15 = 2.13
+
+55. A building is to be braced by means of a beam which must pass over a wall. If the wall is 3 3/8 feet high and stands 8 feet from the building, find the shortest beam that can be used.
+A. 11-1/8 ft
+B. 13-3/8 ft
+C. 15-5/8 ft
+D. 17-7/8 ft
+Answer: C
+Solution: Shortest length over a wall of height h at distance d: L = (h^(2/3) + d^(2/3))^(3/2)
+• h^(2/3) = (27/8)^(2/3) = 9/4; d^(2/3) = 8^(2/3) = 4
+• L = (6.25)^(3/2) = 15.625 ft = 15-5/8 ft
+
+56. Find the centroid of the area in the first quadrant under the curve y = 4 − x².
+A. (3/4, 8/5)
+B. (8/5, 3/4)
+C. (1/2, 5/7)
+D. (7/5, 1/2)
+Answer: A
+Solution: A = ∫ from 0 to 2 of (4 − x²) dx = 16/3
+• x̄ = (3/16)∫ x(4 − x²) dx = (3/16)(4) = 3/4
+• ȳ = (3/16)∫ ½(4 − x²)² dx = (3/16)(½)(256/15) = 8/5
+• Centroid: (3/4, 8/5)
+
+57. Find the integral of [(eˣ − 1)/(eˣ + 1)] dx.
+A. ln(eˣ − 1)² − x + C
+B. ln(eˣ + 1)² − x + C
+C. ln(eˣ − 1)² + x + C
+D. ln(eˣ − 1)² + 2x + C
+Answer: B
+Solution: (eˣ − 1)/(eˣ + 1) = 2eˣ/(eˣ + 1) − 1
+• ∫ = 2 ln(eˣ + 1) − x + C = ln(eˣ + 1)² − x + C
+
+58. Evaluate the integral of cos(ln x) dx/x.
+A. sin(ln x) + C
+B. cos(ln x) + C
+C. csc(ln x) + C
+D. sec(ln x) + C
+Answer: A
+Solution: Let u = ln x, du = dx/x.
+• ∫ cos u du = sin u + C = sin(ln x) + C
+
+59. The area bounded by the parabola ay = x², the x-axis, and the line x = b is revolved about the x-axis. Find the volume generated.
+A. πb⁵/(5a²)
+B. πb⁴/(3a)
+C. πb⁴/(4a)
+D. πb⁴/5
+Answer: A
+Solution: y = x²/a
+• V = π∫ from 0 to b of (x²/a)² dx = (π/a²)(b⁵/5) = πb⁵/(5a²)
+
+60. Find the equation of the line tangent to y = x² − 3x − 5 and parallel to the line y = 3x − 2.
+A. y = 3x − 14
+B. y = 3x − 13
+C. y = 3x − 12
+D. y = 3x − 11
+Answer: A
+Solution: y' = 2x − 3 = 3, so x = 3 and y = 9 − 9 − 5 = −5.
+• Tangent: y + 5 = 3(x − 3), so y = 3x − 14
+
+61. Find the largest area of a rectangle which can be inscribed in the ellipse 4x² + 9y² = 36.
+A. 12
+B. 24
+C. 15
+D. 30
+Answer: A
+Solution: x²/9 + y²/4 = 1, a = 3, b = 2. The largest inscribed rectangle has vertices at (a/√2, b/√2).
+• A_max = 4(a/√2)(b/√2) = 2ab = 2(3)(2) = 12 square units
+
+62. The cost per hour of running a motor boat is proportional to the cube of the speed. At what speed will the boat run against a current of 8 km/hr in order to go a given distance most economically?
+A. 15 kph
+B. 8 kph
+C. 12 kph
+D. 20 kph
+Answer: C
+Solution: Cost for distance s at speed v: C = kv³ · s/(v − 8)
+• dC/dv = 0: 3v²(v − 8) − v³ = 0, so 2v = 24 and v = 12 kph (= 1.5 × current speed)
+
+63. Evaluate ∫ x²/(x + 1) dx.
+A. x² + x + ln(x + 1) + C
+B. (1/2)x² − x + ln(x + 1) + C
+C. (1/2)x² + x + ln(x + 1) + C
+D. −x + ln(x + 1) + C
+Answer: B
+Solution: Long division: x²/(x + 1) = x − 1 + 1/(x + 1)
+• ∫ = x²/2 − x + ln(x + 1) + C
+
+64. Find the second derivative of y from the equation 4x² − 8y² = 36.
+A. y'' = −9/(4y²)
+B. y'' = −9/(4y³)
+C. y'' = −4/(9y²)
+D. y'' = −4/(9y³)
+Answer: B
+Solution: 8x − 16yy' = 0, so y' = x/(2y)
+• y'' = (2y − 2xy')/(4y²) = (2y² − x²)/(4y³)
+• From the equation, x² − 2y² = 9, so 2y² − x² = −9
+• y'' = −9/(4y³)
+
+65. Determine the area bounded by the curves x = 1/y, 2x − y = 0, x = 6, and the x-axis.
+A. 2.14
+B. 2.33
+C. 1.32
+D. 2.64
+Answer: D
+Solution: y = 1/x and y = 2x meet at 2x² = 1, x = 1/√2.
+• From 0 to 1/√2 the upper curve is y = 2x: ∫ 2x dx = 1/2
+• From 1/√2 to 6 the upper curve is y = 1/x: ∫ dx/x = ln(6√2) = 2.138
+• A = 0.5 + 2.138 = 2.64 square units
+
+66. The area bounded by the curve y² = 12x and the line x = 3 is revolved about the line x = 3. What is the volume generated?
+A. 382.644π
+B. 76.529π
+C. 288π/5
+D. 180.956π
+Answer: C
+Solution: Disks perpendicular to x = 3: radius = 3 − y²/12, y from −6 to 6.
+• V = π∫ from −6 to 6 of (3 − y²/12)² dy = 2π[9y − y³/6 + y⁵/720] from 0 to 6
+• = 2π(54 − 36 + 10.8) = 57.6π = 288π/5
+
+67. What is the maximum area of a rectangle that can be inscribed in a right triangle with a base of 8 cm and a height of 6 cm?
+A. 12 cm²
+B. 48 cm²
+C. 24 cm²
+D. 50 cm²
+Answer: A
+Solution: Rectangle with sides along the legs: A = x·6(1 − x/8); dA/dx = 6 − 1.5x = 0, so x = 4 and y = 3.
+• A_max = 4 × 3 = 12 cm² (half the triangle's area of 24 cm²)
+
+68. The slope of the curve at any point is given as 6x − 2 and the curve passes through (5, 3). Determine the equation of the curve.
+A. 3x² − 2x − y − 62 = 0
+B. 2x² − 3x + y + 62 = 0
+C. 2x² + 3x − y − 62 = 0
+D. 3x² + 2x − y + 62 = 0
+Answer: A
+Solution: y = ∫ (6x − 2) dx = 3x² − 2x + C
+• Through (5, 3): 3 = 75 − 10 + C, so C = −62
+• y = 3x² − 2x − 62, i.e. 3x² − 2x − y − 62 = 0
+
+69. Find the area bounded by y² = 4x and y + 2x = 12.
+A. 42 sq. units
+B. 65 sq. units
+C. 55 sq. units
+D. 75 sq. units
+Answer: A
+Solution: x = y²/4 and x = (12 − y)/2 meet where y² + 2y − 24 = 0: y = 4 and y = −6.
+• A = ∫ from −6 to 4 of [(12 − y)/2 − y²/4] dy = [6y − y²/4 − y³/12] from −6 to 4
+• = (14.667) − (−27) = 41.67 ≈ 42 square units
+
+70. A body moves such that its acceleration as a function of time is a = 2 + 12t, where t is in minutes and a is in m/sec². If its velocity after 1 sec is 11 m/s, find the distance travelled after 5 seconds.
+A. 340 m
+B. 256 m
+C. 420 m
+D. 290 m
+Answer: D
+Solution: Treating t in seconds: v = 2t + 6t² + C; v(1) = 11 gives C = 3.
+• s = t² + 2t³ + 3t (s = 0 at t = 0)
+• s(5) = 25 + 250 + 15 = 290 m
+• Review note: the stem mixes minutes and seconds; the choices assume t is in seconds throughout.
+
+71. A conical tank that is 5 m high has a radius of 2 m and is filled with a liquid that weighs 800 kg per cubic meter. How much work is done in discharging all the liquid at a point 3 m above the top of the tank?
+A. 25,667π kg-m
+B. 21,667π kg-m
+C. 22,667π kg-m
+D. 24,667π kg-m
+Answer: C
+Solution: Vertex down; a slice at height y above the vertex has radius 2y/5 and is lifted (8 − y) m.
+• W = ∫ from 0 to 5 of 800π(4y²/25)(8 − y) dy = 128π[8y³/3 − y⁴/4] from 0 to 5
+• = 128π(1000/3 − 625/4) = 128π(2125/12) = 22,667π kg-m
+
+72. Find the centroid of the area bounded by the curve x² = 16y, the line x = 12, and the x-axis.
+A. (9, 3)
+B. (9, 2.7)
+C. (6, 3)
+D. (6, 2.7)
+Answer: B
+Solution: y = x²/16; A = ∫ from 0 to 12 of x²/16 dx = 36
+• x̄ = (1/36)∫ x³/16 dx = (1/36)(12⁴/64) = 9
+• ȳ = (1/36)∫ ½(x²/16)² dx = (1/36)(12⁵/2560) = 2.7
+• Centroid: (9, 2.7)
+
+73. The charge in coulombs that passes through a wire after t seconds is given by the function Q(t) = t³ − 2t² + 5t + 2. Determine the average current during the first two seconds.
+A. 2 A
+B. 3 A
+C. 4 A
+D. 5 A
+Answer: D
+Solution: Average current = [Q(2) − Q(0)]/(2 − 0)
+• Q(2) = 8 − 8 + 10 + 2 = 12 C; Q(0) = 2 C
+• I_avg = (12 − 2)/2 = 5 A
+
+74. Find the area bounded by the curve y = 8 − x² and the x-axis.
+A. 12
+B. 15
+C. 14
+D. 13
+Solution: y = 8 − x² meets the x-axis at x = ±2√2.
+• A = ∫ from −2√2 to 2√2 of (8 − x²) dx = 2[8x − x³/3] from 0 to 2√2 = 64√2/3 ≈ 30.17
+• Review note: none of the choices fits the curve as printed. Choice A (12) is the area under y = 8 − x³ between the coordinate axes (∫ from 0 to 2 of (8 − x³) dx = 12), which may be the intended curve. No answer is set; check the source or key, then set the answer or reject this item.
+
+75. Find the centroid of a semicircular area.
+A. 3π/(4r)
+B. 4π/(3r)
+C. 4r/(3π)
+D. 3r/(4π)
+Answer: C
+Solution: For a semicircle of radius r on the x-axis: A = πr²/2, Mₓ = ∫ ½y² dx = 2r³/3
+• ȳ = (2r³/3)/(πr²/2) = 4r/(3π) from the diameter
+
+76. What is the equation of the tangent line to the circle x² + y² = 5 through (1, 2)?
+A. x + 2y − 5 = 0
+B. 3x − 4y + 5 = 0
+C. 5x − 8y + 11 = 0
+D. 2x − 3y + 4 = 0
+Answer: A
+Solution: (1, 2) lies on the circle. The tangent to x² + y² = r² at (x₁, y₁) is x₁x + y₁y = r².
+• x + 2y = 5, i.e. x + 2y − 5 = 0
+
+77. A baseball diamond is a square whose sides are 90 feet long. If the batter runs to first base at the rate of 20 fps, how fast is his distance from second base changing when he has run 50 ft?
+A. −80/√97
+B. −10/√90
+C. −20/√97
+D. −90/√97
+Answer: A
+Solution: Let x = distance still to go to first base. Distance to second base D = √(x² + 90²).
+• After running 50 ft: x = 40, D = √(1600 + 8100) = 10√97
+• dD/dt = (x/D)(dx/dt) = (40)(−20)/(10√97) = −80/√97 fps
+
+78. Find the area inside the cardioid r = a(1 + cos θ) but outside the circle r = a.
+A. a²(1 + π/4)
+B. a²(2 + π/2)
+C. a²(2 + π/4)
+D. a²(1 + π/2)
+Answer: C
+Solution: The curves meet at θ = ±π/2.
+• A = 2 × ½∫ from 0 to π/2 of [a²(1 + cos θ)² − a²] dθ = a²∫ (2cos θ + cos²θ) dθ
+• = a²(2 + π/4)
+
+79. The integral of sin³x cos²x dx with limits from 0 to π/2 is:
+A. 2/5
+B. 2/15
+C. 2π/5
+D. 2π/15
+Answer: B
+Solution: Wallis' formula (m = 3, n = 2, not both even, so no π/2 factor):
+• ∫ = [(2)(1)]/[(5)(3)(1)] = 2/15
+
+80. Find the area of the region in the first quadrant bounded by the curves y = sin x, y = cos x and the y-axis.
+A. 0.534
+B. 0.356
+C. 0.414
+D. 0.486
+Answer: C
+Solution: The curves meet at x = π/4.
+• A = ∫ from 0 to π/4 of (cos x − sin x) dx = [sin x + cos x] from 0 to π/4 = √2 − 1 = 0.414
+
+81. A goat is tied to a corner of a 30 ft by 35 ft building. If the rope is 40 ft long and the goat can reach 1 ft farther than the rope length, what is the maximum area the goat can cover?
+A. 4840.07
+B. 8044.07
+C. 4804.07
+D. 4084.07
+Answer: D
+Solution: Reach R = 41 ft. The goat sweeps 3/4 of a circle of radius 41, then wraps around each adjacent corner.
+• Past the 30 ft side: quarter circle of radius 41 − 30 = 11
+• Past the 35 ft side: quarter circle of radius 41 − 35 = 6 (the two do not overlap)
+• A = (3/4)π(41²) + (1/4)π(11² + 6²) = π(1260.75 + 39.25) = 1300π = 4084.07 ft²
+
+82. Find the centroid of the area under the curve y = 4 − x² in the first quadrant.
+A. 0.25
+B. 0.75
+C. 0.5
+D. 1.15
+Answer: B
+Solution: Same region as item 56: A = 16/3.
+• x̄ = (3/16)∫ from 0 to 2 of x(4 − x²) dx = (3/16)(4) = 0.75
+• (ȳ = 8/5 = 1.6, not among the choices, so x̄ is the coordinate asked for.)
+
+83. Two sides of a triangle are 5 and 10 inches, respectively. The angle between them is increasing at a rate of 5° per minute. How fast is the third side of the triangle growing when the angle is 60°?
+A. 0.44 in/min
+B. 0.75 in/min
+C. 0.11 in/min
+D. 0.67 in/min
+Answer: A
+Solution: c² = 5² + 10² − 2(5)(10)cos θ = 125 − 100 cos θ
+• 2c(dc/dt) = 100 sin θ (dθ/dt); at 60°: c = √75 = 8.660
+• dθ/dt = 5° = π/36 rad/min
+• dc/dt = 100(0.8660)(π/36)/(2 × 8.660) = 0.436 ≈ 0.44 in/min
+
+84. What is the perimeter of the curve r = 4(1 + sin θ)?
+A. 28
+B. 34
+C. 30
+D. 32
+Answer: D
+Solution: r = a(1 + sin θ) is a cardioid; its length is 8a.
+• s = ∫ from 0 to 2π of √(r² + r'²) dθ = ∫ a√(2 + 2 sin θ) dθ = 8a
+• With a = 4: s = 32
+
+85. Find the tangent line of the parabola x² − 6y = 10 through (3, 5).
+A. x − y = −2
+B. 2x − y = −9
+C. 3x − 2y = 11
+D. x − y = 4
+Answer: A
+Solution: Of the choices, only x − y = −2 (y = x + 2) passes through (3, 5): 3 − 5 = −2.
+• Review note: (3, 5) is not on x² − 6y = 10, and no real tangent to that parabola passes through (3, 5) (the tangency condition x₀² − 6x₀ + 40 = 0 has no real roots). The line y = x + 2 is tangent at (3, 5) to x² − 6y = −21 (slope there y' = x/3 = 1), so the printed constant is probably a typo. Answer A is the only choice that fits.
+
+86. Find the radius of curvature at any point on the curve y + ln cos x = 0.
+A. sec x
+B. −sec x
+C. csc x
+D. −csc x
+Answer: A
+Solution: y = −ln cos x, y' = tan x, y'' = sec²x
+• R = (1 + y'²)^(3/2)/|y''| = (sec²x)^(3/2)/sec²x = sec x
+
+87. A river is 1 mile wide. Boyet wants to get from point A to point B on the opposite side of the river, 3 miles downstream. If Boyet can run 5 miles per hour and can swim 3 miles per hour, what is the least amount of time in which he can get from A to B?
+A. 11/15 hr
+B. 13/15 hr
+C. 14/15 hr
+D. 12/15 hr
+Answer: B
+Solution: Swim to a point x miles downstream, then run the rest: T = √(1 + x²)/3 + (3 − x)/5
+• dT/dx = x/(3√(1 + x²)) − 1/5 = 0, so 5x = 3√(1 + x²), x = 3/4
+• T = (5/4)/3 + (9/4)/5 = 5/12 + 9/20 = 52/60 = 13/15 hr
+
+88. Evaluate the integral of xy dx from 0 to 8, subject to the functional relation x = t³ and y = t².
+A. 99
+B. 100
+C. 96
+D. 120
+Answer: C
+Solution: dx = 3t² dt; x from 0 to 8 means t from 0 to 2.
+• ∫ xy dx = ∫ from 0 to 2 of t³ · t² · 3t² dt = 3∫ t⁷ dt = 3(2⁸/8) = 96
+
+89. The integral of any quotient whose numerator is the differential of the denominator is the:
+A. product
+B. co-logarithm
+C. derivative
+D. logarithm
+Answer: D
+Solution: ∫ du/u = ln|u| + C, so the result is the logarithm of the denominator.
+
+90. Postal regulations require that a parcel post package be no greater than 3 m in the sum of its length and the perimeter of its cross-section (girth). What is the volume in cubic meters of the largest package allowed by the postal regulations if the package is to be rectangular in shape and has square ends?
+A. 3 cu m
+B. 1/3 cu m
+C. 2 cu m
+D. 1/4 cu m
+Answer: D
+Solution: Square end of side x, length L: L + 4x = 3
+• V = x²(3 − 4x); dV/dx = 6x − 12x² = 0, so x = 1/2 m and L = 1 m
+• V = (1/2)²(1) = 1/4 m³
+
+91. Find the area of the largest triangle that can be inscribed in a semicircle of radius 10.
+A. 25√2
+B. 50
+C. 100
+D. 75
+Answer: C
+Solution: The largest triangle has the diameter as its base (20) and its apex at the top of the arc (height 10).
+• A = ½(20)(10) = 100
+
+92. A farmer estimates that if he digs his potatoes now, he will have 120 bushels, which he can sell at $1.75 per bushel. If he expects his crop to increase 8 bushels per week, but the price to drop 5 cents per bushel per week, in how many weeks should he sell to realize the maximum amount for his crop?
+A. 10 weeks
+B. 15 weeks
+C. 20 weeks
+D. 18 weeks
+Answer: A
+Solution: Revenue after w weeks: R = (120 + 8w)(1.75 − 0.05w)
+• dR/dw = 8(1.75 − 0.05w) − 0.05(120 + 8w) = 8 − 0.8w = 0
+• w = 10 weeks
+
+93. Water is flowing into a conical vessel 15 cm deep and having a radius of 3.75 cm across the top. If the rate at which the water rises is 2 cm/sec, how fast is the water flowing into the conical vessel when the water is 4 cm deep?
+A. 6.28 m³/sec
+B. 2.82 m³/sec
+C. 6.82 m³/sec
+D. 2.28 m³/sec
+Answer: A
+Solution: r/h = 3.75/15 = 1/4, so V = (1/3)π(h/4)²h = πh³/48
+• dV/dt = (πh²/16)(dh/dt) = (π(16)/16)(2) = 2π = 6.28 cm³/sec
+• Review note: the choices are labelled m³/sec; with the dimensions in cm the rate is 6.28 cm³/sec.
+
+94. Evaluate lim (x→∞) of (1 + 1/x)^(3x).
+A. e²
+B. e³
+C. e
+D. ∞
+Answer: B
+Solution: (1 + 1/x)^(3x) = [(1 + 1/x)^x]³ → e³
+• Review note: the PDF writes the limit as n → ∞ but the expression is in x.
+
+95. Evaluate ∫ from 0 to 2 ∫ from 0 to 1 ∫ from 0 to π/2 of z dz · r² dr · sin u du.
+A. 1/3
+B. 3/2
+C. 1/2
+D. 2/3
+Answer: D
+Solution: The integrand separates; reading the limits in the order of the factors (z: 0 to 2, r: 0 to 1, u: 0 to π/2):
+• ∫ from 0 to 2 of z dz = 2
+• ∫ from 0 to 1 of r² dr = 1/3
+• ∫ from 0 to π/2 of sin u du = 1
+• Product = 2 × 1/3 × 1 = 2/3
+
+96. A square has sides of 20 cm. Another square is inscribed in the given square such that the vertices of the latter lie on the midpoints of the sides of the former. Determine the area, in sq. cm, of the smaller inscribed square.
+A. 200
+B. 180
+C. 220
+D. 160
+Answer: A
+Solution: Side of the inscribed square = √(10² + 10²) = 10√2 cm
+• Area = (10√2)² = 200 cm² (half of the original 400 cm²)
+• Review note: the PDF says "all the smaller inscribed squares". If squares keep being inscribed without end, the total is 200 + 100 + 50 + … = 400 cm², which is not a choice, so the single inscribed square is meant.
+
+97. Find the volume generated by revolving a rectangle of sides a and b about the side a.
+A. πab²
+B. πba²
+C. πab²/2
+D. πba²/2
+Answer: A
+Solution: Revolving about side a gives a cylinder of height a and radius b.
+• V = πb²a = πab²
+
+98. A line y = 2x + 8 intersects the parabola y = x² at points A and B. Point C is on the parabolic arc AOB, where O is the origin. Locate C to maximize the area of the triangle ABC.
+A. (1.1, 1.21)
+B. (1, 1)
+C. (0.9, 0.81)
+D. (1.2, 1.44)
+Answer: B
+Solution: x² = 2x + 8 gives x = −2 and x = 4, so AB is fixed.
+• The area is largest when C is farthest from AB, where the tangent to y = x² is parallel to AB: 2x = 2, x = 1
+• C = (1, 1)
+
+99. One raised to infinity is:
+A. 1
+B. indeterminate
+C. infinity
+D. zero
+Answer: B
+Solution: 1^∞ is one of the indeterminate forms (along with 0/0, ∞/∞, 0·∞, ∞ − ∞, 0⁰ and ∞⁰); e.g. (1 + 1/x)^x → e.
+
+100. Differentiate: y = tan⁻¹(3x).
+A. 3/(1 − 9x²)
+B. 9/(1 + 3x²)
+C. 3/(1 + 9x²)
+D. 9/(1 − 3x²)
+Answer: C
+Solution: d/dx tan⁻¹u = u'/(1 + u²)
+• y' = 3/(1 + 9x²)

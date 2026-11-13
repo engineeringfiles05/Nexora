@@ -1,0 +1,904 @@
+Math 3 Evaluation Exam
+Coverage: Differential Equations, Advanced Eng'g. Mathematics, Permutation, Combination and Probability
+
+1. Infinity minus infinity is:
+A. infinity
+B. indeterminate
+C. zero
+D. none of these
+Answer: B
+Solution: ∞ − ∞ is an indeterminate form: its value depends on how the two quantities grow (e.g. (x + 1) − x → 1 but 2x − x → ∞).
+
+2. Two or more equations are equal if and only if they have the same:
+A. solution set
+B. order
+C. degree
+D. variable set
+Answer: A
+Solution: Equations are equivalent (equal) exactly when every solution of one is a solution of the other, i.e. they have the same solution set.
+
+3. Simplify (3 − i)² − 7(3 − i) + 10.
+A. −(3 + i)
+B. 3 + i
+C. 3 − i
+D. −(3 − i)
+Answer: D
+Solution: Let w = 3 − i. Then w² − 7w + 10 = (w − 2)(w − 5) = (1 − i)(−2 − i)
+• = −2 − i + 2i + i² = −2 + i − 1 = −3 + i = −(3 − i)
+
+4. If seven coins are tossed simultaneously, find the probability that there will be at least five heads.
+A. 29/128
+B. 1/2
+C. 5/128
+D. 37/128
+Answer: A
+Solution: P(at least 5 heads) = [C(7,5) + C(7,6) + C(7,7)]/2⁷ = (21 + 7 + 1)/128 = 29/128
+• Review note: the PDF reads "at five heads"; exactly five heads would be 21/128, which is not a choice, so "at least" is meant.
+
+5. A die is rolled and a coin is tossed. What is the probability that a three and a head will appear?
+A. 1/2
+B. 2/3
+C. 1/6
+D. 1/12
+Answer: D
+Solution: Independent events: P = (1/6)(1/2) = 1/12
+• Review note: the PDF prints choices A and C both as 1/2; C is shown here as 1/6 (a likely misprint). The answer is D either way.
+
+6. The quartile deviation is a measure of:
+A. division
+B. certainty
+C. central tendency
+D. dispersion
+Answer: D
+Solution: The quartile deviation (semi-interquartile range), (Q₃ − Q₁)/2, measures the spread of the data, i.e. dispersion.
+• Review note: the PDF reads "quartile division"; "quartile deviation" is meant.
+
+7. Evaluate ln(3 + j4).
+A. 1.46 + j0.102
+B. 1.77 + j0.843
+C. 1.61 + j0.927
+D. 1.95 + j0.112
+Answer: C
+Solution: 3 + j4 = 5∠53.13° = 5e^(j0.9273)
+• ln(3 + j4) = ln 5 + j0.9273 = 1.609 + j0.927
+
+8. Evaluate cos 2x if sin x = 2.
+A. 4
+B. 6
+C. −3
+D. −7
+Answer: D
+Solution: cos 2x = 1 − 2sin²x = 1 − 2(4) = −7
+• Review note: the PDF asks for sin 2x. With sin x = 2, cos x = ±j√3 and sin 2x = 2 sin x cos x = ±j4√3, which is not a choice; −7 is cos 2x, so the stem has been set to cos 2x.
+
+9. Two factors are considered essentially the same if:
+A. one is merely the negative of the other
+B. both of them are negative
+C. one is exactly the same as the other
+D. both of them are positive
+Answer: A
+Solution: In factoring, factors that differ only by a unit (such as −1) are regarded as essentially the same, e.g. (x − y) and (y − x).
+
+10. How many triangles are determined by the vertices of a regular hexagon?
+A. 10
+B. 20
+C. 15
+D. 25
+Answer: B
+Solution: No three vertices are collinear, so every choice of 3 vertices gives a triangle: C(6,3) = 20
+
+11. Find the quotient of (50 + j35)/(8 + j5).
+A. 6.47∠3°
+B. 4.47∠3°
+C. 7.47∠30°
+D. 2.47∠53°
+Answer: A
+Solution: 50 + j35 = 61.03∠34.99°; 8 + j5 = 9.434∠32.01°
+• Quotient = (61.03/9.434)∠(34.99° − 32.01°) = 6.47∠2.99° ≈ 6.47∠3°
+
+12. In how many ways can 6 people be seated in a row of 9 seats?
+A. 30,240
+B. 60,840
+C. 30,420
+D. 60,480
+Answer: D
+Solution: P(9,6) = 9!/3! = 9 × 8 × 7 × 6 × 5 × 4 = 60,480
+
+13. In the chemical processing of a certain mineral, the rate of change of the amount of mineral present varies as the amount of the mineral remaining. If after 8 hours, 100 pounds of mineral have been reduced to 70 pounds, what quantity of the mineral will remain after 24 hours?
+A. 53.2
+B. 34.3
+C. 43.4
+D. 25.3
+Answer: B
+Solution: dA/dt = kA gives A = 100e^(kt); every 8 hours the amount is multiplied by 0.70.
+• A(24) = 100(0.70)^(24/8) = 100(0.343) = 34.3 lb
+
+14. You are given n = 10 measurements: 3, 5, 4, 6, 10, 5, 6, 9, 2, 8. Find the mode.
+A. 8
+B. 5
+C. 6
+D. 5 & 6
+Answer: D
+Solution: 5 and 6 each occur twice; every other value occurs once. The data are bimodal: modes 5 and 6.
+
+15. Find the orthogonal trajectories of the family of curves with center at the origin and foci on the x-axis.
+A. y = Cx²
+B. y = C ln(x/y)
+C. y = Cx^(b²/a²)
+D. y = Cx^((a/b)²)
+Answer: D
+Solution: Family: x²/a² + y²/b² = c, i.e. b²x² + a²y² = k.
+• Differentiate: b²x + a²yy' = 0, so y' = −b²x/(a²y)
+• Orthogonal trajectories: y' = a²y/(b²x), so dy/y = (a²/b²)dx/x
+• ln y = (a²/b²) ln x + ln C, so y = Cx^(a²/b²) = Cx^((a/b)²)
+
+16. A statement the truth of which is admitted without proof is called:
+A. an axiom
+B. a theorem
+C. a postulate
+D. a corollary
+Answer: A
+Solution: An axiom is a statement accepted as true without proof. A theorem is proved; a corollary follows directly from a theorem.
+• Review note: "postulate" is often used with nearly the same meaning (traditionally for geometric assumptions); the usual key is "axiom".
+
+17. In any square matrix, when the elements of any two rows/columns are interchanged, the determinant is ___.
+A. negative of former value
+B. the same
+C. unity
+D. zero
+Answer: A
+Solution: Interchanging two rows (or two columns) of a determinant changes its sign.
+
+18. There are 8 different colors, 3 of which are red, blue and green. In how many ways can 5 colors be selected out of the 8 colors if red and blue are always included but green is excluded?
+A. 12
+B. 10
+C. 11
+D. 9
+Answer: B
+Solution: Red and blue are taken and green is out, so choose the remaining 3 from the other 5 colors.
+• C(5,3) = 10
+
+19. Evaluate (1 − i)⁻⁶.
+A. 0.300∠90°
+B. 0.125∠−90°
+C. 0.250∠−90°
+D. 0.4145∠−90°
+Answer: B
+Solution: 1 − i = √2∠−45°
+• (1 − i)⁻⁶ = (√2)⁻⁶∠270° = (1/8)∠270° = 0.125∠−90°
+
+20. Evaluate ln(50∠70°).
+A. 4.73 + j1.48
+B. 3.56 + j1.34
+C. 4.30 + j1.11
+D. 3.91 + j1.22
+Answer: D
+Solution: 50∠70° = 50e^(j1.2217) (70° = 1.2217 rad)
+• ln(50∠70°) = ln 50 + j1.2217 = 3.912 + j1.222
+
+21. Find the work done by the force F = 3i + 10j newtons in moving an object 10 meters north.
+A. 104.40 J
+B. 106 J
+C. 100 J
+D. 108.60 J
+Answer: C
+Solution: Displacement d = 10j (north).
+• W = F · d = (3)(0) + (10)(10) = 100 J
+
+22. If the lengths 2, 3, 5, 7 and 9 are to be used to form a triangle, what is the probability that a triangle is formed?
+A. 7/10
+B. 3/10
+C. 4/5
+D. 3/5
+Answer: B
+Solution: There are C(5,3) = 10 sets of three lengths. A triangle needs the two shorter sides to sum to more than the longest.
+• Valid: (3, 5, 7), (3, 7, 9), (5, 7, 9) — 3 sets. (2, 3, 5), (2, 5, 7) and (2, 7, 9) only reach equality, so they fail.
+• P = 3/10
+
+23. What is 4i cubed times 2i squared?
+A. −8i
+B. 8i
+C. −8
+D. −8i²
+Answer: B
+Solution: (4i³)(2i²) = 8i⁵ = 8i (since i⁴ = 1)
+• Check: 4i³ = −4i, 2i² = −2, and (−4i)(−2) = 8i
+
+24. One term of a Fourier series in cosine form is 10 cos 40πt. Write it in exponential form.
+A. 5e^(j40πt)
+B. 5e^(j40πt) + 5e^(−j40πt)
+C. 10e^(−j40πt)
+D. 10e^(j40πt)
+Answer: B
+Solution: cos θ = (e^(jθ) + e^(−jθ))/2
+• 10 cos 40πt = 5e^(j40πt) + 5e^(−j40πt)
+
+25. In how many ways can an IIEE Chapter with 15 directors choose a president, a vice-president, a secretary, a treasurer and an auditor, if no member can hold more than one position?
+A. 5,005
+B. 3,603,600
+C. 25,025
+D. 360,360
+Answer: D
+Solution: The offices are distinct, so order matters: P(15,5) = 15 × 14 × 13 × 12 × 11 = 360,360
+
+26. Find the differential equation of the family of parabolas with vertex at the origin and focus on the x-axis.
+A. 2x dy = y dx
+B. 2x dy = x dy
+C. 2y dy = y dx
+D. 2y dx = x dy
+Answer: A
+Solution: Family: y² = 4ax, so y²/x = 4a.
+• Differentiate: (2xyy' − y²)/x² = 0, so 2xy' = y
+• 2x dy = y dx
+
+27. Find the value of r (spherical coordinates) for the point with Cartesian coordinates (3, 4, 5).
+A. 4
+B. 4√2
+C. 5
+D. 5√2
+Answer: D
+Solution: r = √(x² + y² + z²) = √(9 + 16 + 25) = √50 = 5√2
+
+28. A statement that one mathematical expression is greater than or less than another is called:
+A. inequality
+B. absolute condition
+C. non-absolute condition
+D. conditional expression
+Answer: A
+Solution: A statement using >, <, ≥ or ≤ to compare two expressions is an inequality.
+
+29. In the chemical processing of a certain mineral, the rate of change of the amount of mineral present varies as the amount of the mineral remaining. If after 8 hours, 100 pounds of minerals have been reduced to 70 pounds, what quantity of the mineral will remain after 24 hours?
+A. 53.2
+B. 34.3
+C. 43.4
+D. 25.3
+Answer: B
+Solution: Same as item 13: A = 100(0.70)^(t/8)
+• A(24) = 100(0.70)³ = 34.3 lb
+
+30. What is a possible outcome of an experiment called?
+A. a sample space
+B. an event
+C. a random point
+D. a finite set
+Answer: B
+Solution: The sample space is the set of all possible outcomes; an event is an outcome (or a set of outcomes) of the experiment.
+• Review note: strictly, a single outcome is a "sample point"; of the choices, "an event" is the usual key.
+
+31. Find the general solution of y' = y sec x.
+A. y = C(sec x + tan x)
+B. y = C(sec x − tan x)
+C. y = C(sec x tan x)
+D. y = C(sec²x + tan x)
+Answer: A
+Solution: Separate: dy/y = sec x dx
+• ln y = ln(sec x + tan x) + ln C
+• y = C(sec x + tan x)
+
+32. The cost of renting a ballroom for a school dance is different at each of three establishments. The Ambassador charges $100 plus $3 per person. The Belmont charges $150 plus $2 per person, while the Coliseum charges $250 plus $1 per person. Under what condition would the Belmont be the place to hold the dance?
+A. Less than 30
+B. between 30-50
+C. between 50-75
+D. between 50-100
+Answer: D
+Solution: For n persons: Ambassador 100 + 3n, Belmont 150 + 2n, Coliseum 250 + n.
+• Belmont < Ambassador: 150 + 2n < 100 + 3n, so n > 50
+• Belmont < Coliseum: 150 + 2n < 250 + n, so n < 100
+• Belmont is cheapest for 50 < n < 100
+
+33. Find the dimensions of the right circular cylinder of greatest volume that can be inscribed in a right circular cone of radius r and altitude h.
+A. radius: 2/3 r ; altitude: 2/3 h
+B. radius: 2/3 r ; altitude: 1/3 h
+C. radius: 1/3 r ; altitude: 1/3 h
+D. radius: 1/3 r ; altitude: 2/3 h
+Answer: B
+Solution: A cylinder of radius x has height y = h(1 − x/r).
+• V = πx²h(1 − x/r); dV/dx = πh(2x − 3x²/r) = 0, so x = 2r/3
+• y = h(1 − 2/3) = h/3
+
+34. How many triangles are determined by the vertices of a regular hexagon?
+A. 10
+B. 20
+C. 15
+D. 25
+Answer: B
+Solution: Same as item 10: C(6,3) = 20
+
+35. If j = √(−1), the quantity j⁵²⁴⁶ is equal to:
+A. 1
+B. j
+C. −1
+D. −j
+Answer: C
+Solution: Powers of j repeat every 4. 5246 = 4(1311) + 2
+• j⁵²⁴⁶ = j² = −1
+
+36. Find the rectangular coordinates of the spherical coordinates (2, π/4, π/2).
+A. (2, √2, 0)
+B. (√2, 0, √2)
+C. (√2, √2, 0)
+D. (√2, 2, √2)
+Answer: C
+Solution: (ρ, θ, φ) = (2, π/4, π/2)
+• x = ρ sin φ cos θ = 2(1)(√2/2) = √2
+• y = ρ sin φ sin θ = 2(1)(√2/2) = √2
+• z = ρ cos φ = 2(0) = 0
+
+37. __________ is a sequence of terms whose reciprocals form an arithmetic progression.
+A. geometric progression
+B. algebraic progression
+C. harmonic progression
+D. ratio and proportion
+Answer: C
+Solution: A harmonic progression is one whose reciprocals form an arithmetic progression, e.g. 1, 1/2, 1/3, 1/4, …
+
+38. Write in the form a + bi the expression i³²¹⁷ − i⁴²⁷ + i¹⁸.
+A. 2i + 1
+B. −1 + i
+C. 2i − 1
+D. 1 + i
+Answer: C
+Solution: Reduce the exponents mod 4.
+• i³²¹⁷ = i¹ = i; i⁴²⁷ = i³ = −i; i¹⁸ = i² = −1
+• i − (−i) + (−1) = 2i − 1
+
+39. A box contains 9 red balls and 6 blue balls. If two balls are drawn in succession, what is the probability that one of them is red and the other is blue?
+A. 18/35
+B. 16/35
+C. 18/37
+D. 16/37
+Answer: A
+Solution: Without replacement: P = P(R then B) + P(B then R) = (9/15)(6/14) + (6/15)(9/14)
+• = 2(54/210) = 108/210 = 18/35
+
+40. Evaluate [√(−1)]⁻¹⁰.
+A. 0.0001074∠30°
+B. 0.0001325∠60°
+C. 0.0001182∠−300°
+D. 0.0009766∠−60°
+Solution: √(−1) = j, so j⁻¹⁰ = 1/j¹⁰ = 1/(−1) = −1 (i.e. 1∠180°).
+• Review note: none of the choices fits the expression as printed. Choice D (2⁻¹⁰ = 0.0009766 at −60°) is the value of (√3 − j)⁻¹⁰ = (2∠−30°)⁻¹⁰ = 2⁻¹⁰∠300°, so the source expression may have been garbled. No answer is set; check the source or key, then set the answer or reject this item.
+
+41. Determine the cylindrical coordinate form of x² + y² + z² = 115.
+A. 4r² + z² = 115
+B. r² + z² = 115
+C. 2r² + z² = 115
+D. r² − z² = 115
+Answer: B
+Solution: In cylindrical coordinates x² + y² = r², so the equation becomes r² + z² = 115.
+
+42. Find the general solution of the differential equation 7yy' = 5x.
+A. 5x² − 7y² = C
+B. 14x² − 5y² = C
+C. 7x² − 10y² = C
+D. 7x² − 10y² = C
+Answer: A
+Solution: Separate: 7y dy = 5x dx
+• 7y²/2 = 5x²/2 + C₁, so 5x² − 7y² = C
+• Review note: the PDF prints choices C and D identically.
+
+43. Solve for the median of 15, 19, 25, 21, 16, 10 and 13.
+A. 16
+B. 56
+C. 59.5
+D. 17
+Answer: A
+Solution: Sorted: 10, 13, 15, 16, 19, 21, 25. With 7 values the median is the 4th: 16.
+
+44. If Z₁ = 1 − i, Z₂ = −2 + 4i, Z₃ = √(3 − 2i), evaluate Re{2Z₁³ + 3Z₂² − 5Z₃²}.
+A. −55
+B. 23
+C. −42
+D. 34
+Answer: A
+Solution: Z₁³ = (1 − i)²(1 − i) = (−2i)(1 − i) = −2 − 2i, so 2Z₁³ = −4 − 4i
+• Z₂² = 4 − 16i + 16i² = −12 − 16i, so 3Z₂² = −36 − 48i
+• Z₃² = 3 − 2i, so 5Z₃² = 15 − 10i
+• Real part: −4 − 36 − 15 = −55
+
+45. Radium decomposes at a rate proportional to the amount present at any instant. In 100 years, 100 mg of radium decomposes to 96 mg. How many mg will be left after 200 years?
+A. 88.60
+B. 95.32
+C. 92.16
+D. 90.72
+Answer: C
+Solution: A = 100(0.96)^(t/100)
+• A(200) = 100(0.96)² = 92.16 mg
+• Review note: the PDF asks for the amount "after 100 years", which is simply the given 96 mg and not a choice; 92.16 mg corresponds to 200 years.
+
+46. The probability of John's winning whenever he plays a certain game is 1/3. If he plays 4 times, find the probability that he wins just twice.
+A. 0.2963
+B. 0.2693
+C. 0.2936
+D. 0.2639
+Answer: A
+Solution: Binomial: P(X = 2) = C(4,2)(1/3)²(2/3)² = 6(1/9)(4/9) = 24/81 = 0.2963
+
+47. The probability that a guest will attend breakfast in his hotel is 0.6, to attend dinner is 0.7, and that he will have breakfast and dinner is 0.4. If a guest is picked at random, find the probability that he is sure to attend breakfast also.
+A. 0.1
+B. 0.2
+C. 0.3
+D. 0.4
+Solution: P(B) = 0.6, P(D) = 0.7, P(B ∩ D) = 0.4, so P(B ∪ D) = 0.6 + 0.7 − 0.4 = 0.9.
+• Neither meal: 1 − 0.9 = 0.1 (choice A)
+• Breakfast only: 0.6 − 0.4 = 0.2 (choice B)
+• Both meals: 0.4 (choice D); breakfast given dinner: 0.4/0.7 = 0.571 (not a choice)
+• Review note: the question's wording is garbled and more than one choice fits a reasonable reading. No answer is set; check the source or key, then set the answer or reject this item.
+
+48. Solve the differential equation cot x dy + y dx = 0.
+A. y = C tan x
+B. y = C sin x
+C. y = C cot x
+D. y = C cos x
+Answer: D
+Solution: Separate: dy/y = −tan x dx
+• ln y = ln cos x + ln C
+• y = C cos x
+• Review note: the PDF reads "cotxdy and ydx = 0"; "and" stands for "+".
+
+49. Find the value of θ for the point with Cartesian coordinates (3, 4, 5) using cylindrical coordinates.
+A. 43°
+B. 53°
+C. 63°
+D. 73°
+Answer: B
+Solution: θ = tan⁻¹(y/x) = tan⁻¹(4/3) = 53.13° ≈ 53°
+
+50. Solve the differential equation dy − x dx = 0 if the curve passes through (1, 0).
+A. 3x² + 2y − 3 = 0
+B. 2y² + x² − 3 = 0
+C. x² − 2y − 1 = 0
+D. 2x² + 2y − 2 = 0
+Answer: C
+Solution: y = x²/2 + C; through (1, 0): 0 = 1/2 + C, C = −1/2
+• 2y = x² − 1, i.e. x² − 2y − 1 = 0
+
+51. In raw data, the term which occurs most frequently is known as the:
+A. mean
+B. mode
+C. median
+D. quartile
+Answer: B
+Solution: The mode is the value that occurs most often.
+
+52. Find k so that A = <3, −2> and B = <1, k> are perpendicular.
+A. 2/3
+B. 5/3
+C. 3/2
+D. 3/5
+Answer: C
+Solution: Perpendicular means A · B = 0: 3(1) + (−2)(k) = 0
+• k = 3/2
+
+53. The real part of one of the two square roots of 5 − j12 is:
+A. 3
+B. 4
+C. 1
+D. 2
+Answer: A
+Solution: Let (a + jb)² = 5 − j12: a² − b² = 5 and 2ab = −12.
+• a = 3, b = −2 works: (3 − j2)² = 9 − j12 − 4 = 5 − j12
+• The roots are ±(3 − j2); the real part of 3 − j2 is 3
+
+54. When the corresponding elements of two rows of a determinant are proportional, the value of the determinant is ______.
+A. multiplied by ratio
+B. unknown
+C. one
+D. zero
+Answer: D
+Solution: Factor the constant of proportionality out of one row; the determinant then has two identical rows and equals zero.
+
+55. Evaluate cos 4x if sin x = 2.
+A. 48
+B. −86
+C. −63
+D. 97
+Answer: D
+Solution: cos 2x = 1 − 2sin²x = 1 − 8 = −7
+• cos 4x = 2cos²2x − 1 = 2(49) − 1 = 97
+
+56. There is a 5-seat bus. In how many ways can the 5 students be seated if 2 particular students will always be in the 1st and 2nd seats?
+A. 3!
+B. 5!
+C. 4!
+D. 2!
+Answer: A
+Solution: With the two students fixed in seats 1 and 2, the other 3 students fill the remaining 3 seats in 3! = 6 ways.
+• Review note: if the two students may swap seats 1 and 2, the count is 2! × 3! = 12, which is not a choice.
+
+57. Evaluate sin 4x if sin x = 2.
+A. j42√3
+B. 73
+C. 33
+D. −j56√3
+Answer: D
+Solution: cos x = √(1 − sin²x) = √(−3) = j√3 (principal root); cos 2x = 1 − 2sin²x = −7
+• sin 2x = 2 sin x cos x = 2(2)(j√3) = j4√3
+• sin 4x = 2 sin 2x cos 2x = 2(j4√3)(−7) = −j56√3
+
+58. An equation in which a variable appears under a radical sign is called:
+A. literal equation
+B. irradical equation
+C. radical equation
+D. irrational equation
+Answer: C
+Solution: An equation with the variable under a radical, e.g. √(x + 3) = x − 3, is a radical equation.
+• Review note: such equations are also called irrational equations (choice D); "radical equation" is the usual key.
+
+59. Find the probability of getting eleven by throwing a pair of dice once.
+A. 1/18
+B. 1/21
+C. 1/12
+D. 1/15
+Answer: A
+Solution: A sum of 11 comes from (5, 6) and (6, 5): 2 of 36 outcomes.
+• P = 2/36 = 1/18
+
+60. A contractor wishes to build 9 houses, each different in design. In how many ways can he place these houses on a street if 6 lots are on one side of the street and 3 lots are on the opposite side?
+A. 422,680
+B. 7,056
+C. 30,481,920
+D. 362,880
+Answer: D
+Solution: 9 distinct houses on 9 distinct lots: 9! = 362,880
+• Review note: the PDF says 5 houses, which gives P(9,5) = 15,120 and matches no choice; the standard problem (and the choices) use 9 houses.
+
+61. In a polar coordinate system, the distance from a point to the pole is known as the:
+A. polar angle
+B. x-coordinate
+C. radius vector
+D. y-coordinate
+Answer: C
+Solution: In (r, θ), r is the radius vector (distance from the pole) and θ is the polar angle.
+
+62. Determine the inverse Laplace transform of I(s) = 100/(s + 20)².
+A. i(t) = 100 − 10 cos 10t
+B. i(t) = 1 − 0.1 sin 10t
+C. i(t) = 100te^(−20t)
+D. i(t) = 1/4 − 5t − 1.25e^(−20t)
+Answer: C
+Solution: L{t} = 1/s², and the shift theorem L{e^(−at)f(t)} = F(s + a) gives L⁻¹{1/(s + 20)²} = te^(−20t).
+• i(t) = 100te^(−20t)
+
+63. Find the general solution of dy/dx = y sec x.
+A. y = sec x + tan x + C
+B. y = ln sec x + C
+C. y = sec x tan x + C
+D. y = ln(C·cos x)
+Solution: Separate: dy/y = sec x dx, so ln y = ln(sec x + tan x) + ln C
+• General solution: y = C(sec x + tan x)
+• Review note: none of the choices is correct. Choice A adds the constant instead of multiplying (y = sec x + tan x + C does not satisfy y' = y sec x). The correct form is choice A of item 31. No answer is set; fix the choice or reject this item.
+
+64. Evaluate ln(2 + j3).
+A. 1.34 + j0.32
+B. 2.54 + j0.866
+C. 2.23 + j0.21
+D. 1.28 + j0.98
+Answer: D
+Solution: 2 + j3 = √13∠56.31° = 3.606e^(j0.9828)
+• ln(2 + j3) = ln 3.606 + j0.9828 = 1.28 + j0.98
+
+65. In how many ways can a student going abroad be accompanied by 3 teachers selected from 6 teachers?
+A. 16
+B. 20
+C. 24
+D. 12
+Answer: B
+Solution: Order does not matter: C(6,3) = 20
+
+66. Determine the inverse Laplace transform of I(s) = 100/(s + 20)².
+A. i(t) = 100 − 10 cos 10t
+B. i(t) = 1 − 0.1 sin 10t
+C. i(t) = 100te^(−20t)
+D. i(t) = 1/4 − 5t − 1.25e^(−20t)
+Answer: C
+Solution: Same as item 62: L⁻¹{1/(s + a)²} = te^(−at)
+• i(t) = 100te^(−20t)
+
+67. A series of numbers which are perfect squares (i.e. 1, 4, 9, 16, …) is called:
+A. Fourier Series
+B. Euler's Number
+C. Fermat's Number
+D. Fibonacci's Number
+Answer: C
+Solution: Keyed as "Fermat's number", following the usual review-center key for this item.
+• Review note: mathematically, 1, 4, 9, 16, … are simply the square numbers. Fermat numbers are 2^(2ⁿ) + 1 (3, 5, 17, 257, …), so none of the choices is strictly right. Confirm against your key.
+
+68. A and B are independent events. The probability that event A occurs is 0.2 and the probability that A and B occur is 0.04. What is the probability that event B will occur?
+A. 0.33
+B. 0.20
+C. 0.24
+D. 0.17
+Answer: B
+Solution: Independent: P(A ∩ B) = P(A)P(B)
+• P(B) = 0.04/0.2 = 0.20
+
+69. A pair of dice is tossed. Find the probability of getting at most a total of 5.
+A. 5/9
+B. 5/18
+C. 5/16
+D. 5/36
+Answer: B
+Solution: Totals 2, 3, 4, 5 occur in 1 + 2 + 3 + 4 = 10 of the 36 outcomes.
+• P = 10/36 = 5/18
+
+70. What is −i^i?
+A. 4.81
+B. 0.21
+C. −4.81
+D. −0.21
+Answer: D
+Solution: i = e^(jπ/2), so i^i = e^(i · iπ/2) = e^(−π/2) = 0.2079 (principal value)
+• −i^i = −(i^i) = −0.21
+• Review note: if the expression means (−i)^i, then (−i)^i = e^(i · (−iπ/2)) = e^(π/2) = 4.81 (choice A).
+
+71. Solve the differential equation x(y − 1)dx + (x + 1)dy = 0, if y = 2 when x = 1. Find y when x = 2.
+A. 1.80
+B. 1.48
+C. 1.55
+D. 1.63
+Answer: C
+Solution: Separate: dy/(y − 1) = −x dx/(x + 1) = −[1 − 1/(x + 1)] dx
+• ln(y − 1) = −x + ln(x + 1) + C; at (1, 2): 0 = −1 + ln 2 + C, so C = 1 − ln 2
+• y − 1 = (x + 1)e^(1 − x)/2
+• At x = 2: y = 1 + 3e⁻¹/2 = 1 + 0.552 = 1.55
+• Review note: the PDF does not say at which x to find y; x = 2 is the value that gives one of the choices.
+
+72. How many triangles are determined by the vertices of a regular octagon?
+A. 60
+B. 38
+C. 56
+D. 28
+Answer: C
+Solution: C(8,3) = 56
+
+73. Which of the following is an exact DE?
+A. (x² + 1)dx − xy dy = 0
+B. 2xy dx + (2 + x²)dy = 0
+C. x dy + (3x − 2y)dx = 0
+D. x²y dy − y dx = 0
+Answer: B
+Solution: M dx + N dy = 0 is exact when ∂M/∂y = ∂N/∂x.
+• B: M = 2xy, N = 2 + x²: ∂M/∂y = 2x = ∂N/∂x, so it is exact
+• A: 0 vs −y; C: −2 vs 1; D: −1 vs 2xy, so none of those are exact
+
+74. A certain radioactive substance has a half-life of 3 years. If 10 grams are present initially, how much of the substance remains after 9 years?
+A. 2.50 g
+B. 1.25 g
+C. 5.20 g
+D. 10.20 g
+Answer: B
+Solution: 9 years = 3 half-lives.
+• A = 10(1/2)³ = 1.25 g
+
+75. There are n couples at a party. Each man shakes hands with everyone else except his spouse. No handshakes take place between women. How many handshakes take place? (as a polynomial function of n)
+A. n! − 1
+B. (n − 1)(n − 2)
+C. n(n − 1)
+D. (1/2)(3n² − 3n)
+Answer: D
+Solution: Man–man handshakes: C(n,2) = n(n − 1)/2
+• Man–woman handshakes (not his wife): n(n − 1)
+• Total = n(n − 1)/2 + n(n − 1) = (3/2)n(n − 1) = (1/2)(3n² − 3n)
+
+76. In a multiple choice test, each question is to be answered by selecting 1 out of 5 choices, of which only 1 is right. If there are 10 questions in a test, what is the probability of getting 6 right by pure guesswork?
+A. 10%
+B. 6%
+C. 0.44%
+D. 0.55%
+Answer: D
+Solution: Binomial with n = 10, p = 0.2: P(X = 6) = C(10,6)(0.2)⁶(0.8)⁴
+• = 210(0.000064)(0.4096) = 0.0055 = 0.55%
+
+77. A box contains 9 red balls and 6 blue balls. If two balls are drawn in succession, what is the probability that one of them is red and the other is blue?
+A. 18/35
+B. 16/35
+C. 18/37
+D. 16/37
+Answer: A
+Solution: Same as item 39: P = 2(9/15)(6/14) = 18/35
+
+78. What is the probability of getting a 7 or 11 when a pair of dice is thrown?
+A. 2/9
+B. 1/6
+C. 1/18
+D. 3/8
+Answer: A
+Solution: Sum 7: 6 outcomes; sum 11: 2 outcomes (mutually exclusive).
+• P = (6 + 2)/36 = 8/36 = 2/9
+
+79. The graphical representation of the cumulative frequency distribution in a set of statistical data is called _______.
+A. Frequency polygon
+B. Mass diagram
+C. Histogram
+D. Ogive
+Answer: D
+Solution: An ogive is the graph of a cumulative frequency distribution.
+
+80. Evaluate cosh[j(π/4)].
+A. 0.707
+B. 1.41 + j0.866
+C. 0.5 + j0.707
+D. j0.707
+Answer: A
+Solution: cosh(jx) = cos x
+• cosh(jπ/4) = cos(π/4) = 0.707
+
+81. In complex algebra, we use a diagram to represent the complex plane, commonly called the ______.
+A. Argand Diagram
+B. Funicular Diagram
+C. De Moivre's Diagram
+D. Venn Diagram
+Answer: A
+Solution: The Argand diagram plots a complex number a + bi as the point (a, b): real axis horizontal, imaginary axis vertical.
+
+82. Given a 10-question test with 5 choices, only one of which is correct, a student is unprepared for the test and answers out of pure luck. What is the standard deviation of his number of correct answers?
+A. 7
+B. 0
+C. 5
+D. 3
+Solution: Binomial with n = 10, p = 0.2, q = 0.8.
+• Mean = np = 2; variance = npq = 1.6
+• Standard deviation = √1.6 = 1.26
+• Review note: none of the choices fits. No answer is set; check the source or key, then set the answer or reject this item.
+
+83. What section is formed by a cone cut by a plane parallel to its slant height (an element of the cone)?
+A. Circle
+B. Ellipse
+C. Parabola
+D. Hyperbola
+Answer: C
+Solution: A plane parallel to an element (slant side) of the cone cuts a parabola.
+
+84. The probability of John's winning whenever he plays a certain game is 1/3. If he plays 4 times, find the probability that he wins just twice.
+A. 0.2963
+B. 0.2693
+C. 0.1481
+D. 0.2222
+Answer: A
+Solution: Same as item 46: C(4,2)(1/3)²(2/3)² = 24/81 = 0.2963
+
+85. Which point is nearest to (3, 2)?
+A. (−1, −1)
+B. (1, 1)
+C. (−1, 1)
+D. (1, −1)
+Answer: B
+Solution: Squared distances from (3, 2):
+• (−1, −1): 16 + 9 = 25; (1, 1): 4 + 1 = 5; (−1, 1): 16 + 1 = 17; (1, −1): 4 + 9 = 13
+• Nearest: (1, 1), distance √5
+
+86. Evaluate sin 3x if sin x = 2.
+A. 4
+B. 16
+C. −3
+D. −26
+Answer: D
+Solution: sin 3x = 3 sin x − 4 sin³x = 3(2) − 4(8) = 6 − 32 = −26
+
+87. What is the simplified expression of the complex number (6 + j2.5)/(3 + j4)?
+A. −0.32 + j0.66
+B. 1.12 − j0.66
+C. 0.32 − j0.66
+D. −1.75 + j1.03
+Answer: B
+Solution: Multiply by the conjugate: (6 + j2.5)(3 − j4)/(3² + 4²)
+• Numerator = 18 − j24 + j7.5 − j²10 = 28 − j16.5
+• Result = (28 − j16.5)/25 = 1.12 − j0.66
+• Review note: the PDF prints choice B as 1.12 + j0.66; the correct value is 1.12 − j0.66, so the sign of choice B has been corrected.
+
+88. Solve for the median given 14, 11, 10, 13, 12, 6, 4.
+A. 13
+B. 11
+C. 10
+D. 12
+Answer: B
+Solution: Sorted: 4, 6, 10, 11, 12, 13, 14. The 4th of 7 values is 11.
+
+89. An array of m × n quantities which represents a single number and is composed of elements in rows and columns is known as a:
+A. transpose matrix
+B. matrix
+C. determinant
+D. co-factor of a matrix
+Answer: C
+Solution: A determinant is a square array of elements that has a single numerical value. A matrix is an array too, but it does not represent a single number.
+
+90. How many permutations can be made out of the letters in the word COMPUTER taken 4 at a time?
+A. 1680
+B. 6720
+C. 336
+D. 2680
+Answer: A
+Solution: COMPUTER has 8 distinct letters: P(8,4) = 8 × 7 × 6 × 5 = 1680
+
+91. Evaluate: 1 + 1/(1 + 1/(1 + i)).
+A. 1 + i
+B. (8 + i)/5
+C. 5 + 3i
+D. 3 + 5i
+Answer: B
+Solution: 1/(1 + i) = (1 − i)/2
+• 1 + (1 − i)/2 = (3 − i)/2, and its reciprocal is 2/(3 − i) = 2(3 + i)/10 = (3 + i)/5
+• 1 + (3 + i)/5 = (8 + i)/5
+
+92. In a hotel it is known that 20% of the total reservations will be cancelled at the last minute. What is the probability that out of 15 reservations, more than 8 but less than 12 will be cancelled?
+A. 0.00784
+B. 0.0784
+C. 0.000784
+D. 0.784
+Answer: C
+Solution: Binomial with n = 15, p = 0.2: P(9 ≤ X ≤ 11)
+• P(9) = C(15,9)(0.2)⁹(0.8)⁶ = 0.000672
+• P(10) = C(15,10)(0.2)¹⁰(0.8)⁵ = 0.000101
+• P(11) = C(15,11)(0.2)¹¹(0.8)⁴ = 0.0000115
+• Sum = 0.000784
+
+93. If the planes 5x − 6y − 7z = 0 and 3nx + 3y − mz + 1 = 0 are parallel, find m.
+A. −2/3
+B. −5/3
+C. −4/3
+D. −7/3
+Solution: Parallel planes have proportional normals: (3n, 3, −m) = k(5, −6, −7)
+• From the y-terms: k = 3/(−6) = −1/2
+• −m = −7k = 7/2, so m = −7/2 (and 3n = 5k gives n = −5/6)
+• Review note: m = −7/2 is not a choice. Choice D (−7/3) would need k = −1/3, i.e. a y-coefficient of 2 instead of 3. No answer is set; check the source or key, then set the answer or reject this item.
+
+94. Find the initial point of v = −3i + j + 2k if the terminal point is (5, 0, −1).
+A. (8, 1, −3)
+B. (8, −1, −3)
+C. (8, −1, 3)
+D. (8, 1, 3)
+Answer: B
+Solution: Initial point = terminal point − v = (5 − (−3), 0 − 1, −1 − 2) = (8, −1, −3)
+
+95. A frequency curve which is composed of a series of rectangles constructed with the steps as the base and the frequency as the height is a:
+A. Bar graph
+B. Histogram
+C. Frequency Distribution
+D. Ogive
+Answer: B
+Solution: A histogram uses adjacent rectangles whose bases are the class intervals and whose heights are the class frequencies.
+
+96. Evaluate i¹⁷⁴.
+A. −1
+B. −i
+C. 1
+D. i
+Answer: A
+Solution: 174 = 4(43) + 2, so i¹⁷⁴ = i² = −1
+
+97. The Laplace transform of cos bt is ______.
+A. s/(b² + s²)
+B. s/(b² − s²)
+C. s/(s² + b²)
+D. s/(s² − b²)
+Answer: C
+Solution: L{cos bt} = ∫ from 0 to ∞ of e^(−st) cos bt dt = s/(s² + b²)
+• Review note: choice A, s/(b² + s²), is the same expression written in a different order. C is keyed as the standard form; accept A as well if your exam does.
+
+98. The following Fourier series equation represents a periodic wave: i(x) = I + i cos x + i² cos 2x + i³ cos 3x + … + i sin x + i² sin 2x + i³ sin 3x + …
+A. cosine
+B. sine
+C. cotangent
+D. tangent
+Solution: The series has both cosine and sine terms (plus a constant), so it is a general periodic wave, neither purely even (cosine series) nor purely odd (sine series).
+• Review note: the question cannot be answered from the text in the PDF (the coefficients are probably subscripts I₀, I₁, I₂, … that were lost). No answer is set; check the source or key, then set the answer or reject this item.
+
+99. Find the limit of z²/(z⁴ + z + 3) as z approaches e^(πi/2).
+A. 3/16
+B. (8i − 76)/365
+C. (−4 + i)/17
+D. (5i + 6)/287
+Answer: C
+Solution: e^(πi/2) = i, and the function is continuous there, so substitute z = i.
+• z² = −1, z⁴ = 1, so the denominator is 1 + i + 3 = 4 + i
+• −1/(4 + i) = −(4 − i)/17 = (−4 + i)/17
+
+100. Five cards are drawn from a pack of 52 well-shuffled cards. Find the probability that 3 are 10's and 2 are queens.
+A. 1/32
+B. 1/108,290
+C. 1/54,350
+D. 1/649,740
+Answer: B
+Solution: Favourable: C(4,3) × C(4,2) = 4 × 6 = 24; total: C(52,5) = 2,598,960
+• P = 24/2,598,960 = 1/108,290
