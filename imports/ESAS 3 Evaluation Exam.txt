@@ -1,0 +1,835 @@
+ESAS 3 Evaluation Exam
+Coverage: Applied Physics, General Chemistry, Illumination & EE Laws, Computer Fundamentals & Communication, and PEC
+
+1. If the temperature of a medium is 0°C, what will the temperature be if it is double?
+A. 0°C
+B. 273°C
+C. 524°R
+D. 460°R
+Answer: B
+Solution: Doubling a temperature means doubling its absolute value: 0 °C = 273.15 K
+• 2 × 273.15 = 546.3 K = 273 °C
+
+2. Which of the following items below is NOT one of the three basic operations of Boolean algebra?
+A. Logical Addition
+B. Logical Complementation
+C. Logical Subtraction
+D. Logical Multiplication
+Answer: C
+Solution: The three basic Boolean operations are OR (logical addition), AND (logical multiplication) and NOT (complementation). There is no logical subtraction.
+
+3. Which of the following is NOT a noble gas?
+A. Argon
+B. Xenon
+C. Radon
+D. Antimony
+Answer: D
+Solution: The noble gases are He, Ne, Ar, Kr, Xe and Rn. Antimony (Sb) is a metalloid in group 15.
+
+4. Which of the following is commonly used wire for subscriber loop design?
+A. AWG #19
+B. AWG #18
+C. AWG #30
+D. AWG #33
+Answer: A
+Solution: Subscriber loops use fine-gauge copper pairs (19 to 26 AWG); AWG #19 is the listed gauge used for long loops.
+• Review note: confirm against your review center's key.
+
+5. A 1Φ HP, 230 volts AC motor draws 50 amperes at full load. What shall be the maximum instantaneous trip circuit that may be used for short circuit protection?
+A. 50 amp
+B. 125 amp
+C. 400 amp
+D. 350 amp
+Answer: C
+Solution: PEC Table 4.30.4.2 (NEC 430.52): an instantaneous-trip breaker may be set up to 800% of the motor full-load current.
+• 8 × 50 = 400 A
+
+6. Which of the following statement is correct?
+A. Light consist of shooting particles
+B. Light is a form of heat energy
+C. Light is a form of electrical energy
+D. Light consists of electromagnetic waves
+Answer: D
+Solution: Light is electromagnetic radiation (about 380–780 nm), electromagnetic waves.
+
+7. All arithmetic operations take place in the _____ of the computer.
+A. CPU
+B. ALU
+C. Microprocessor
+D. ROM
+Answer: B
+Solution: The arithmetic logic unit (ALU), part of the CPU, performs all arithmetic and logical operations.
+
+8. The purpose of vanadium in steel alloying is to _____.
+A. Increase strength
+B. Increase brittleness
+C. Fix carbon in inert particles and reduce martensile hardness
+D. Increase machinability
+Answer: A
+Solution: Vanadium refines the grain and forms hard carbides, increasing strength, toughness and fatigue resistance. Fixing carbon in inert particles is the role of titanium.
+
+9. What is the smallest type of computer in terms of their physical size?
+A. Minicomputer
+B. Mainframe
+C. Maxicomputer
+D. Microcomputer
+Answer: D
+Solution: In size order: microcomputer < minicomputer < mainframe < supercomputer.
+
+10. A molecular diameter of CO is 3.10 x 10⁻⁸ at 300K and pressure of 100 mmHg. What is the mean free path of the gas in cm?
+A. 6.86 x 10⁻³
+B. 6.86 x 10⁻⁵
+C. 2.86 x 10⁻⁴
+D. 6.86 x 10⁻⁹
+Answer: B
+Solution: λ = kT/(√2 πd²p), with d = 3.10 × 10⁻¹⁰ m and p = 100 mmHg = 13,332 Pa
+• λ = (1.381 × 10⁻²³ × 300)/(1.414 × π × (3.10 × 10⁻¹⁰)² × 13,332) = 7.3 × 10⁻⁷ m = 7.3 × 10⁻⁵ cm
+• Nearest choice: 6.86 × 10⁻⁵ cm
+
+11. Two thirds of the atom in a molecule of water is hydrogen. What percentage weight of a water molecule if the weight of two hydrogen atoms? The atomic weight of the hydrogen is 1.008 g/mol and oxygen is 116.00 g/mol.
+A. 19.12
+B. 11.19
+C. 19.11
+D. 12.19
+Answer: B
+Solution: %H = 2(1.008)/[2(1.008) + 16.00] × 100 = 2.016/18.016 × 100 = 11.19%
+• Note: the PDF prints oxygen's atomic weight as 116.00; it is 16.00.
+
+12. A room measures 40 ft by 60 ft and needs 80 foot-candles of illumination. Each lamp has an output of 3300 lumens. Deprecation and maintenance factor are 0.6 and 0.7 respectively. If each lamp consumes 53 watts, power factor is 90%, what is the feeder current? Take supply voltage is 220 volts, three-phase.
+A. 24
+B. 22
+C. 21
+D. 20
+Answer: C
+Solution: Lumens needed = 80 fc × (40 × 60) ft² = 192,000 lm
+• Lamps = 192,000/(3300 × 0.6 × 0.7) = 138.5, about 139 lamps
+• P = 139 × 53 = 7,367 W; I = P/(√3 V pf) = 7,367/(1.732 × 220 × 0.9) = 21.5 A ≈ 21 A
+
+13. What is the mass in grams of 1 liter of carbon monoxide (CO), at standard temperature and pressure (STP)? Note: the molecular weight (MW) of CO is 28 g/mole, and at STP, mole of any gas occupies a volume of 22.4 liters.
+A. 1.20
+B. 1.35
+C. 1.45
+D. 1.25
+Answer: D
+Solution: m = (1 L/22.4 L/mol) × 28 g/mol = 1.25 g
+
+14. Two thin lenses of focal length +10 and -5 cm are placed in contact. Compute the focal length of the combination.
+A. -12
+B. +11
+C. -10
+D. +10
+Answer: C
+Solution: 1/f = 1/f₁ + 1/f₂ = 1/10 + 1/(−5) = −1/10, so f = −10 cm (diverging)
+
+15. Small circles on the input or output lines of logic circuit symbols which represent inversion of a particular signal.
+A. Bootstrap
+B. Bubble
+C. Strobe
+D. Clode
+Answer: B
+Solution: The small circle (bubble) on a gate's input or output marks inversion (NOT).
+
+16. Sec. 4, Art. II, R.A. 7920 states the powers and duties of the board. What does it mean by quasi- legislative powers?
+A. Evaluation
+B. Supervisory
+C. Control
+D. Rule-Making
+Answer: D
+Solution: Quasi-legislative power is the power to make rules and regulations; quasi-judicial power is the power to hear and decide cases.
+
+17. How many protons (P) and neutrons (N) are there in the nucleus are present in a Pb Nucleus of atomic mass 206?
+A. P=92, N=156
+B. P=85, N=160
+C. P=82, N=124
+D. P=90, N=150
+Answer: C
+Solution: Lead has atomic number Z = 82, so P = 82 and N = A − Z = 206 − 82 = 124.
+
+18. Hydrogen peroxide solution for hair bleaching is usually prepared mixing 5 grams of hydrogen peroxide (H2O2). Molecular weight = 34 g/mole per 100 ml of solution. What is the molarity of this solution?
+A. 1.0M
+B. 1.5M
+C. 1.95 M
+D. 1.8 M
+Answer: B
+Solution: Moles = 5/34 = 0.147 mol in 0.100 L
+• M = 0.147/0.100 = 1.47 M ≈ 1.5 M
+
+19. The minimum size copper equipment grounding conductor required on a motor branch circuit with a 30 amp circuit breaker and 3.5 mm² copper conductors is ______.
+A. 5.5 mm²
+B. 3.5 mm²
+C. 2.0 mm²
+D. 14 mm²
+Answer: B
+Solution: PEC 2.50.6.13 (NEC 250.122(A)): the equipment grounding conductor need not be larger than the circuit conductors. With 3.5 mm² circuit conductors it is 3.5 mm².
+
+20. “When the elements are arranged in the order of increasing atomic number, elements with similar properties appear at periodic intervals.” This statement is known as _____.
+A. Law of Multiple Proportion
+B. Law of Definite Proportion
+C. The Periodic Law
+D. Dalton’s Atomic Theory
+Answer: C
+Solution: This is the modern periodic law (Moseley), the basis of the periodic table.
+• Note: the PDF numbers this item 19 a second time, so from here on each item is one higher than its number in the PDF.
+
+21. It is a type of voltage variation of the RMS value of the voltage from nominal voltage for a time greater than one-half cycle of the power frequency but not exceeding one minute?
+A. Short Duration
+B. Long Duration
+C. Medium Duration
+D. Very Long Duration
+Answer: A
+Solution: Short-duration variations (sags, swells, interruptions) last from half a cycle to 1 minute; long-duration variations last longer than 1 minute.
+
+22. A 20.0 gram sample of fish fillet was found to contain 0.5 milligram of mercury. What is the concentration of mercury in the fish fillet in art per million (ppm)?
+A. 15.0
+B. 35.0
+C. 25.0
+D. 75.0
+Answer: C
+Solution: ppm = (mass of Hg/mass of sample) × 10⁶ = (0.5 × 10⁻³ g/20.0 g) × 10⁶ = 25.0 ppm
+
+23. Hat is the change in the gravitational attraction between an orbiting object and the earth if the distance between them is doubled?
+A. One Fourth
+B. Double
+C. Half
+D. Same
+Answer: A
+Solution: F = Gm₁m₂/r², so doubling r makes F one fourth as large.
+
+24. What would be the value printed as result of the following instructions?
+10 DEF FNA (X) = X**2+1/X
+20 PRINT FNA (2)
+30 END
+A. 3.2
+B. 4.5
+C. 6.5
+D. 7.2
+Answer: B
+Solution: FNA(2) = 2² + 1/2 = 4 + 0.5 = 4.5 (exponentiation and division come before addition)
+
+25. What is the radix minus one, compliment of (BABE) base 16?
+A. 4541
+B. 4524
+C. 4542
+D. 4514
+Answer: A
+Solution: The radix-minus-one (15's) complement subtracts each digit from F:
+• F − B = 4, F − A = 5, F − B = 4, F − E = 1, giving (4541)₁₆
+
+26. Luminous efficiency of a fluorescent tube is.
+A. 10 lm/watts
+B. 20 lm/watts
+C. 40 lm/watts
+D. 60 lm/watts
+Answer: C
+Solution: Textbooks give a fluorescent tube about 40 lm/W, against roughly 10–15 lm/W for incandescent lamps.
+• Note: modern fluorescent tubes reach 60–100 lm/W.
+
+27. A solid angle is expressed in terms of.
+A. Radians/Meter
+B. Radians
+C. Steradians
+D. Degrees
+Answer: C
+Solution: The SI unit of solid angle is the steradian: ω = A/r²; a full sphere is 4π sr.
+
+28. The impedance of the quaterwave transformer used to match a 600 Ω line to a 300 Ω load is.
+A. 382 Ω
+B. 424 Ω
+C. 565 Ω
+D. 712 Ω
+Answer: B
+Solution: Z(quarter-wave) = √(Z₁Z₂) = √(600 × 300) = 424 Ω
+
+29. The ______ belongs to a class of codes called the minimum change codes, in which only one bit in the code group changes when going from one step to the next.
+A. Morse Code
+B. BCD Code
+C. Excess-3 Code
+D. Gray Code
+Answer: D
+Solution: Gray code is a minimum-change (unit-distance) code: successive values differ in only one bit.
+
+30. Which of the following takes the completer decimal number and represent in binary?
+A. Straight Binary Coding
+B. Binary Coded Decimal
+C. Gray Code
+D. Excess-3 Code
+Answer: A
+Solution: Straight binary coding converts the complete decimal number into binary. BCD codes each decimal digit separately.
+
+31. A type of reaction has two compounds as reactants and two compounds as products:
+A. Direct Combination (Synthesis)
+B. Decomposition (Analysis)
+C. Single Displacement
+D. Double Displacement
+Answer: D
+Solution: Double displacement (metathesis): AB + CD → AD + CB, two compounds forming two new compounds.
+
+32. In RA 7920, rule 2(d) is defining?
+A. CPE- Continuing Professional Education
+B. Board- Board of Electrical Engineering
+C. Commission- Professional Regulation Commission
+D. Commissioner – The Chairman of Professional Regulation Commission
+Answer: D
+Solution: Rule 2 of the RA 7920 implementing rules defines the terms used. Item (d) is taken here as "Commissioner", the Chairman of the Professional Regulation Commission.
+• Review note: I could not check the IRR text; please confirm this item against your copy or key.
+
+33. ____ description and operating principles of motors, generators and transformers.
+A. Test Equipment
+B. Electrical Equipment
+C. Electrical Machines
+D. Control Equipment
+Answer: C
+Solution: Motors, generators and transformers are electrical machines; their description and operating principles form the Electrical Machines subject.
+
+34. Data storage in a memory is termed as
+A. Writing
+B. Memorizing
+C. Loading
+D. Reading
+Answer: A
+Solution: Storing data in memory is a write operation; retrieving it is a read.
+
+35. What is the decimal equivalent of (1101011)₂?
+A. 107
+B. 108
+C. 96
+D. 100
+Answer: A
+Solution: 1101011₂ = 64 + 32 + 0 + 8 + 0 + 2 + 1 = 107
+
+36. The decimal system is composed of ______ numerals or symbols.
+A. 2
+B. 10
+C. 8
+D. 16
+Answer: B
+Solution: Decimal (base 10) uses the ten digits 0–9.
+
+37. The protons and neutrons are not considered are fundamentals particles because they consist of as smaller particles called _______.
+A. Bosons
+B. Quarks
+C. Leptons
+D. Fermions
+Answer: B
+Solution: Protons (uud) and neutrons (udd) are each made of three quarks, so they are not fundamental particles.
+
+38. A street lamp 7 m above the sidewalk dissipates 200 watts and has a luminous efficiency of 60 lumens per watt. If the source is assumed to be isotropic find the illuminance at a point on the sidewalk 10 m from the base of the lamp.
+A. 3.68 lux
+B. 4.52 lux
+C. 6.42 lux
+D. 5.68 lux
+Answer: A
+Solution: Flux = 200 × 60 = 12,000 lm; isotropic intensity I = 12,000/(4π) = 954.9 cd
+• Distance to the point: d² = 7² + 10² = 149 m²; cos θ = 7/√149 = 0.5735
+• E = I cos θ/d² = 954.9 × 0.5735/149 = 3.68 lux
+
+39. _________ is any equipment which produces, modifies, regulates, or controls the supply of electric energy.
+A. Electric Supply Equipment
+B. Electrical System Design
+C. Electric Locomotive
+D. Electric Plant
+Answer: A
+Solution: By definition, electric supply equipment is equipment that produces, modifies, regulates or controls the supply of electric energy.
+
+40. A standard method used for coding data on 80-column, 12 row cards is _______.
+A. Hollerith Code
+B. Baudot Code
+C. Card Code
+D. Internal Code
+Answer: A
+Solution: The Hollerith code is the standard punched-card code for 80-column, 12-row cards.
+
+41. Which stage increases the selectivity of the circuit in an AM receiver?
+A. Detector
+B. IF stage
+C. Modulator
+D. Mixer
+Answer: B
+Solution: In a superheterodyne receiver the fixed-frequency IF amplifier stages provide most of the selectivity (and gain).
+
+42. Given: x=A’BC (A+D)’. Determine the output of the circuit x if A= 0, B=1, C=1 and D=0.
+A. 0
+B. 1
+C. 2
+D. 10
+Answer: B
+Solution: A' = 1, B = 1, C = 1 and (A + D)' = (0 + 0)' = 1
+• x = 1 · 1 · 1 · 1 = 1
+
+43. The temperature at which mercury starts to freeze is 35°C. What is the temperature in degrees Fahrenheit at which mercury cannot be used?
+A. -63°F
+B. -35°F
+C. -31°F
+D. -5.4°F
+Answer: C
+Solution: Taking the freezing point as −35 °C: °F = 1.8(−35) + 32 = −31 °F
+• Note: the PDF drops the minus sign. Mercury actually freezes at about −39 °C (−38 °F); the choices use −35 °C.
+
+44. In RA 7920, Rule 23 is defining?
+A. Taking Oath of Professional
+B. Renewal of Professional License
+C. Delisting
+D. Lifting of Deferment of Registration
+Answer: A
+Solution: Rule 23 of the RA 7920 implementing rules is taken here as the oath of the professional, taken before registration and licensing.
+• Review note: I could not check the IRR text; please confirm this item against your copy or key.
+
+45. Illumination of one lumen per sq. Meter is called _______.
+A. Lumen Meter
+B. Lux
+C. Foot Candle
+D. Candela
+Answer: B
+Solution: 1 lux = 1 lm/m². (1 foot-candle = 1 lm/ft² = 10.76 lux.)
+
+46. How many moles of hydrogen gas are present in a 50 liter steel cylinder if the pressure is 210 atm and the temperature is 27 deg. C? Where R=0.082 liter-atm /mole-K.
+A. 30 moles
+B. 20 moles
+C. 25 moles
+D. 35 moles
+Answer: A
+Solution: n = pV/(RT) = 210 × 50/(0.082 × 300) = 427 mol as printed
+• With 210 psi (14.29 atm) instead: n = 14.29 × 50/24.6 = 29 ≈ 30 mol
+• Review note: the choices do not fit 210 atm; 30 moles fits a pressure of 210 psi. Please check the source and key.
+
+47. The siren of the stationary fire engine has a frequency of 500 Hz; a car drives away from it at 20 m/sec. What frequency does the person in the car hears now? Take velocity of sound in still air 343 m/sec.
+A. 471 Hz
+B. 445 Hz
+C. 531 Hz
+D. 500 Hz
+Answer: A
+Solution: Observer moving away from a stationary source: f' = f(v − vo)/v = 500 × (343 − 20)/343 = 471 Hz
+
+48. Full-duplex transmission means
+A. One-Way Transmission
+B. 24-Hour Transmission
+C. Broadcast Transmission
+D. Two-Way Transmission
+Answer: D
+Solution: Full duplex is simultaneous two-way transmission. Half duplex is two-way but one direction at a time; simplex is one-way.
+
+49. A hoisting and lowering mechanism equipped with a car which moves substantially vertical direction and used exclusively for carrying materials.
+A. Freight Elevators
+B. Dumbwaiter
+C. Elevator
+D. Escalator
+Answer: B
+Solution: PEC/NEC definition: a dumbwaiter is a hoisting and lowering mechanism with a car of limited size that moves in a substantially vertical direction and is used exclusively for carrying materials.
+
+50. The additional of cobalt to iron has the effect of raising the saturation density of iron to about _____.
+A. 12%
+B. 45%
+C. 26%
+D. 36%
+Answer: A
+Solution: Iron–cobalt alloys (Permendur) raise the saturation flux density of iron by roughly 10–14%, the highest of any alloy.
+• Review note: confirm against your review center's key.
+
+51. Electrical non-metallic tubing is permitted to be used in sizes up to ____.
+A. 50 mm
+B. 85 mm
+C. 25 mm
+D. 65 mm
+Answer: A
+Solution: PEC 3.62.2.20 (NEC 362.20): ENT is permitted up to trade size 2 (50 mm).
+
+52. A piece of stone weighs 0.05 pounds. When it is submerged in a graduated cylinder containing 50 ml of H2O, the level rose to 60 ml. what is the density of the stone in g/mole?
+A. 2.27
+B. 2.72
+C. 7.22
+D. 7.27
+Answer: A
+Solution: Mass = 0.05 lb × 453.6 g/lb = 22.68 g; volume displaced = 60 − 50 = 10 mL
+• Density = 22.68/10 = 2.27 g/mL
+• Note: the unit is g/mL (g/cm³); the PDF prints "g/mole".
+
+53. Determine the 2’s compliment of (1011) base 2.
+A. 0100
+B. 0101
+C. 1111
+D. 1001
+Answer: B
+Solution: 1's complement of 1011 is 0100; add 1: 0100 + 1 = 0101
+
+54. Which of the following is not example of a compound?
+A. Sugar
+B. Salt
+C. Ash
+D. Water
+Answer: C
+Solution: Sugar (C₁₂H₂₂O₁₁), salt (NaCl) and water (H₂O) are compounds. Ash is a mixture of mineral residues.
+
+55. Fin d the Gray code of the four digits 2.
+A. 1010
+B. 0011
+C. 1100
+D. 1111
+Answer: B
+Solution: 2 = 0010 in binary. Gray code: keep the first bit, then XOR each pair of adjacent bits: 0, 0⊕0 = 0, 0⊕1 = 1, 1⊕0 = 1, giving 0011.
+
+56. A stone was dropped freely from a balloon at a height of 190 m. above the ground. The balloon is moving upward at a speed of 30m/s. determine the velocity of the stone as it hits the ground.
+A. 69.03 m/s
+B. 68.03 m/s
+C. 67.30 m/s
+D. 69.23 m/s
+Answer: B
+Solution: The stone starts with the balloon's upward speed, 30 m/s.
+• v² = v₀² + 2gh = 30² + 2(9.81)(190) = 900 + 3,727.8 = 4,627.8
+• v = 68.03 m/s (downward)
+
+57. _______ the highest effective potential difference between any two conductors of the circuit.
+A. Ampere
+B. ohms
+C. voltage
+D. watts
+Answer: C
+Solution: PEC definition: the voltage of a circuit is the greatest effective (rms) potential difference between any two conductors of the circuit.
+
+58. How many dynes are there in one newton?
+A. 10,000
+B. 100,000
+C. 1,000,000
+D. 1,000
+Answer: B
+Solution: 1 N = 1 kg·m/s² = (1000 g)(100 cm)/s² = 10⁵ dynes
+
+59. How much should a 100 W lamp be lowered to double the illumination on the object which is 60 cm under it?
+A. 17.6 cm
+B. 42.5 cm
+C. 16.7 cm
+D. 2.42 cm
+Answer: A
+Solution: E ∝ 1/d²; for twice the illumination d₂ = 60/√2 = 42.4 cm
+• Lower the lamp by 60 − 42.4 = 17.6 cm
+
+60. The professional regulation commission (PRC) was created under:
+A. PD 223
+B. PD 1081
+C. PD 59
+D. PD 232
+Answer: A
+Solution: The Professional Regulation Commission was created by Presidential Decree No. 223 on June 22, 1973.
+
+61. The purpose of tungsten in steel alloying is to _____.
+A. Increase atmospheric corrosion resistance.
+B. Increase high-temperature and hardness.
+C. Fix carbon in inert particles and reduce martensitic hardness .
+D. Reduce brittleness, combine with sulphur and increase hardness.
+Answer: B
+Solution: Tungsten forms hard, stable carbides that keep steel hard at high temperature (red hardness), as in high-speed tool steels.
+
+62. An electron volt is the energy required by an electron that has been accelerated by a potential difference of how many volts?
+A. 1 volt
+B. 0.1 volt
+C. 10 volts
+D. 0.01 volts
+Answer: A
+Solution: 1 eV is the energy gained by an electron accelerated through 1 V: 1 eV = 1.602 × 10⁻¹⁹ J.
+
+63. With OR operation, 1 + 1 =______.
+A. 1
+B. 0
+C. 10
+D. 2
+Answer: A
+Solution: In Boolean OR the output is 1 if any input is 1, so 1 + 1 = 1. (10 is the binary sum.)
+
+64. A light meter reads the illumination received from the sun as 1 x 10⁵ lm/m². If the distance from the earth to the sun is 1.5 x 10¹¹ m, compute the luminous intensity of the sun.
+A. 2.25 x 10²⁷ cd
+B. 2.25 x 10²¹ cd
+C. 1.5 x 10²¹ cd
+D. 1.25 x 10²⁷ cd
+Answer: A
+Solution: E = I/d², so I = Ed² = 1 × 10⁵ × (1.5 × 10¹¹)² = 2.25 × 10²⁷ cd
+
+65. A device used to measure speech volume.
+A. Speech Meter
+B. Volume Meter
+C. Volume Unit Meter
+D. Speedometer
+Answer: C
+Solution: The volume unit (VU) meter measures the volume level of speech and program signals.
+
+66. The chemical process which occurs when water is added to cement is called____.
+A. Oxidation
+B. Brownian Movement
+C. Plastic Flow
+D. Hydration
+Answer: D
+Solution: Cement sets and hardens by hydration, the chemical reaction of its compounds with water.
+
+67. Refers to manufacturing assembly plants or other business endeavours where electrical machinery and equipment are installed.
+A. Industrial Plants
+B. Institutional Buildings
+C. Electric Plant
+D. Commercial Establishment
+Answer: A
+Solution: RA 7920 defines industrial plants as manufacturing, assembly or other business endeavours where electrical machinery and equipment are installed.
+
+68. Is the component of system loss that refers to the energy used in the proper operation of the distribution system and any unbilled energy that is used for community-related activities?
+A. Technical Loss
+B. Administrative Loss
+C. Non-Technical Loss
+D. Conductor Loss
+Answer: B
+Solution: Administrative loss is the energy used in the proper operation of the distribution system plus unbilled energy for community-related activities. Technical loss is lost in the equipment; non-technical loss is pilferage and metering errors.
+
+69. A pressure cooker reduces cooking time because of the _____.
+A. Heat is distributed evenly.
+B. Boiling point of water inside is elevated.
+C. Higher pressure softens food.
+D. Bigger flame is applied.
+Answer: B
+Solution: The higher pressure raises water's boiling point (about 120 °C at 1 atm gauge), so food cooks faster at the higher temperature.
+
+70. Combination of modulator, channel, and detector.
+A. 547 Ω
+B. 357 Ω
+C. 273 Ω
+D. 300 Ω
+Solution: A modulator, channel and detector together form a communication (transmission) system. None of the printed choices fits.
+• Review note: the PDF's choices (in ohms) belong to a different question, so this item has no answer. Fix or reject it before publishing.
+
+71. The board shall have the power, upon proper notice and hearing, to revoke any certificate of registration is under article _____, section 29.
+A. Article I
+B. Article II
+C. Article III
+D. Article IV
+Answer: C
+Solution: RA 7920 Article III (Examination, Registration and License) contains Section 29 on revocation and suspension of certificates. Article IV holds the sundry provisions, such as Section 33.
+
+72. It is defined as the high-frequency over voltages that generally shorter in duration compared to the Short Duration Voltage Variations.
+A. Voltage Imbalance
+B. Voltage Sag
+C. Transient Voltages
+D. Voltage Swell
+Answer: C
+Solution: Transients are high-frequency overvoltages lasting well under half a cycle, shorter than short-duration variations.
+
+73. Is a type of memory chip that retains it data when its power supply is switched off, in other words, it is non-volatile? It is an array of floating gate transistors individually programmed by an electronic device that supplies higher voltages than those normally used in digital circuits.
+A. Capacitive storage
+B. EPROM
+C. SRAM
+D. DRAM
+Answer: B
+Solution: EPROM is non-volatile memory made of floating-gate transistors, programmed by a device that applies higher-than-normal voltages (and erased with UV light). SRAM and DRAM are volatile.
+
+74. A ball is thrown vertically at a speed of 20 m/s from a bldg. 100 m above the ground. Find the velocity and position of the stone above the ground after 5 seconds.
+A. 4.67 m, 48.30 m/s
+B. 4.54 m, 47.68 m/s
+C. 5.43m, 47.69 m/s
+D. 5.68m, 48.20 m/s
+Answer: B
+Solution: Energy check at a height y above the ground: v² = 20² + 2(9.81)(100 − y).
+• For y = 4.54 m: v² = 400 + 2(9.81)(95.46) = 2,272.9, so v = 47.68 m/s, which matches choice B
+• The other choices fail this check (e.g. y = 4.67 m gives 47.65 m/s, not 48.30).
+• Review note: the "5 seconds" in the stem does not fit these values (a ball thrown up at 20 m/s is still 77 m above the ground at t = 5 s). Choice B is the only consistent pair; please check the source.
+
+75. What do you call earth and stone mixed with iron oxide?
+A. Hematite
+B. Gangue
+C. Magnetite
+D. Diamond
+Answer: B
+Solution: Gangue is the worthless earthy and stony material mixed with the iron oxide in the ore.
+
+76. Refers to the installed capacity of an alternating current electric plant or supply equipment is ______.
+A. Kilo-Ohm
+B. Kilowatt
+C. Kilovolt
+D. Kilovolt-Ampere.
+Answer: D
+Solution: AC plant and supply equipment capacity is rated in kilovolt-amperes (kVA).
+
+77. The group VIII elements, called the noble gas or rare gases, have the ff. property:
+A. They are lighter than air.
+B. They are rare.
+C. They remain gaseous down to just few degrees above absolute zero.
+D. They do not react with other elements.
+Answer: D
+Solution: With full outer shells the noble gases are chemically inert. (Only a few compounds of Kr and Xe exist.)
+
+78. A projectile is fired from the top of a cliff 92 m high with a velocity of 430 m/s directed 45° to the horizontal. Find the range on the horizontal plane through the base of the cliff.
+A. 18.959 km
+B. 23.408 km
+C. 15.273 km
+D. 20.365 km
+Answer: A
+Solution: vx = vy = 430 cos 45° = 304.06 m/s
+• Vertical: −92 = 304.06t − 4.905t², giving t = 62.3 s
+• Range = 304.06 × 62.3 = 18,950 m ≈ 18.959 km
+
+79. Steel that is non-magnetic is called
+A. Austenitic
+B. Magnetite
+C. Phenolic
+D. Martensite
+Answer: A
+Solution: Austenitic steels (such as 18-8 stainless) have a face-centred cubic structure and are non-magnetic.
+
+80. What is the molarity of a solution that contains 75 grams of barium chloride, BaCl2 per liter? Take molecular weight of Ba as 137.34 g/mole and that of Cl as 35.46 g/mole.
+A. 0.36 mole/li
+B. 0.63 mole/li
+C. 0.43 mole/li
+D. 0.56 mole/li
+Answer: A
+Solution: MW(BaCl₂) = 137.34 + 2(35.46) = 208.26 g/mol
+• M = 75/208.26 = 0.36 mol/L
+
+81. In Article IV, Sec. 33 (b) Personnel Required States: industrial plants or factories, commercial establishments, or industrial buildings having a connected kVA load of any size and employing voltages of any standard rating-1 PEE or 1REE. However, for connected loads up to ____ kVA and employing voltages up to ____ Volts-1 RME.
+A. 750, 600
+B. 750,750
+C. 500,750
+D. 500, 600
+Answer: D
+Solution: RA 7920 Sec. 33(b): a registered master electrician may take charge of connected loads up to 500 kVA at voltages up to 600 V.
+
+82. A light source emits a total luminous flux of 1000 lumens distributed uniformly over a quarter of a sphere. What is the luminous intensity at 2.5 m?
+A. 270 cd
+B. 357 cd
+C. 318 cd
+D. 400 cd
+Answer: C
+Solution: A quarter sphere is a solid angle of 4π/4 = π sr
+• I = Φ/ω = 1000/π = 318 cd (intensity does not depend on distance)
+
+83. What is defined as the distance the light travels in a vacuum in 1/299,792,458 second?
+A. Yard
+B. Feet
+C. Meter
+D. Inch
+Answer: C
+Solution: This is the SI definition of the metre.
+
+84. Candela is the unit of which of the following?
+A. Wavelength
+B. Luminous Intensity
+C. Luminous Flux
+D. Frequency
+Answer: B
+Solution: The candela is the SI unit of luminous intensity. Luminous flux is in lumens.
+
+85. What is the photo energy associated with green-blue light of wavelength of 500 nanometers?
+A. 8 x 10⁻¹⁹ J
+B. 2 x 10⁻¹⁹ J
+C. 4 x 10⁻¹⁹ J
+D. 5 x 10⁻¹⁸ J
+Answer: C
+Solution: E = hc/λ = (6.626 × 10⁻³⁴)(3 × 10⁸)/(500 × 10⁻⁹) = 3.98 × 10⁻¹⁹ J ≈ 4 × 10⁻¹⁹ J
+
+86. Which of the following does not describe a flip-flop circuit?
+A. Latch
+B. Memory
+C. Bistable Multivibrator
+D. ROM
+Answer: D
+Solution: A flip-flop is a bistable multivibrator (a latch) that stores one bit of memory. ROM is a separate memory device, not a flip-flop.
+
+87. Every circuit breaker having an interrupting rating other than _____, shall have its interrupting rating shown on the breaker itself.
+A. 5.0 kAmp
+B. 7.5 kAmp
+C. 2.5 kAmp
+D. 1.0 kAmp
+Answer: A
+Solution: PEC 2.40.7.3(C) (NEC 240.83(C)): every circuit breaker with an interrupting rating other than 5,000 A shall have its rating marked on it.
+
+88. A ball is thrown vertically upward with an initial velocity of 3 m/s from a window of a tall bldg. the ball strikes the ground level 4 seconds late. Determine the height of window above the ground.
+A. 66.331 m
+B. 66.450 m
+C. 67.239 m
+D. 67.492 m
+Answer: B
+Solution: Taking up as positive: y = v₀t − ½gt² = 3(4) − ½(9.81)(4)² = 12 − 78.48 = −66.48 m
+• The window is about 66.5 m above the ground, nearest choice 66.450 m
+
+89. CMOS means
+A. Complementary Main-Oxide Semiconductor
+B. Complements Main-Oxide Semiconductor
+C. Complementary Metal-Oxide Semiconductor
+D. Correlation in Metal Oxidized Semiconductor
+Answer: C
+Solution: CMOS stands for complementary metal-oxide-semiconductor.
+
+90. The electronic configuration, 1s²2s²2p⁶3s²3p⁵ , is that of:
+A. An Alkali Metal
+B. A Halogen
+C. An Inert Gas
+D. A Transition Metal
+Answer: B
+Solution: 17 electrons is chlorine; seven valence electrons (3s²3p⁵) make it a halogen (group 17).
+
+91. The most widely used 7-bit alphanumeric code is the
+A. ASCII
+B. EBCDIC
+C. Straight Binary Code
+D. Gray Code
+Answer: A
+Solution: ASCII is a 7-bit code (128 characters). EBCDIC is an 8-bit code.
+
+92. An ingot is a pure iron with 0.5% impurity?
+A. False
+B. depending from its ore
+C. true
+D. no basis for impurities
+Answer: C
+Solution: Ingot iron is a commercially pure iron containing only a small fraction of impurities (under about 0.5%), so the statement is taken as true.
+• Review note: confirm against your review center's key.
+
+93. A cylinder contains oxygen at a pressure of 10 atm and a temperature of 300K. The volume of the cylinder is 100 liters. What is the mass of the oxygen in grams? Molecular weight (MW) of oxygen is 32 g/mole?
+A. 125.02
+B. 130.08
+C. 135.05
+D. 120.04
+Answer: B
+Solution: n = pV/(RT). With V = 10 L: n = 10 × 10/(0.08206 × 300) = 4.06 mol, m = 4.06 × 32 = 130 g
+• Review note: with 100 L as printed, m = 1,300 g; the choices fit a 10-L cylinder.
+
+94. How many years does a high school graduate need to qualify for RME?
+A. 4 yrs
+B. 2 yrs
+C. 3 yrs
+D. 5 yrs
+Answer: D
+Solution: Under RA 7920, a high school graduate qualifies for the RME examination after at least 5 years of practical experience (apprenticeship) in electrical wiring and installation.
+
+95. The simple and most common grade of steels belongs to group of:
+A. Stainless Steel
+B. Cast Iron
+C. Carbon Steel
+D. Wrought Iron
+Answer: C
+Solution: Plain carbon steels are the simplest and most widely used steels.
+
+96. Convert (1011111101111001)₂ to base 16.
+A. (BF79)₁₆
+B. (123F)₁₆
+C. (AFB2)₁₆
+D. (32AB)₁₆
+Answer: A
+Solution: Group the bits in fours from the right: 1011 1111 0111 1001 = B F 7 9, so (BF79)₁₆
+
+97. How many lumens pass through an area of 0.5 m² on a sphere of radius 2.5 m, if a 250 cd isotropic source at it center?
+A. 5
+B. 20
+C. 125
+D. 2
+Answer: B
+Solution: Solid angle ω = A/r² = 0.5/2.5² = 0.08 sr
+• Φ = Iω = 250 × 0.08 = 20 lm
+
+98. If a 60 g of H2SO4 is dissolved in water to make a 1.5 Li solution, find its normality?
+A. 0.813 N
+B. 0.613 N
+C. 0.841 N
+D. 0.641 N
+Answer: A
+Solution: H₂SO₄ has 2 replaceable H⁺, so its equivalent weight = 98.08/2 = 49.04 g/eq
+• Equivalents = 60/49.04 = 1.224; N = 1.224/1.5 = 0.816 N, nearest choice 0.813 N
+
+99. Given 800 lux, what is the lux when the distance to point is doubled?
+A. 300
+B. 400
+C. 100
+D. 200
+Answer: D
+Solution: E ∝ 1/d², so doubling the distance gives 800/4 = 200 lux.

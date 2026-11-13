@@ -1,0 +1,861 @@
+ESAS 2 Evaluation Exam
+Coverage: Thermodynamics & Engineering Economy
+
+1. What refers to the state at which liquid and gaseous phases are indistinguishable?
+A. Critical Point
+B. Triple Point
+C. Boiling Point
+D. Freezing Point
+Answer: A
+Solution: At the critical point the saturated liquid and saturated vapour states coincide, so the two phases can no longer be told apart.
+
+2. What is the value of the work done for a closed, reversible, isometric system?
+A. Cannot be determined
+B. Positive
+C. Negative
+D. Zero
+Answer: D
+Solution: Isometric means constant volume. W = ∫p dV = 0 since dV = 0.
+
+3. It is estimated that a certain mine will have an annual output of 30,000 tons of ore, and that the ore body will be exhausted within a period of 20 years. The management cost will be P350,000 annually, and the cost of operating the mine and the smelter plant is p48 per ton. The processed ore and sold for P 17.50 per ton. The sinking fund rate of interest is 8% and the annual dividend rate is to be 15%. Determine the valuation of the property now.
+A. P1,165,728.50
+B. P1,065,728.48
+C. P2,165,728.49
+D. P2,065,728.47
+Answer: D
+Solution: With a selling price of P71.50 per ton: annual net income A = 30,000(71.50 − 48) − 350,000 = P355,000
+• Sinking fund factor (8%, 20 yr) = 0.08/[(1.08)²⁰ − 1] = 0.08/3.66096 = 0.021852
+• Hoskold valuation: P = A/(dividend rate + SFF) = 355,000/(0.15 + 0.021852) = P2,065,728.47
+• Review note: the PDF prints a selling price of P17.50, which is below the P48 operating cost; the choices fit P71.50 per ton.
+
+4. What is considered as the standard unit which forms the basis of a country’s domestic money supply?
+A. Monetary unit
+B. Currency
+C. Foreign exchange
+D. Cash or check
+Answer: A
+Solution: The monetary unit (for example the Philippine peso) is the standard unit on which a country's money supply is based.
+
+5. A steam engine operating between a boiler temperature of 220°C and a condenser temperature of 35°C delivers 8 hp. If its efficiency is 30% of that for a Carnot engine operating between these temperature limits, how many calories are exhausted to the considered each seconds?
+A. 11,240
+B. 14,120
+C. 12,140
+D. 12,665
+Answer: A
+Solution: Carnot efficiency = 1 − 308/493 = 0.3753; actual efficiency = 0.30 × 0.3753 = 0.1126
+• Output = 8 × 746 = 5,968 W, so heat input = 5,968/0.1126 = 53,010 W
+• Heat exhausted = 53,010 − 5,968 = 47,040 W = 47,040/4.186 ≈ 11,240 cal/s
+
+6. A man invested P110,000 for 31 days. The net interest after deducting 20% withholding tax is P890.36. Find the rate of return annually.
+A. 11.50%
+B. 11.75%
+C. 11.95%
+D. 12.32%
+Answer: B
+Solution: Gross interest = 890.36/0.80 = P1,112.95
+• Ordinary simple interest (360-day year): i = I/(Pt) = 1,112.95/(110,000 × 31/360) = 0.1175 = 11.75%
+
+7. How many BTU are needed to isothermally compress a 4 lbm of 240°F air to twice the original pressure?
+A. 321.93 BTU
+B. 200.93 BTU
+C. -132.93 BTU
+D. -244.93 BTU
+Answer: C
+Solution: T = 240 + 459.67 = 699.67 °R; R(air) = 53.34 ft·lbf/lbm·°R = 0.06855 BTU/lbm·°R
+• W = mRT ln(p₁/p₂) = 4 × 0.06855 × 699.67 × ln(1/2) = −132.9 BTU
+• For an ideal gas at constant temperature Q = W, so about −132.9 BTU (work done on the gas, heat rejected).
+
+8. A spherical helium balloon of 10m diameter is at 15°C and 100 kPa. How much helium does it contain?
+A. 57.5kg
+B. 67.5kg
+C. 77.5kg
+D. 87.5kg
+Answer: D
+Solution: V = (4/3)π(5)³ = 523.6 m³; R(He) = 8.314/4.003 = 2.077 kJ/kg·K
+• m = pV/(RT) = 100 × 523.6/(2.077 × 288.15) = 87.5 kg
+
+9. The gas constant of the mixture is the _________of the gas constants of the components.
+A. Average
+B. Weighted mean
+C. Sum
+D. Difference of the highest and the lowest
+Answer: B
+Solution: R(mix) = Σ(mᵢRᵢ)/m, the mass-weighted mean of the components' gas constants.
+
+10. Is a measure of the effectiveness of an investment of the capital?
+A. Rate of return
+B. Effective Interest Rate
+C. Annual worth method
+D. Promotion Cost
+Answer: A
+Solution: The rate of return (annual profit/capital invested) measures how effectively the invested capital earns.
+
+11. A steady-flow hydroelectric plant drops water 40ft. the water enters at 10ft/sec and exits at 30ft/sec. what is the maximum electrical output per lb of water assuming a 100% efficient turbine. Friction is negligible and the water temperature is constant.
+A. -0.03245 BTU/lbm
+B. -0.12345 BTU/lbm
+C. -0.03544 BTU/lbm
+D. -1.0222 BTU/lbm
+Answer: C
+Solution: Potential energy released = 40 ft·lbf/lbm = 40/778 = 0.05141 BTU/lbm
+• Kinetic energy gained = (30² − 10²)/(2 × 32.174 × 778) = 0.01598 BTU/lbm
+• Work out = 0.05141 − 0.01598 = 0.03544 BTU/lbm (negative sign: energy leaving the water)
+
+12. Which of the following is another term used for enthalpy-entropy (h-s) diagram?
+A. Steam chart
+B. Enthalpy diagram
+C. Mollier diagram
+D. Entropy diagram
+Answer: C
+Solution: The h-s chart is called the Mollier diagram.
+
+13. A plant erected to manufactured socks has a first cost of P10,000 with an estimated Salvage value of P100,000 at the end of 25 years. Find its appraised value to the nearest P100 by the sinking fund Method, assuming an interest rate of 6% at end to 10 years?
+A. P 7,621,597.91
+B. P 6,621,697.67
+C. P 7,620,597.75
+D. P 7,620,597.54
+Answer: A
+Solution: With first cost P10,000,000: annual deposit d = (FC − SV) × SFF = 9,900,000 × 0.06/[(1.06)²⁵ − 1] = 9,900,000 × 0.0182267 = P180,444.51
+• Depreciation fund after 10 years = d[(1.06)¹⁰ − 1]/0.06 = 180,444.51 × 13.18079 = P2,378,402
+• Book (appraised) value = 10,000,000 − 2,378,402 = P7,621,598 ≈ P7,621,597.91
+• Review note: the PDF prints a first cost of P10,000 (below the P100,000 salvage); the choices fit P10,000,000.
+
+14. An escalator raises a 100kg bucket of sand 10m in a minute. Determine the rate of work done during the process.
+A. 143 W
+B. 153 W
+C. 163 W
+D. 173 W
+Answer: C
+Solution: P = mgh/t = 100 × 9.81 × 10/60 = 163.5 W ≈ 163 W
+
+15. Maxwell’s equations consists of _______ equations.
+A. Four
+B. Three
+C. Two
+D. One
+Answer: A
+Solution: There are four Maxwell relations in thermodynamics (from the four energy functions U, H, A and G), as there are four Maxwell equations in electromagnetism.
+
+16. If i=interest rate, n=period, P=present worth and F=future worth, which of the following best describes Future worth?
+A. P (1+in)⁻¹
+B. P (1-i)⁻ⁿ – n
+C. P (1+i)ⁿ
+D. P (1+i)⁻ⁿ
+Answer: C
+Solution: Compound interest: F = P(1 + i)ⁿ. P(1 + i)⁻ⁿ is the present worth of F.
+
+17. In an isentropic compression, P1 =100 psia, V1 =10 cu. Inch and k =1.4 Find for V2.
+A. 6.095 cu. inch
+B. 4.500 cu inch
+C. 5.000 cu. inch
+D. 3.509 cu. inch
+Answer: A
+Solution: pV^k = constant, so V₂ = V₁(p₁/p₂)^(1/k). With p₂ = 200 psia: V₂ = 10 × (100/200)^(1/1.4) = 10 × 0.6095 = 6.095 in³
+• Review note: the PDF does not give p₂; the choices fit p₂ = 200 psia.
+
+18. A granite query purchased for P 1,600,000 is expected to be exhaust at the end 4 years. If the resale value of the land is 100.00. What annual income is required to yield an investment rate of 12%? Use a sinking fund rate of 3%.
+A. P 542,544.21
+B. P 642,544.25
+C. P 532,544.20
+D. P 632,544.24
+Answer: A
+Solution: Annual income = return on the investment + sinking fund deposit to recover the capital.
+• Return = 0.12 × 1,600,000 = P192,000
+• Sinking fund factor (3%, 4 yr) = 0.03/[(1.03)⁴ − 1] = 0.23903
+• Review note: as printed this gives about P574,400 (resale P100) or P550,500 (resale P100,000), and no choice matches exactly. Choice A is the nearest; please check the source data and key.
+
+19. What is defined as the reduction or fall of the value of an asset due to constant use and passage of time?
+A. Depletion
+B. Inflation
+C. Depreciation
+D. Deflation
+Answer: C
+Solution: Depreciation is the decrease in an asset's value through use, wear and the passage of time. Depletion applies to natural resources used up.
+
+20. What must be the condition for Ideal gas law?
+A. low temperature, low pressure
+B. low temperature, high pressure
+C. high temperature, low pressure
+D. high temperature, high pressure
+Answer: C
+Solution: Real gases behave ideally when molecules are far apart and fast: low pressure and high temperature (far from condensation).
+
+21. Which of the following is chosen as the standard thermometric substance?
+A. Gas
+B. Liquid
+C. Solid
+D. All of the above
+Answer: A
+Solution: The constant-volume gas thermometer (ideally hydrogen or helium) is the standard, because a gas's behaviour is nearly independent of the particular gas.
+
+22. A bond with a par value of P1,000 and with a bond rate of 10% payable annually is sold now for P1,080. If the yield is to be 12%, how much should the redemption price be at the end of 8 years?
+A. P 1,333.03
+B. P 1,555.04
+C. P 1,222.05
+D. P 1,444.07
+Answer: D
+Solution: Annual coupon = 0.10 × 1,000 = P100. Price = PV of coupons + PV of redemption price R at 12%:
+• (P/A, 12%, 8) = 4.96764 and (P/F, 12%, 8) = 0.403883
+• 1,080 = 100(4.96764) + R(0.403883), so R = 583.236/0.403883 = P1,444.07
+
+23. The value of compressibility factor at the critical state for a van der Waals gas is.
+A. 0.325
+B. 0.350
+C. 0.375
+D. 0.400
+Answer: C
+Solution: For a van der Waals gas, Zc = pcvc/(RTc) = 3/8 = 0.375
+
+24. The amount of company’s profit that the board of directors of the corporation decides to distribute to ordinary shareholders is called_________.
+A. Dividend
+B. Return
+C. Share of stock
+D. Equity
+Answer: A
+Solution: A dividend is the part of a corporation's profit the board declares for distribution to shareholders.
+
+25. A machine was purchased 5 years ago at a cost P120,000. Its estimated salvage value at the end of 10 years is P10,000. If it is sold now for P30,000. Determine the sunk cost if the depreciation method used straight line method.
+A. P 35,000
+B. P 21,000
+C. P 30,000
+D. P 25,000
+Answer: A
+Solution: Annual depreciation = (120,000 − 10,000)/10 = P11,000
+• Book value after 5 years = 120,000 − 5(11,000) = P65,000
+• Sunk cost = book value − selling price = 65,000 − 30,000 = P35,000
+
+26. What refers to the need, want or desire for a product backed by the money to purchase it?
+A. Supply
+B. Demand
+C. Product
+D. Good
+Answer: B
+Solution: Demand is the desire for a product backed by the ability (money) and willingness to buy it.
+
+27. A Carnot cycle consists of the following which one is NOT?
+A. Isentropic compression
+B. Reversible adiabatic expansion
+C. Reversible constant heat addition
+D. Reversible adiabatic compression
+Answer: C
+Solution: A Carnot cycle is two reversible isothermal processes (heat added and rejected at constant temperature) and two reversible adiabatic (isentropic) processes. Isentropic compression (A) and reversible adiabatic compression (D) are the same process and are in the cycle, as is B; C is the odd one out.
+
+28. Determine the ordinary simple interest on P25,000 for 9 months and 15 days if the rate of interest is 12%?
+A. P 2,735.00
+B. P 3,725.00
+C. P 3,275.00
+D. P 2,375.00
+Answer: D
+Solution: Ordinary interest uses a 360-day year: 9 months 15 days = 285 days
+• I = Pit = 25,000 × 0.12 × 285/360 = P2,375.00
+
+29. A Carnot engine receives 130 BTU of heat from a hot reservoir at 700°F and rejects 49 BTU of heat. Calculate the temperature of the cold reservoir.
+A. -22.77°F
+B. -21.98°F
+C. -20.98°F
+D. -24.22°F
+Answer: A
+Solution: For a Carnot engine QL/QH = TL/TH
+• TH = 700 + 460 = 1,160 °R; TL = 1,160 × 49/130 = 437.23 °R
+• TL = 437.23 − 460 = −22.77 °F
+
+30. A battery is well insulted while being charged by 12.3 V at a current of 6 A. Take the battery as a control mass and find the instantaneous rate of work.
+A. 63.8 W
+B. 73.8 W
+C. 83.8 W
+D. 93.8 W
+Answer: B
+Solution: Electrical work rate W = VI = 12.3 × 6 = 73.8 W (work done on the battery)
+
+31. The simplest and extensively employed method in computing depreciation.
+A. Straight line method
+B. Sinking fund method
+C. Sum of integers method
+D. Fixed percentage method
+Answer: A
+Solution: The straight-line method charges the same amount every year, (FC − SV)/n, and is the simplest and most widely used.
+
+32. A 1200 Hp engine has a drive shaft rotating at 2000 RPM. Find the torque on the shaft?
+A. 2214 Nm
+B. 3214 Nm
+C. 4214 Nm
+D. 5214 Nm
+Answer: C
+Solution: Using metric horsepower (1 hp = 735.5 W): P = 1200 × 735.5 = 882,600 W
+• ω = 2π(2000)/60 = 209.44 rad/s; T = P/ω = 882,600/209.44 = 4,214 N·m
+• Note: with 1 hp = 746 W, T = 4,274 N·m; the choices use metric horsepower.
+
+33. A father wishes to have P 50,000.00 available at his daughter’s 18th birthday. What amount must he set aside on his daughter’s third birthday if will earn interest at the rate of 12 percent compounded quarterly?
+A. P 8,487.00
+B. P 9,000.00
+C. P 8,000.00
+D. P 8,500.00
+Answer: A
+Solution: From age 3 to 18 is 15 years = 60 quarters at 3% per quarter
+• P = F(1 + i)⁻ⁿ = 50,000(1.03)⁻⁶⁰ = 50,000/5.8916 = P8,487
+
+34. What do you call a system in which there is a flow of matter through the boundary? This system usually encloses the device that involves mass flow, such as: compressor, turbine, or nozzle.
+A. Open system
+B. Closed system
+C. Isolated system
+D. Steady flow system
+Answer: A
+Solution: An open system (control volume) lets mass cross its boundary. A closed system lets only energy cross; an isolated system lets neither.
+
+35. The profit derived from a project or business enterprise without consideration of obligations of financial contributors and claims of others based on profit is known as ______.
+A. Yield
+B. Economic
+C. Earning value
+D. Gain
+Answer: B
+Solution: This is the definition of economic return; choice B is printed as "Economic".
+
+36. Copper weighing 50 gr heated to 100°C in steam immersed in water at 27°C. The water in the calorimeter weighs 100 gr and the inner Aluminum capacity is 50 gr. If the final temperature is 30°C. What is the specific heat of copper? Specific heat of Aluminum is 0.22 Cal/gr-°C.
+A. 0.093 Cal/gr-°C
+B. 0.371 Cal/gr-°C
+C. 0.131 Cal/gr-°C
+D. 0.325 Cal/gr-°C
+Answer: A
+Solution: Heat lost by copper = heat gained by water + aluminum cup
+• 50c(100 − 30) = 100(1)(30 − 27) + 50(0.22)(30 − 27) = 300 + 33 = 333 cal
+• c = 333/3500 = 0.095 cal/g·°C, nearest choice 0.093
+
+37. The flow back of profit plus depreciation form a given project is called _______.
+A. Capital recovery
+B. Cash flow
+C. Economic return
+D. Earning value
+Answer: B
+Solution: Cash flow = profit + depreciation (the money actually returned by the project).
+
+38. If atmospheric air 14.7 psia and 60°F at sea level, what is the pressure at 12,000 ft. altitude if air is compressed adiabatically? Where k= 1.4.
+A. 29.26 psia
+B. 39.36 psia
+C. 9.36 psia
+D. 9.26 psia
+Answer: D
+Solution: Adiabatic atmosphere: p/p₀ = [1 − ((k − 1)/k)(z/(RT₀))]^(k/(k−1)), with RT₀ = 53.34 × 519.67 = 27,719 ft
+• z/(RT₀) = 12,000/27,719 = 0.4329; 1 − 0.2857 × 0.4329 = 0.8763
+• p = 14.7 × (0.8763)^3.5 = 14.7 × 0.630 = 9.26 psia
+
+39. A window having area of 2m² has a surface temperature of 15°C and the air is blowing at 2°C across it with convection heat transfer coefficient of h=125 W/m²-K. Find the total heat transfer loss?
+A. 3250W
+B. 2250W
+C. 4250 W
+D. 5250 W
+Answer: A
+Solution: Q = hAΔT = 125 × 2 × (15 − 2) = 3,250 W
+
+40. If the temperature is constant, enthalpy :
+A. Changes with change in P
+B. Changes with change in both P and V
+C. Changes with change in V
+D. Does not change with change in P or V
+Answer: D
+Solution: For an ideal gas h = h(T) only (h = u + pv = u + RT), so at constant temperature enthalpy does not change with p or v.
+
+41. “When one of the factors of production is fixed in quantity or is difficult to increase, increasing the other factors of production will result in a less than proportionate increase in output”. This statement is known as the:
+A. Law of diminishing return
+B. Law of demand
+C. Law of supply
+D. Law of supply and demand
+Answer: A
+Solution: This is the law of diminishing returns.
+
+42. The changed to which the borrower pays to the lender for the use of this money is.
+A. Interest
+B. Principal
+C. Annuities
+D. Depreciation
+Answer: A
+Solution: Interest is the amount the borrower pays the lender for the use of borrowed money.
+
+43. ABC Corporation makes it a policy that for nay new equipment purchased; the annual depreciation cost should not exceed 20% of the first cost at any time with no salvage value. Determine the length of life service life necessary if the depreciation used is the SYD Method.
+A. 7 years
+B. 8 years
+C. 9 years
+D. 10 years
+Answer: C
+Solution: SYD depreciation is largest in year 1: d₁ = n/[n(n + 1)/2] × FC = 2FC/(n + 1)
+• 2/(n + 1) ≤ 0.20, so n + 1 ≥ 10 and n = 9 years
+
+44. An machine has a first cost of P15,000 an estimated life of 15 years and an estimated salvage value of P1,500. Using straight-line formula, what is the annual depreciation charge?
+A. P850
+B. P900
+C. P1,100
+D. P1,050
+Answer: B
+Solution: d = (FC − SV)/n = (15,000 − 1,500)/15 = P900
+
+45. The value of the ratio of the steam point temperature to the ice point temperature is?
+A. 1.466
+B. 1.266
+C. 1.166
+D. 1.366
+Answer: D
+Solution: In kelvins: 373.15/273.15 = 1.366
+
+46. A radiant heating lamp has a temperature of 100K with ɛ = 0.8. What should be the surface area to provide 250 W of radiation Heat transfer?
+A. 0.0035 m²
+B. 0.0055 m²
+C. 0.0075 m²
+D. 0.0095 m²
+Answer: B
+Solution: Q = εσAT⁴, so A = Q/(εσT⁴). With T = 1000 K:
+• A = 250/(0.8 × 5.67 × 10⁻⁸ × 1000⁴) = 250/45,360 = 0.0055 m²
+• Review note: the PDF prints 100 K; the choices fit a lamp at 1000 K (at 100 K the area would be 55 m²).
+
+47. Find the nominal rate compounded semi-annually which is equivalent to 12% compounded quarterly.
+A. 12.55%
+B. 15.25%
+C. 11.94%
+D. 11.88%
+Answer: A
+Solution: Equal effective rates: (1 + r/2)² = (1 + 0.12/4)⁴ = 1.12551
+• 1 + r/2 = (1.03)² = 1.0609, so r = 12.18% compounded semi-annually
+• Review note: 12.18% is not among the choices. Choice A (12.55%) is the equivalent effective annual rate, (1.03)⁴ − 1. Please check the key.
+
+48. What refers to the cost of borrowing money or the amount earned by a unit principal per unit time?
+A. Yield rate
+B. Rate of return
+C. Rate of interest
+D. Economic return
+Answer: C
+Solution: The rate of interest is the amount earned by a unit principal per unit time (the cost of borrowing money).
+
+49. A 100 million pounds per year DMT Meth analysis plant costs P10,000,000.00 to build. If the DMT sells for 25 cents per pound, what is the return on investment for the plant? Profit after taxes is 10%. Assume that working capital is 25% of fixed capital.
+A. 10%
+B. 25%
+C. 20%
+D. 15%
+Answer: C
+Solution: Sales = 100 × 10⁶ lb × P0.25 = P25,000,000/yr; profit after taxes = 10% = P2,500,000
+• Total investment = 10,000,000 + 0.25(10,000,000) = P12,500,000
+• ROI = 2,500,000/12,500,000 = 20%
+
+50. The amount of P12,500 in 4 years at 6% compounded quarterly is .
+A. P15,862.32
+B. P15,268.23
+C. P13,267.04
+D. P13,726.40
+Answer: A
+Solution: F = P(1 + i)ⁿ = 12,500(1.015)¹⁶ = 12,500 × 1.26899 = P15,862.32
+
+51. Air is compressed in a diesel engine from an initial pressure 13 psia (89.64 kPa abs) and temperature of 120°F (48.9°C) to one-twelfth its initial temperature. Assuming the compression to be adiabatic, will the final pressure be:
+A. 421 psia (2903 kPa)
+B. 400 psia (2758 kPa)
+C. 375 psia (2586 kPa)
+D. 438 psia (3020 kPa)
+Answer: A
+Solution: The air is compressed to one-twelfth of its initial volume (compression ratio 12).
+• Adiabatic: p₂ = p₁(V₁/V₂)^k = 13 × 12^1.4 = 13 × 32.42 = 421 psia
+• Note: the PDF says "one-twelfth its initial temperature"; it means volume.
+
+52. A device produces 37.5 joules per cycle. There is one power stroke per cycle. Calculate the power output if the device is run at 45 rpm.
+A. 27.56 W
+B. 5.69 W
+C. 28.125 W
+D. 15.063 W
+Answer: C
+Solution: P = (37.5 J/cycle)(45 cycles/min)/(60 s/min) = 28.125 W
+
+53. To be sure that steam after throttling is in the single-phase or superheated vapor, a minimum of _______ is desired.
+A. 10°C
+B. -5 °C
+C. 0 °C
+D. 5 °C
+Answer: D
+Solution: In a throttling calorimeter the steam leaving should be superheated by at least about 5 °C to be sure it is a single phase.
+
+54. A heat pump
+A. Extracts energy at low temperature heat source
+B. Both A and C
+C. Gives energy to high temperature heat source
+D. A pump for raising
+Answer: B
+Solution: A heat pump absorbs heat from a low-temperature source and delivers it, plus the work input, to a high-temperature region, so both A and C describe it.
+
+55. How does an adiabatic process compare to an isentropic process.
+A. Both: heat transfer = 0; isentropic reversible
+B. Adiabatic: heat transfer = 0; isentropic: heat transfer is not equal to zero
+C. Adiabatic: heat transfer is not equal to zero; isentropic irreversible
+Answer: A
+Solution: Both have no heat transfer; an isentropic process is in addition reversible (a reversible adiabatic process).
+• Note: the PDF gives only three choices for this item.
+
+56. “Under conditions of perfect competition, the price at which any given product will be supplied and purchased is the price that will result in the supply and the demand being equal.” This statement is known as
+A. Law of diminishing return
+B. Law of demand
+C. Law of supply
+D. Law of supply and demand
+Answer: D
+Solution: This is the law of supply and demand.
+
+57. What refers to the goods and services that are desired by human and will be acquired only after all needs have been satisfied?
+A. Producer Products
+B. Consumer Products
+C. Luxury
+D. Necessity
+Answer: C
+Solution: Luxuries are goods and services acquired only after the necessities have been satisfied.
+
+58. A 20 g piece of aluminum with specific heat constant of 0.21 Cal/g-°C at 90°C is dropped into a cavity in a large block of ice at 0°C. How much ice does the aluminum melt? Take Lf = 80 Cal/g.
+A. 7.4 g
+B. 0.21 g
+C. 4.7 g
+D. 2.1 g
+Answer: C
+Solution: Heat given up by the aluminum cooling to 0 °C: Q = mcΔT = 20 × 0.21 × 90 = 378 cal
+• Ice melted = Q/Lf = 378/80 = 4.7 g
+
+59. A hollow metal sphere having an inside diameter of 150 mm is weighed first when evacuated and then after being filled to 875 kPa with an unknown gas. If the difference in mass is 0.0025kg, and the temperature is 25°C, find the gas.
+A. Helium
+B. Argon
+C. Hydrogen
+D. Nitrogen
+Answer: A
+Solution: V = (4/3)π(0.075)³ = 1.767 × 10⁻³ m³
+• R = pV/(mT) = 875 × 1.767 × 10⁻³/(0.0025 × 298.15) = 2.074 kJ/kg·K
+• M = 8.314/2.074 = 4.0 kg/kmol, which is helium
+
+60. A P1,000,000 issue of 3%, 15 year bond was sold at 95%. What is the rate of interest of this investment?
+A. 3.0%
+B. 3.4%
+C. 3.7%
+D. 4.0%
+Answer: B
+Solution: Per P1,000 bond: price 950, coupon P30 a year, redeemed at 1,000 after 15 years. Solve 950 = 30(P/A, i, 15) + 1,000(P/F, i, 15).
+• At i = 3.4%: 30(11.615) + 1,000(0.6051) = 953.6; at 3.45%: 948.0
+• i ≈ 3.43% ≈ 3.4%
+
+61. It is an interest earning with equal deposits made at equal interval of time.
+A. Depletion
+B. Amortization
+C. Sinking Fund
+D. Dividends
+Answer: C
+Solution: A sinking fund is built from equal deposits at equal intervals that earn interest, to accumulate a required amount.
+
+62. What refers to the amount of money paid for the use of borrower capital?
+A. Interest
+B. Rate of interest
+C. Simple Interest
+D. Principal
+Answer: A
+Solution: Interest is the amount paid for the use of borrowed capital. (The rate of interest is that amount per unit principal per unit time.)
+
+63. What is the ordinary interest on P1,500.50 for 182 days at 5.2%
+A. P39.01
+B. P39.82
+C. P39.45
+D. P39.99
+Answer: C
+Solution: Ordinary interest (360-day year): I = 1,500.50 × 0.052 × 182/360 = P39.45
+
+64. A uniform series of payment occurring at equal interval of time called ________.
+A. Annuity
+B. Amortization
+C. Depreciation
+D. Bond
+Answer: A
+Solution: An annuity is a series of equal payments made at equal intervals of time.
+
+65. What is the principal accounting equation?
+A. Equity = Asset + Liability
+B. Asset = Equity - Liability
+C. Equity = Asset - Liability
+D. Liability = Equity – Asset
+Answer: C
+Solution: Assets = Liabilities + Owner's Equity, so Equity = Assets − Liabilities.
+
+66. Specifies a definite portion of ownership of the capital and assets of the corporation, all such being a like in value.
+A. Common stock
+B. Fair value
+C. Same value
+D. Stock
+Answer: D
+Solution: A share of stock represents a definite, equal portion of ownership of a corporation's capital and assets.
+
+67. The expression which represents the pressure exerted by a gas is.
+A. nVRT
+B. nRT/V
+C. V/nRT
+D. 1/nVRT
+Answer: B
+Solution: Ideal gas law pV = nRT, so p = nRT/V.
+
+68. A farmer selling eggs t 50 pesos a dozen gains 20%. If he sells the eggs at the same price after the costs of the eggs at the same price after the costs of the eggs rises by 12.5%, how much will be his new gain in percent?
+A. 6.89%
+B. 6.65%
+C. 6.58%
+D. 6.12%
+Answer: B
+Solution: Original cost = 50/1.20 = P41.667; new cost = 41.667 × 1.125 = P46.875
+• New gain = (50 − 46.875)/46.875 = 6.67%, nearest choice 6.65%
+
+69. The present worth of cost associated with an asset for an infinite period of the time is preferred as:
+A. Operating cost
+B. Incremental cost
+C. Annual cost
+D. Capitalized cost
+Answer: D
+Solution: Capitalized cost is the present worth of all costs of an asset over an infinite (perpetual) period.
+
+70. For minimum work the intermediate pressure is the ____ of the suction and discharge pressures.
+A. Arithmetic mean
+B. Geometric mean
+C. Sum
+D. Difference
+Answer: B
+Solution: For a two-stage compressor with perfect intercooling, minimum work requires px = √(p₁p₂), the geometric mean.
+
+71. What will be the future worth of money after 15 months, if a sum of P20,000 is invested today at a simple interest rate of 15% per year?
+A. P37,750
+B. P27,350
+C. P23,750
+D. P33,350
+Answer: C
+Solution: F = P(1 + it) = 20,000[1 + 0.15(15/12)] = 20,000 × 1.1875 = P23,750
+• Note: the PDF labels the last two choices "C"; P33,350 is choice D.
+
+72. A Carnot machine operates between hot reservoir at 200°C and a cold reservoir at 20°C, when operated as an engine it receives 1000 kJ/kg. Find the coefficient of performance (COP) when operated as a refrigerator.
+A. 1.11
+B. 2.63
+C. 1.63
+D. 2.11
+Answer: C
+Solution: COP(refrigerator) = TL/(TH − TL) = 293.15/(473.15 − 293.15) = 1.63
+
+73. When a battery (12V) is charged with 6 amps for 3 hours how much energy is delivered?
+A. 477.6 kJ
+B. 577.6 kJ
+C. 677.6 kJ
+D. 777.6 kJ
+Answer: D
+Solution: E = VIt = 12 × 6 × (3 × 3600) = 777,600 J = 777.6 kJ
+
+74. Helium (R = 0.468 BTU/ lb-R) is compressed isothermally from 14.7 psia and 68°F the compression ratio is 4. What is the work done by the gas in BTU/lbm?
+A. -567
+B. -564
+C. -357
+D. -364
+Answer: D
+Solution: W = RT ln(p₁/p₂), T = 68 + 459.67 = 527.67 °R. With R(He) = 386 ft·lbf/lbm·°R = 0.4961 BTU/lbm·°R:
+• W = 0.4961 × 527.67 × ln(1/4) = −363 ≈ −364 BTU/lbm (work done on the gas)
+• Review note: with R = 0.468 as printed, W = −342 BTU/lbm, which is not a choice. Helium's R is 0.4961 BTU/lbm·°R.
+
+75. The amount of property in which a willing buyer to a willing seller for the poverty when neither one is under the compulsion to buy nor to sell is called ________.
+A. Fair value
+B. Market value
+C. Good will value
+D. Book value
+Answer: A
+Solution: Fair value is the price a willing buyer pays a willing seller, neither being under compulsion to buy or sell.
+
+76. A pure substance is said to have __________ degrees of freedom.
+A. One
+B. Two
+C. Three
+D. Four
+Answer: B
+Solution: By the state postulate (and Gibbs' phase rule F = C − P + 2 for one component in one phase), a simple pure substance has two independent intensive properties: two degrees of freedom.
+
+77. Thermodynamics properties are.
+A. Point Function
+B. Path Function
+C. Depends on the State
+D. None of these
+Answer: A
+Solution: Properties depend only on the state, not on how it was reached, so they are point functions. Heat and work are path functions.
+• Note: "depends on the state" (C) says the same thing; point function is the standard term.
+
+78. What refers to the amount of a product made available for sale?
+A. Supply
+B. Demand
+C. Product
+D. Good
+Answer: A
+Solution: Supply is the amount of a product made available for sale.
+
+79. Under ordinary simple interest, how many days in one year?
+A. 300
+B. 360
+C. 365
+D. 366
+Answer: B
+Solution: Ordinary simple interest uses a 360-day year (12 months of 30 days). Exact simple interest uses 365 or 366.
+
+80. Funds supplies by others on which a fixed rate of interest must be paid and the debt be repaired at a specific time.
+A. Equity Capital
+B. Borrowed Capital
+C. Demand
+D. Supply
+Answer: B
+Solution: Borrowed capital is supplied by lenders; it earns a fixed interest and must be repaid at a specific time. Equity capital is supplied by owners.
+
+81. The ideal gas refrigeration cycle is same as.
+A. The Brayton Cycle
+B. Reversed Brayton Cycle
+C. The Rankine Cycle
+D. Reversed Rankine Cycle
+Answer: B
+Solution: The ideal gas (air) refrigeration cycle is the reversed Brayton (Bell–Coleman) cycle.
+
+82. Shaft uses which kind of motion to do work?
+A. Vertical motion
+B. Horizontal motion
+C. Rotational motion
+D. None of these
+Answer: C
+Solution: Shaft work is done by rotation: W = Tθ, power = Tω.
+
+83. What is a secondary book of accounts, the information of which obtained from the journal is called?
+A. Balance Sheet
+B. Ledger
+C. Work sheet
+D. Trial balance
+Answer: B
+Solution: The ledger is the book of secondary entry; transactions are posted to it from the journal (book of original entry).
+
+84. If there is only one seller and many buyers, the market situation is _________.
+A. Doupsony
+B. Oligopoly
+C. Oligopsony
+D. Monopoly
+Answer: D
+Solution: One seller with many buyers is a monopoly. (One buyer with many sellers is a monopsony.)
+
+85. The hire of any person to do whatever work he is skilled in doing.
+A. Labor cost
+B. Salary cost
+C. Material cost
+D. Promotion cost
+Answer: A
+Solution: Labor cost is the cost of hiring people to do the work they are skilled in.
+
+86. A lead bullet travelling at 350 m/sec, strikes a target and it is brought to rest. What would be the rise in temperature of the bullet if one of the lead developed were lost to the surroundings? Take specific heat of lead is 0.03 kcal/kg-°C
+A. 372°C
+B. 462°C
+C. 472°C
+D. 452°C
+Answer: C
+Solution: If all the kinetic energy stays in the bullet as heat: ½v² = cΔT
+• ΔT = v²/(2c) = 350²/(2 × 0.03 × 4186) = 122,500/251.2 = 488 °C
+• Review note: the stem is garbled ("if one of the lead developed were lost"), and no choice equals 488 °C; 472 °C is the nearest. If half the heat were lost, ΔT = 244 °C. Please check the source and key.
+
+87. What refers to the claim of ownership?
+A. Proprietorship
+B. Assets
+C. Equity
+D. Liability
+Answer: C
+Solution: Equity is the ownership claim on the assets (assets minus liabilities). Liabilities are the creditors' claims.
+
+88. What is defined as the interest on a load or principal that is base only on the original amount of the loan or principal?
+A. Effective rate of interest
+B. Compound interest
+C. Nominal rate of interest
+D. Simple interest
+Answer: D
+Solution: Simple interest is computed on the original principal only; compound interest is also earned on accumulated interest.
+
+89. The sum of U + PV represents?
+A. Entropy
+B. Enthalpy
+C. Internal energy
+D. Temperature
+Answer: B
+Solution: Enthalpy H = U + pV.
+
+90. A cold tire contains 1000 cubic inches of air at 24 psig and 32°F. What is the pressure in the tire if the temperature and volume are increased to 35°F and 1020 cubic inches, respectively?
+A. 32.8 psia
+B. 48.2 psia
+C. 42.8 psia
+D. 38.2 psia
+Answer: D
+Solution: p₁ = 24 + 14.7 = 38.7 psia; T₁ = 491.67 °R; T₂ = 494.67 °R
+• p₂ = p₁(T₂/T₁)(V₁/V₂) = 38.7 × (494.67/491.67) × (1000/1020) = 38.2 psia
+
+91. The entrance enthalpy, velocity, and height of an open system receiving mass at the rate of 5 lbm/sec are 1000 BTU/lbm, 100 ft/sec, and 100 ft, respectively. 50 BTU/sec are loss to the surroundings. The exit enthalpy, velocity and the height are 1020 BTU/lbm, 50 ft/sec and 0 ft respectively. What is the input horsepower?
+A. 210.3
+B. 200.3
+C. 150.1
+D. 900.3
+Answer: A
+Solution: Steady flow, per lbm: Δh = +20 BTU; ΔKE = (50² − 100²)/(2 × 32.174 × 778) = −0.150 BTU; ΔPE = (0 − 100)/778 = −0.129 BTU
+• Δe = 20 − 0.150 − 0.129 = 19.72 BTU/lbm; for 5 lbm/s: 98.61 BTU/s
+• Work input = 98.61 + 50 (heat lost) = 148.61 BTU/s = 148.61 × 1.4148 = 210.3 hp
+
+92. In a combustion chamber, fuel is banned to raise the temperature of the medium prior to production of work through an expansion process. The heat generated during the combustion reaction is the.
+A. Specific heat
+B. Heat of Evaporation
+C. Heat of Formation
+D. Heat of Reaction
+Answer: D
+Solution: The heat released by a chemical reaction such as combustion is the heat of reaction (heat of combustion).
+
+93. A gas at 1 atm pressure originally occupies a volume of 20 ft³. The gas is polytropically compressed with n= 1.15 until the pressure is 48.51 psia. What work is required for this compression?
+A. -45 lbf – ft
+B. -300 lbf – ft
+C. 11,560 lbf – ft
+D. -47,560 lbf – ft
+Answer: D
+Solution: V₂ = V₁(p₁/p₂)^(1/n) = 20 × (14.7/48.51)^(1/1.15) = 7.082 ft³
+• W = (p₂V₂ − p₁V₁)/(1 − n) = 144(48.51 × 7.082 − 14.7 × 20)/(1 − 1.15)
+• W = 144(343.6 − 294.0)/(−0.15) = −47,560 lbf·ft (work done on the gas)
+
+94. A cylinder contains oxygen at a pressure of 10 atm and a temperature of 300K. The volume of the cylinder is 100 liters. What is the mass of oxygen in grams? MW of O2 is 32 gm/mole.
+A. 130.08
+B. 125.02
+C. 120.04
+D. 135.05
+Answer: A
+Solution: n = pV/(RT). With V = 10 L: n = 10 × 10/(0.08206 × 300) = 4.062 mol, m = 4.062 × 32 = 130 g
+• Review note: with 100 L as printed, m = 1,300 g; the choices fit a 10-L cylinder.
+
+95. At any dbt, the _____ difference of wbt reading below dbt, _______ is the amount of water vapor held in mixture.
+A. smaller, smaller
+B. greater, greater
+C. greater, smaller
+D. smaller, greater
+Answer: C
+Solution: The wet-bulb depression grows as the air gets drier, so the greater the difference of the wbt below the dbt, the smaller the amount of water vapour in the mixture.
+
+96. What is defined as any tangible economic activity that contributes directly or indirectly to the satisfaction of human want?
+A. Services
+B. Goods
+C. Commodities
+D. Goods or Commodities
+Answer: D
+Solution: Goods or commodities are tangible economic products that directly or indirectly satisfy human wants. Services are intangible.
+
+97. The internal energy of saturated water at the triple point is
+A. 1
+B. 0
+C. -1
+D. Infinity
+Answer: B
+Solution: Steam tables take the internal energy (and entropy) of saturated liquid water at the triple point (0.01 °C) as zero, the reference state.
+
+98. All gases and vapors approach ideal gas behavior at
+A. High pressure and high density
+B. High pressure and low density
+C. Low pressure and low density
+D. Low pressure and high density
+Answer: C
+Solution: At low pressure and low density the molecules are far apart, so intermolecular forces and molecular volume are negligible.
+
+99. The profit earned by a corporation are periodically distributed to the stockholders in the form of.
+A. Bonds
+B. Shares
+C. Stocks
+D. Dividends
+Answer: D
+Solution: Profits distributed to stockholders are dividends.
+
+100. The length of time during which it is capable of preforming the function for which it was designed.
+A. Economic life
+B. Physical life
+C. Interest
+D. Depreciation
+Answer: B
+Solution: Physical life is how long the property can perform its designed function. Economic life is how long it is used economically, usually shorter.
