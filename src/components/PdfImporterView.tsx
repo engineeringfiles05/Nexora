@@ -203,6 +203,11 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     [staged, duplicates, publishedIds]
   );
   const decisionCounts = countDuplicateDecisions(decisions, duplicateIds);
+  const setAllDuplicates = (d: DuplicateDecision) => {
+    if (!session || duplicateIds.length === 0) return;
+    importQueue.setDuplicateDecisions(session.id, duplicateIds, d);
+    setNotice(`All ${duplicateIds.length} duplicate${duplicateIds.length === 1 ? '' : 's'} set to "${DECISION_LABEL[d]}" when publishing. You can still change single questions.`);
+  };
   const allTotals = useMemo(() => importTotals(store.sessions), [store.sessions]);
   const importedBefore = useMemo(
     () => (session ? pdfSources.find((s) => (session.fileHash && s.fileHash === session.fileHash) || s.filename.toLowerCase() === session.filename.toLowerCase()) ?? null : null),
@@ -748,12 +753,7 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                           Set all to:
                           <select
                             value=""
-                            onChange={(e) => {
-                              const d = e.target.value as DuplicateDecision;
-                              if (!d || !session) return;
-                              importQueue.setDuplicateDecisions(session.id, duplicateIds, d);
-                              setNotice(`All ${duplicateIds.length} duplicate${duplicateIds.length === 1 ? '' : 's'} set to "${DECISION_LABEL[d]}" when publishing. You can still change single questions.`);
-                            }}
+                            onChange={(e) => e.target.value && setAllDuplicates(e.target.value as DuplicateDecision)}
                             aria-label="Set the publishing choice for all duplicates"
                             className="px-2 py-1 rounded bg-slate-950 border border-fuchsia-800/60 text-white"
                           >
@@ -787,6 +787,8 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                           duplicate={duplicates.get(q.id)}
                           duplicateDecision={decisions[q.id]}
                           onDuplicateDecision={(d) => importQueue.setDuplicateDecision(session.id, q.id, d)}
+                          duplicateCount={duplicateIds.length}
+                          onDuplicateDecisionAll={setAllDuplicates}
                           checked={checked.includes(q.id)}
                           onToggleChecked={() => toggleChecked(q.id)}
                           aiBusy={store.aiBusy.includes(q.id)}

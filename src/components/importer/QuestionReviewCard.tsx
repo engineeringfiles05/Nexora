@@ -92,6 +92,9 @@ interface Props {
   duplicate?: DuplicateMatch;
   duplicateDecision?: DuplicateDecision;
   onDuplicateDecision?: (decision: DuplicateDecision) => void;
+  /** Number of duplicates in the import; with onDuplicateDecisionAll, the menu can set them all. */
+  duplicateCount?: number;
+  onDuplicateDecisionAll?: (decision: DuplicateDecision) => void;
   /** Ticked for "Publish selected". */
   checked?: boolean;
   onToggleChecked?: () => void;
@@ -356,12 +359,25 @@ export const QuestionReviewCard: React.FC<Props> = (props) => {
             When publishing:
             <select
               value={props.duplicateDecision ?? 'skip'}
-              onChange={(e) => props.onDuplicateDecision!(e.target.value as DuplicateDecision)}
+              onChange={(e) => {
+                const [scope, decision] = e.target.value.split(':') as ['all' | DuplicateDecision, DuplicateDecision?];
+                if (scope === 'all' && decision) props.onDuplicateDecisionAll?.(decision);
+                else props.onDuplicateDecision!(scope as DuplicateDecision);
+              }}
               className="px-2 py-1 rounded bg-slate-950 border border-fuchsia-800/60 text-white"
             >
-              <option value="skip">Skip it</option>
-              <option value="replace">Replace the bank copy</option>
-              <option value="keep">Keep both</option>
+              <optgroup label="This question">
+                <option value="skip">Skip it</option>
+                <option value="replace">Replace the bank copy</option>
+                <option value="keep">Keep both</option>
+              </optgroup>
+              {props.onDuplicateDecisionAll && (props.duplicateCount ?? 0) > 1 && (
+                <optgroup label={`All ${props.duplicateCount} duplicates`}>
+                  <option value="all:skip">Skip all</option>
+                  <option value="all:replace">Replace all bank copies</option>
+                  <option value="all:keep">Keep both for all</option>
+                </optgroup>
+              )}
             </select>
           </label>
         </div>
