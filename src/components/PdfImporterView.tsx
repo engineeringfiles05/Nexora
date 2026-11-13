@@ -203,6 +203,9 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
     [staged, duplicates, publishedIds]
   );
   const decisionCounts = countDuplicateDecisions(decisions, duplicateIds);
+  // The choice every duplicate shares, shown in "Set all to"; null when they differ.
+  const sharedDecision = (['skip', 'replace', 'keep'] as const).find((d) => decisionCounts[d] === duplicateIds.length) ?? null;
+  const unapprovedDuplicates = staged.filter((q) => duplicateIds.includes(q.id) && q.reviewStatus !== 'approved').length;
   const setAllDuplicates = (d: DuplicateDecision) => {
     if (!session || duplicateIds.length === 0) return;
     importQueue.setDuplicateDecisions(session.id, duplicateIds, d);
@@ -748,17 +751,22 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                           <span className="text-fuchsia-300/80">
                             Now: {decisionCounts.skip} skip, {decisionCounts.replace} replace, {decisionCounts.keep} keep both.
                           </span>
+                          {unapprovedDuplicates > 0 && decisionCounts.skip < duplicateIds.length && (
+                            <span className="block text-amber-300/90 mt-0.5">
+                              {unapprovedDuplicates} of them {unapprovedDuplicates === 1 ? 'is' : 'are'} not approved yet. Approve {unapprovedDuplicates === 1 ? 'it' : 'them'} to publish with this choice.
+                            </span>
+                          )}
                         </span>
                         <label className="flex items-center gap-1.5">
                           Set all to:
                           <select
-                            value=""
+                            value={sharedDecision ?? ''}
                             onChange={(e) => e.target.value && setAllDuplicates(e.target.value as DuplicateDecision)}
                             aria-label="Set the publishing choice for all duplicates"
                             className="px-2 py-1 rounded bg-slate-950 border border-fuchsia-800/60 text-white"
                           >
                             <option value="" disabled>
-                              Choose…
+                              Mixed choices
                             </option>
                             <option value="skip">{DECISION_LABEL.skip}</option>
                             <option value="replace">{DECISION_LABEL.replace}</option>
