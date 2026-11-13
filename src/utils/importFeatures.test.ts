@@ -11,7 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { INITIAL_PDF_SOURCES, INITIAL_QUESTIONS } from '../data/seedData.ts';
 import { EXAM_PROGRAMS, programById } from '../data/programs.ts';
 import type { Question } from '../types/index.ts';
-import { findDuplicates, publishQuestionsToBank } from './bank.ts';
+import { applyDuplicateDecision, countDuplicateDecisions, findDuplicates, publishQuestionsToBank } from './bank.ts';
 import { formatStructuredSolution, parseSolutionSections, readSolution } from './solutionFormat.ts';
 import { SolutionPanel } from '../components/SolutionPanel.tsx';
 import { applySolutionOnly, approveMany, planBulkApproval } from './importReview.ts';
@@ -70,6 +70,37 @@ test('publishing: duplicates are skipped by default, or replace the bank copy, o
   const kept = publishQuestionsToBank(bank, [], [dup], src, { 'imp-1': 'keep' });
   assert.equal(kept.questions.length, 2);
   assert.equal(kept.skipped.length, 0);
+});
+
+test('one choice can be set for every duplicate at once, and publishing honours it', () => {
+  const stem2 = 'A 12 V battery supplies 3 A to a heater. How much power does the heater take from the battery?';
+  const options2 = [
+    { key: 'A', text: '4 W' },
+    { key: 'B', text: '36 W' },
+    { key: 'C', text: '15 W' },
+    { key: 'D', text: '9 W' },
+  ];
+  const bank = [
+    q({ id: 'bank-1', question: stem, options, contentFingerprint: 'fp-1' }),
+    q({ id: 'bank-2', question: stem2, options: options2, contentFingerprint: 'fp-2' }),
+  ];
+  const src = { ...INITIAL_PDF_SOURCES[0]!, id: 'src', filename: 'new.pdf' };
+  const dups = [
+    q({ id: 'imp-1', question: stem, options, contentFingerprint: 'fp-1' }),
+    q({ id: 'imp-2', question: stem2, options: options2, contentFingerprint: 'fp-2' }),
+  ];
+
+  // A single choice made earlier is overwritten; decisions for other questions are kept.
+  const before = { 'imp-1': 'replace' as const, other: 'skip' as const };
+  const all = applyDuplicateDecision(before, ['imp-1', 'imp-2'], 'keep');
+  assert.deepEqual(all, { 'imp-1': 'keep', 'imp-2': 'keep', other: 'skip' });
+  assert.deepEqual(before, { 'imp-1': 'replace', other: 'skip' }); // not mutated
+  assert.deepEqual(countDuplicateDecisions(all, ['imp-1', 'imp-2']), { skip: 0, replace: 0, keep: 2 });
+  assert.deepEqual(countDuplicateDecisions({}, ['imp-1', 'imp-2']), { skip: 2, replace: 0, keep: 0 }); // default
+
+  const published = publishQuestionsToBank(bank, [], dups, src, all);
+  assert.equal(published.questions.length, 4);
+  assert.equal(published.skipped.length, 0);
 });
 
 // ---- Solutions ----

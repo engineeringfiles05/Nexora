@@ -27,7 +27,9 @@ import {
   X,
 } from 'lucide-react';
 import type { PdfSource, Question } from '../types/index.ts';
-import { findDuplicates, isReviewedForExams, type DuplicateDecision } from '../utils/bank.ts';
+import { countDuplicateDecisions, findDuplicates, isReviewedForExams, type DuplicateDecision } from '../utils/bank.ts';
+
+const DECISION_LABEL: Record<DuplicateDecision, string> = { skip: 'Skip it', replace: 'Replace the bank copy', keep: 'Keep both' };
 import { buildExtractionReport, refreshQuestionAssessment, SUBJECT_NAMES } from '../utils/questionExtractor.ts';
 import {
   approvalBlocker,
@@ -195,6 +197,12 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
   }, [result, staged, acknowledgedMissing]);
 
   const duplicates = useMemo(() => findDuplicates(existingQuestions, staged), [existingQuestions, staged]);
+  // Duplicates whose publishing choice still matters: not rejected and not yet published.
+  const duplicateIds = useMemo(
+    () => staged.filter((q) => duplicates.has(q.id) && q.reviewStatus !== 'rejected' && !publishedIds.includes(q.id)).map((q) => q.id),
+    [staged, duplicates, publishedIds]
+  );
+  const decisionCounts = countDuplicateDecisions(decisions, duplicateIds);
   const allTotals = useMemo(() => importTotals(store.sessions), [store.sessions]);
   const importedBefore = useMemo(
     () => (session ? pdfSources.find((s) => (session.fileHash && s.fileHash === session.fileHash) || s.filename.toLowerCase() === session.filename.toLowerCase()) ?? null : null),
@@ -728,6 +736,37 @@ export const PdfImporterView: React.FC<Props> = ({ existingQuestions, pdfSources
                         <Plus className="w-3 h-3" /> Add missing item
                       </button>
                     </div>
+                    {duplicateIds.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-fuchsia-900/60 bg-fuchsia-950/20 px-2.5 py-2 text-[11px] text-fuchsia-100">
+                        <span className="flex-1 min-w-[12rem]">
+                          {duplicateIds.length} question{duplicateIds.length === 1 ? ' is' : 's are'} already in the Question Bank.{' '}
+                          <span className="text-fuchsia-300/80">
+                            Now: {decisionCounts.skip} skip, {decisionCounts.replace} replace, {decisionCounts.keep} keep both.
+                          </span>
+                        </span>
+                        <label className="flex items-center gap-1.5">
+                          Set all to:
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              const d = e.target.value as DuplicateDecision;
+                              if (!d || !session) return;
+                              importQueue.setDuplicateDecisions(session.id, duplicateIds, d);
+                              setNotice(`All ${duplicateIds.length} duplicate${duplicateIds.length === 1 ? '' : 's'} set to "${DECISION_LABEL[d]}" when publishing. You can still change single questions.`);
+                            }}
+                            aria-label="Set the publishing choice for all duplicates"
+                            className="px-2 py-1 rounded bg-slate-950 border border-fuchsia-800/60 text-white"
+                          >
+                            <option value="" disabled>
+                              Choose…
+                            </option>
+                            <option value="skip">{DECISION_LABEL.skip}</option>
+                            <option value="replace">{DECISION_LABEL.replace}</option>
+                            <option value="keep">{DECISION_LABEL.keep}</option>
+                          </select>
+                        </label>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-3">
