@@ -13,6 +13,7 @@ import React from 'react';
 import { CheckCircle2, Info, ListOrdered, Sigma, XCircle } from 'lucide-react';
 import type { Question } from '../types/index.ts';
 import { parseSolutionSections, readSolution, type ReadableSolution } from '../utils/solutionFormat.ts';
+import { SolutionMath } from './SolutionMath.tsx';
 
 interface Props {
   question: Pick<Question, 'options' | 'correctAnswer' | 'explanation' | 'stepByStepSolution' | 'givenValues' | 'formulasUsed' | 'finalAnswerWithUnit'>;
@@ -28,7 +29,7 @@ const Steps: React.FC<{ solution: ReadableSolution }> = ({ solution }) => (
   <>
     {solution.paragraphs.map((p, i) => (
       <p key={`p${i}`} className="text-sm text-slate-200 leading-relaxed whitespace-pre-line">
-        {p}
+        <SolutionMath>{p}</SolutionMath>
       </p>
     ))}
     {solution.steps.length > 0 && (
@@ -38,7 +39,7 @@ const Steps: React.FC<{ solution: ReadableSolution }> = ({ solution }) => (
             <span className="mt-0.5 w-6 h-6 shrink-0 rounded-full bg-indigo-600/20 border border-indigo-500/40 text-indigo-200 text-[11px] font-bold flex items-center justify-center">
               {i + 1}
             </span>
-            <span className="flex-1 text-sm text-slate-100 leading-relaxed whitespace-pre-line break-words tabular-nums">{step}</span>
+            <span className="min-w-0 flex-1 text-sm text-slate-100 leading-relaxed whitespace-pre-line break-words tabular-nums"><SolutionMath>{step}</SolutionMath></span>
           </li>
         ))}
       </ol>
@@ -94,7 +95,7 @@ export const SolutionPanel: React.FC<Props> = ({ question: q, userAnswer, showAn
               <ul className="space-y-1 text-sm text-slate-200">
                 {q.givenValues!.map((g, i) => (
                   <li key={i}>
-                    {g.label} = <strong className="text-white">{g.value}</strong>
+                    <SolutionMath>{`${g.label} = ${g.value}`}</SolutionMath>
                   </li>
                 ))}
               </ul>
@@ -108,7 +109,7 @@ export const SolutionPanel: React.FC<Props> = ({ question: q, userAnswer, showAn
               <ul className="space-y-1">
                 {q.formulasUsed!.map((f, i) => (
                   <li key={i} className="font-mono text-[13px] text-emerald-300 bg-slate-950 rounded px-2 py-1 break-words">
-                    {f}
+                    <SolutionMath>{f}</SolutionMath>
                   </li>
                 ))}
               </ul>
@@ -140,7 +141,7 @@ export const SolutionPanel: React.FC<Props> = ({ question: q, userAnswer, showAn
           {q.finalAnswerWithUnit && !structured && (
             <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800/50 text-sm text-emerald-100">
               <span className="font-bold text-emerald-300">Final answer: </span>
-              {q.finalAnswerWithUnit}
+              <SolutionMath>{q.finalAnswerWithUnit}</SolutionMath>
             </div>
           )}
         </div>
@@ -158,7 +159,7 @@ export const SolutionPanel: React.FC<Props> = ({ question: q, userAnswer, showAn
           {notes.map((n, i) => (
             <p key={i} className="flex gap-2 leading-relaxed">
               <Info className="w-4 h-4 shrink-0 mt-0.5 text-sky-400" />
-              <span>{n}</span>
+              <span className="min-w-0"><SolutionMath>{n}</SolutionMath></span>
             </p>
           ))}
         </div>
