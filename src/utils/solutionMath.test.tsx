@@ -84,3 +84,37 @@ Final Answer:
   assert.match(html, /<mfrac>/);
   assert.doesNotMatch(html, /katex-error|\$\$/);
 });
+
+test('all formulas appear inside the solution card before a legacy numerical calculation', () => {
+  const html = renderToStaticMarkup(<SolutionPanel question={{
+    options: [], correctAnswer: '', explanation: '',
+    formulasUsed: [String.raw`$P = E f$`, String.raw`$f = \frac{n}{60}$`],
+    stepByStepSolution: String.raw`$P = 37.5\times\frac{45}{60} = 28.125\,\mathrm{W}$`,
+  }} />);
+  const heading = html.indexOf('> Solution</div>');
+  const formulasHeading = html.indexOf('Formulas used');
+  const powerFormula = html.indexOf('P = E f');
+  const conversionFormula = html.indexOf(String.raw`f = \frac{n}{60}`);
+  const calculation = html.indexOf('28.125');
+  assert.ok(heading >= 0 && heading < formulasHeading);
+  assert.ok(formulasHeading < powerFormula && powerFormula < calculation);
+  assert.ok(formulasHeading < conversionFormula && conversionFormula < calculation);
+  assert.doesNotMatch(html, /katex-error/);
+});
+
+test('structured and separately saved formulas are combined without repeating identical formulas', () => {
+  const html = renderToStaticMarkup(<SolutionPanel question={{
+    options: [], correctAnswer: '', explanation: '', formulasUsed: [String.raw`$P = E f$`],
+    stepByStepSolution: String.raw`Formula:
+• $P = E f$
+• $f = \frac{n}{60}$
+• Review note: SECRET admin formula.
+
+Solution:
+1. $P = 28.125\,\mathrm{W}$`,
+  }} />);
+  assert.equal((html.match(/annotation encoding="application\/x-tex">P = E f</g) ?? []).length, 1);
+  assert.equal((html.match(/Formulas used/g) ?? []).length, 1);
+  assert.ok(html.indexOf(String.raw`f = \frac{n}{60}`) < html.indexOf('28.125'));
+  assert.doesNotMatch(html, /SECRET|Review note/);
+});

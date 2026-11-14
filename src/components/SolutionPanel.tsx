@@ -55,6 +55,13 @@ export const SolutionPanel: React.FC<Props> = ({ question: q, userAnswer, showAn
   const extra = working && explanation && explanation !== working ? readSolution(explanation) : null;
 
   const sections = parseSolutionSections(main);
+  // Older questions keep formulas separately; generated solutions also embed a Formula section.
+  // Present the complete list once, inside the solution and before any substitutions.
+  const formulaBodies = [...(q.formulasUsed ?? []), ...sections.filter((s) => s.heading === 'Formula').map((s) => s.body)];
+  const formulas = [...new Map(formulaBodies.flatMap((body) => {
+    const readable = readSolution(body);
+    return [...readable.paragraphs, ...readable.steps];
+  }).map((formula) => [formula.trim().replace(/\s+/g, ' '), formula.trim()])).values()];
   const structured = sections.some((s) => s.heading);
   const plain = structured ? null : readSolution(main);
   const notes = [...(plain?.notes ?? []), ...(extra?.notes ?? []), ...sections.flatMap((s) => (s.heading ? readSolution(s.body).notes : []))];
@@ -87,7 +94,7 @@ export const SolutionPanel: React.FC<Props> = ({ question: q, userAnswer, showAn
         </div>
       )}
 
-      {((q.givenValues?.length ?? 0) > 0 || (q.formulasUsed?.length ?? 0) > 0) && (
+      {(q.givenValues?.length ?? 0) > 0 && (
         <div className="grid gap-3 sm:grid-cols-2">
           {(q.givenValues?.length ?? 0) > 0 && (
             <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/70">
@@ -101,30 +108,27 @@ export const SolutionPanel: React.FC<Props> = ({ question: q, userAnswer, showAn
               </ul>
             </div>
           )}
-          {(q.formulasUsed?.length ?? 0) > 0 && (
-            <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/70">
-              <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 flex items-center gap-1.5">
-                <Sigma className="w-3.5 h-3.5" /> Formula
-              </div>
-              <ul className="space-y-1">
-                {q.formulasUsed!.map((f, i) => (
-                  <li key={i} className="font-mono text-[13px] text-emerald-300 bg-slate-950 rounded px-2 py-1 break-words">
-                    <SolutionMath>{f}</SolutionMath>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
 
-      {main && (
+      {(main || formulas.length > 0) && (
         <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/70 space-y-3">
           <div className="text-[10px] uppercase tracking-wider font-bold text-indigo-300 flex items-center gap-1.5">
             <ListOrdered className="w-3.5 h-3.5" /> Solution
           </div>
+          {formulas.length > 0 && (
+            <section className="p-3 rounded-lg border border-indigo-900/60 bg-indigo-950/20 space-y-2">
+              <div className="text-xs font-bold text-indigo-200 flex items-center gap-1.5">
+                <Sigma className="w-3.5 h-3.5" /> Formulas used
+              </div>
+              <ul className="space-y-2 text-sm text-emerald-200">
+                {formulas.map((formula, i) => <li key={i}><SolutionMath>{formula}</SolutionMath></li>)}
+              </ul>
+            </section>
+          )}
           {structured
             ? sections.map((s, i) => {
+                if (s.heading === 'Formula') return null;
                 const body = readSolution(s.body);
                 if (!body.paragraphs.length && !body.steps.length) return null;
                 const isFinal = s.heading === 'Final Answer';

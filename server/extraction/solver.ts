@@ -48,13 +48,15 @@ Work it out yourself, then check it: recompute the result independently (or by a
 
 LaTeX formatting is required for all mathematical expressions in formulasUsed, solutionSteps, finalAnswerWithUnit, find, explanation and verification. Keep explanatory prose as ordinary text. Wrap inline mathematics in $...$ and standalone equations in $$...$$. Use \\frac{numerator}{denominator}, \\sqrt{...}, subscripts such as Q_t and C_d, and braced powers such as d^{2}. Set units upright with \\mathrm{...}, separated from values with \\, (for example $v = \\sqrt{2gh} = 31.08\\,\\mathrm{ft/s}$). Do not use slash fractions, Unicode square roots or plain-text equations. Each solutionSteps item must be one complete step; keep any display equation in that item. JSON-escape every LaTeX backslash so parsing the JSON preserves the commands. Preserve givenValues exactly as quoted from the question.
 
+Every calculation must include ALL formulas used, in their general symbolic form BEFORE substituting numerical values. Include the main governing relation, any rearranged relations, intermediate formulas and unit conversions needed to reach the answer. Name each formula and briefly define its symbols. For example, for work per cycle and cycles per minute, list power $P = \\frac{W}{t} = E_{\\mathrm{cycle}} f$ and frequency conversion $f = \\frac{n}{60}$, where n is cycles per minute and f is cycles per second, before showing the numerical calculation. Never return only a substituted equation. An empty formulasUsed list is allowed only for a purely conceptual question with no calculation.
+
 Return JSON:
 - answerKey: the letter of the correct choice, exactly one of ${input.options.map((o) => `"${o.key}"`).join(', ')}. Use "" if you cannot determine it with confidence (for example the data is insufficient, a figure is needed, or no choice matches your result).
 - confidence: "high" only if you verified the result independently and exactly one choice matches; "medium" if probably right; "low" otherwise.
 - givenValues: list of {label, value} taken from the question, values with their units, exactly as given.
 - find: what the question asks for.
-- formulasUsed: the formulas applied (empty for a purely conceptual question).
-- solutionSteps: the working as ordered steps, each with substitutions and units.
+- formulasUsed: every formula applied, with its name, general symbolic LaTeX equation and symbol definitions; include intermediate relations and conversion formulas. Required; empty only for a purely conceptual question.
+- solutionSteps: the working as ordered steps, stating the applicable symbolic formula before its substitutions and units.
 - finalAnswerWithUnit: the result with its unit (or the correct statement for a conceptual question).
 - explanation: the engineering principle behind the answer and why the chosen option is correct.
 - verification: how you checked the result.
@@ -62,10 +64,11 @@ Return JSON:
 - topic: short topic name, and subtopic if clear.
 - difficulty: "Easy", "Average" or "Difficult".`;
 
+  let formulaReminder = '';
   const call = () =>
     ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: prompt + formulaReminder,
       config: {
         temperature: 0,
         responseMimeType: 'application/json',
@@ -88,7 +91,7 @@ Return JSON:
             topic: { type: Type.STRING },
             difficulty: { type: Type.STRING },
           },
-          required: ['answerKey', 'confidence', 'explanation', 'find', 'solutionSteps', 'finalAnswerWithUnit'],
+          required: ['answerKey', 'confidence', 'explanation', 'find', 'formulasUsed', 'solutionSteps', 'finalAnswerWithUnit'],
         },
       },
     });
@@ -101,9 +104,22 @@ Return JSON:
         timer = setTimeout(() => reject(new Error('AI solving took too long')), timeoutMs);
       }),
     ]).finally(() => clearTimeout(timer));
-  const response = await withRetry(timed, 1);
-  const raw = JSON.parse(response.text || '{}');
+  let response = await withRetry(timed, 1);
+  let raw = JSON.parse(response.text || '{}');
+  if (missingCalculationFormulas(raw)) {
+    formulaReminder = '\nYour previous response omitted the formulas for a calculation. Return the complete solution again, with a nonempty formulasUsed list containing every general symbolic formula, its name and symbol definitions before any numerical substitutions.';
+    response = await withRetry(timed, 1);
+    raw = JSON.parse(response.text || '{}');
+    if (missingCalculationFormulas(raw)) throw new Error('The generated calculation omitted its formulas. Please regenerate the solution.');
+  }
   return normalizeSolution(raw, input, model);
+}
+
+function missingCalculationFormulas(raw: any): boolean {
+  const formulas = Array.isArray(raw?.formulasUsed) ? raw.formulasUsed.filter((f: unknown) => typeof f === 'string' && f.trim()) : [];
+  const working = [...(Array.isArray(raw?.solutionSteps) ? raw.solutionSteps : []), raw?.stepByStepSolution, raw?.finalAnswerWithUnit]
+    .filter((value): value is string => typeof value === 'string').join('\n');
+  return formulas.length === 0 && /\d/.test(working) && /[=≈]|\\(?:approx|simeq)\b/.test(working);
 }
 
 /** Validates model output. An answer that is not one of the choices is discarded. */
