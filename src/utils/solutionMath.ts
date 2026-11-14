@@ -60,35 +60,56 @@ export function legacyMathToLatex(source: string): string {
 
 function legacyParts(text: string): SolutionMathPart[] {
   // Keep explanatory prose intact and identify the variable introducing an equation.
-  return text.split(/([;\n]|\.(?=\s+[A-Z]))/).flatMap((line): SolutionMathPart[] => {
+  return text.split(/((?<!\\);|\n|\.(?=\s+[A-Z]))/).flatMap((line): SolutionMathPart[] => {
     const start = /(?:[A-Za-zα-ωΑ-Ω][A-Za-z0-9_α-ωΑ-Ω]*(?:\([^)]*\))?|√\([^)]*\)|\\[a-zA-Z]+(?:\{[^}]*\})?)\s*(?=[=≈])/.exec(line);
+    const commands = /\\(?:[a-zA-Z]+|[,;:! ])(?:\{(?:[^{}]|\{[^{}]*\})*\})*/g;
+    const command = commands.exec(line);
     if (!start) {
       // Accept bare LaTeX as well as delimited math, and simple results with units.
       if (/^\s*\\(?:frac|sqrt|boxed|begin)\b/.test(line)) return [{ text: line, math: true }];
+      if (command) {
+        // A continuation after inline math can start with an operator or a number.
+        if (/^\s*[=≈+\-−*/×÷\d.]/.test(line)) return [{ text: line, math: true }];
+        // Standalone commands (including multiplication between two inline values) are
+        // math too. Keep any prose around them as text rather than swallowing the sentence.
+        const parts: SolutionMathPart[] = [];
+        let end = 0;
+        for (const match of line.matchAll(new RegExp(commands.source, 'g'))) {
+          parts.push({ text: line.slice(end, match.index) }, { text: match[0], math: true });
+          end = match.index! + match[0].length;
+        }
+        parts.push({ text: line.slice(end) });
+        return parts;
+      }
       if (/^\s*-?\d+(?:\.\d+)?\s+[A-Za-zΩ°]+(?:[²³]|\/[A-Za-z]+)?\s*$/.test(line)) {
         return [{ text: legacyMathToLatex(line), math: true }];
       }
       return [{ text: line }];
     }
-    const equation = line.slice(start.index);
+    // Include a leading LaTeX symbol in expressions such as "Force: \\gamma h A = ...".
+    const index = command ? Math.min(start.index, command.index) : start.index;
+    const equation = line.slice(index);
     return [
-      { text: line.slice(0, start.index) },
-      { text: /\\[a-zA-Z]+/.test(equation) ? equation : legacyMathToLatex(equation), math: true },
+      { text: line.slice(0, index) },
+      { text: /\\(?:[a-zA-Z]+|[,;:! ])/.test(equation) ? equation : legacyMathToLatex(equation), math: true },
     ];
   });
 }
 
 export function splitSolutionMath(text: string): SolutionMathPart[] {
+  // Some imported strings retain a second JSON escape. Restrict this repair to known
+  // commands so legitimate LaTeX row separators, such as "\\\\ c &= 3", stay intact.
+  text = text.replace(/(?<!\\)\\{2}(?=(?:times|cdot|div|mathrm|text|frac|dfrac|tfrac|sqrt|gamma|rho|pi|theta|mu|omega|eta|sigma|alpha|beta|Delta|Omega|bar|overline|hat|vec|boxed|left|right)\b)/g, '\\');
   const delimiter = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|(?<!\\)\$([^\n$]+?)(?<!\\)\$/g;
   const parts: SolutionMathPart[] = [];
   let end = 0;
   for (const match of text.matchAll(delimiter)) {
-    // Explicit math delimiters leave surrounding prose untouched.
-    parts.push({ text: text.slice(end, match.index) });
+    // Imported steps may mix delimited math with bare LaTeX or legacy equations.
+    parts.push(...legacyParts(text.slice(end, match.index)));
     parts.push({ text: match[1] ?? match[2] ?? match[3] ?? match[4], math: true, display: match[1] !== undefined || match[2] !== undefined });
     end = match.index! + match[0].length;
   }
   if (!end) return legacyParts(text);
-  parts.push({ text: text.slice(end) });
+  parts.push(...legacyParts(text.slice(end)));
   return parts.filter((part) => part.text);
 }

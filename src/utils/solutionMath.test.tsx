@@ -8,6 +8,56 @@ import { legacyMathToLatex, splitSolutionMath } from './solutionMath.ts';
 
 const render = (text: string) => renderToStaticMarkup(<SolutionMath>{text}</SolutionMath>);
 
+const visibleMarkup = (html: string) => html.replace(/<annotation\b[^>]*>[\s\S]*?<\/annotation>/g, '');
+
+test('the force equation in the reported format renders mathematical operators and upright units', () => {
+  const equation = String.raw`F = γ h^A = 9.81 \times 2 \times 4 = 78.48 \mathrm{kN}`;
+  const html = render(equation);
+  assert.match(html, /class="katex"/);
+  assert.match(html, /<msup>/);
+  assert.match(html, /78\.48/);
+  assert.match(html, /mathvariant="normal">k/);
+  assert.doesNotMatch(visibleMarkup(html), /\\times|\\mathrm|katex-error/);
+});
+
+test('mixed delimited math and unwrapped LaTeX equations do not expose raw commands', () => {
+  for (const equation of [
+    String.raw`Use $F = \gamma h A$: F = γ h A = 9.81 \times 2 \times 4 = 78.48 \mathrm{kN}`,
+    String.raw`F = $\gamma h A$ = 9.81 \times 2 \times 4 = 78.48 \mathrm{kN}`,
+    String.raw`F = $9.81$ \times $2$ \times $4$ = $78.48\,\mathrm{kN}$`,
+    String.raw`Calculate: \gamma h A = 9.81 \times 2 \times 4 = 78.48 \mathrm{kN}`,
+  ]) {
+    const html = render(equation);
+    assert.match(html, /class="katex"/);
+    assert.doesNotMatch(visibleMarkup(html), /\\times|\\mathrm|\\gamma|katex-error/);
+  }
+});
+
+test('double-escaped imported LaTeX commands render without disrupting aligned equation rows', () => {
+  const html = render(String.raw`F = \\gamma h A = 9.81 \\times 2 \\times 4 = 78.48 \\mathrm{kN}`);
+  assert.doesNotMatch(visibleMarkup(html).replace(/<[^>]*>/g, ''), /times|mathrm|gamma/);
+  assert.doesNotMatch(html, /katex-error/);
+  assert.match(html, /<mo>×<\/mo>/);
+  const aligned = render(String.raw`$$\begin{aligned}a &= \frac{1}{2} \\ c &= 3\end{aligned}$$`);
+  assert.match(aligned, /<mtable/);
+  assert.equal((aligned.match(/<mtr>/g) ?? []).length, 2);
+  assert.doesNotMatch(aligned, /katex-error/);
+  const adjacentRows = render(String.raw`$$\begin{gathered}\frac{1}{2}\\\frac{3}{4}\end{gathered}$$`);
+  assert.equal((adjacentRows.match(/<mtr>/g) ?? []).length, 2);
+  assert.equal((adjacentRows.match(/<mfrac>/g) ?? []).length, 2);
+  assert.doesNotMatch(adjacentRows, /katex-error/);
+});
+
+test('bare LaTeX symbols preserve surrounding prose and spacing commands in equations', () => {
+  const prose = render(String.raw`Use $F$ and \gamma for the force and unit weight.`);
+  assert.match(prose, /Use /);
+  assert.match(prose, / for the force and unit weight\./);
+  assert.doesNotMatch(visibleMarkup(prose), /\\gamma/);
+  const equation = render(String.raw`F = 78.48\;N`);
+  assert.match(equation, /class="katex"/);
+  assert.doesNotMatch(visibleMarkup(equation), /\\;|katex-error/);
+});
+
 test('LaTeX delimiters render fractions, roots, subscripts and units alongside prose', () => {
   const html = render(String.raw`The velocity is $v = \sqrt{2gh}$, so $$Q_t = \frac{1}{2}\,\mathrm{ft^3/s}$$`);
   assert.match(html, /The velocity is /);
