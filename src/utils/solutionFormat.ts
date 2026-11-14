@@ -61,7 +61,9 @@ export function readSolution(text: string): ReadableSolution {
   const out: ReadableSolution = { paragraphs: [], steps: [], notes: [], reviewNotes: [] };
   const lead: string[] = []; // plain lines before the first step
   let lastWasStep = false;
-  for (const raw of text.split('\n')) {
+  // A display equation is one reading unit even when its LaTeX spans several lines.
+  const lines = text.replace(/\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]/g, (math) => math.replace(/\r?\n/g, ' '));
+  for (const raw of lines.split('\n')) {
     if (!raw.trim()) {
       lastWasStep = false;
       continue;

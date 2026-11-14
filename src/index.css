@@ -1,1 +1,30 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+.solution-math {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.15rem;
+  overflow-wrap: normal;
+}
+
+.solution-math .katex {
+  font-size: 1.1em;
+  white-space: normal;
+}
+
+.solution-math .katex-display {
+  margin: 0.5em 0;
+  text-align: left;
+}
+
+.solution-math .katex-display > .katex {
+  text-align: left;
+}
+
+.solution-math-display {
+  display: block;
+}
